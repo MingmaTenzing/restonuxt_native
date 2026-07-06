@@ -4,7 +4,15 @@ module.exports = {
 
   presets: [require('nativewind/preset')],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        // Uber-style accent (Uber green)
+        accent: {
+          DEFAULT: '#06C167',
+          dark: '#3fdd85',
+        },
+      },
+    },
   },
   plugins: [],
 };

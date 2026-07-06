@@ -14,12 +14,12 @@ const events = [
 export default function EventsScreen() {
   return (
     <ScrollView
-      className="flex-1 bg-zinc-50"
+      className="flex-1 bg-neutral-50 dark:bg-black"
       contentContainerClassName="gap-6 px-5 py-6"
       contentInsetAdjustmentBehavior="automatic">
       <View className="gap-2">
-        <Text className="text-3xl font-bold text-zinc-950">Events</Text>
-        <Text className="text-base leading-6 text-zinc-600">
+        <Text className="text-3xl font-bold text-neutral-900 dark:text-neutral-50">Events</Text>
+        <Text className="text-base leading-6 text-neutral-500 dark:text-neutral-400">
           {events.length} {pluralize(events.length, 'scheduled event')} in the current plan.
         </Text>
       </View>

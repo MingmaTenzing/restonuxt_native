@@ -9,15 +9,17 @@ export default function HomeScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-zinc-50 px-5">
-        <Text className="text-base font-medium text-zinc-600">Loading...</Text>
+      <View className="flex-1 items-center justify-center bg-neutral-50 px-5 dark:bg-black">
+        <Text className="text-base font-medium text-neutral-500 dark:text-neutral-400">
+          Loading...
+        </Text>
       </View>
     );
   }
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 bg-zinc-50">
+      <View className="flex-1 bg-neutral-50 dark:bg-black">
         <AuthView isDismissible={false} mode="signInOrUp" />
       </View>
     );

@@ -19,9 +19,12 @@ export function useTheme() {
     setColorScheme,
     toggleColorScheme,
     colors: {
-      primary: colorScheme === 'dark' ? '#7dd3fc' : '#0369a1',
-      surface: colorScheme === 'dark' ? '#18181b' : '#ffffff',
-      text: colorScheme === 'dark' ? '#fafafa' : '#18181b',
+      accent: colorScheme === 'dark' ? '#3fdd85' : '#06C167',
+      background: colorScheme === 'dark' ? '#000000' : '#fafafa',
+      surface: colorScheme === 'dark' ? '#171717' : '#ffffff',
+      border: colorScheme === 'dark' ? '#262626' : '#e5e5e5',
+      text: colorScheme === 'dark' ? '#fafafa' : '#171717',
+      mutedText: colorScheme === 'dark' ? '#a3a3a3' : '#737373',
     },
   };
 }

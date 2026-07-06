@@ -8,9 +8,10 @@ export function HomeUserIcon() {
   return (
     <Pressable
       accessibilityRole="button"
-      className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 active:opacity-80 dark:border-zinc-800 dark:bg-zinc-900"
+      className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 active:opacity-80 dark:border-neutral-800 dark:bg-neutral-900"
+      style={{ borderCurve: 'continuous' }}
       onPress={() => signOut()}>
-      <Text className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">Sign out</Text>
+      <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Sign out</Text>
     </Pressable>
   );
 }

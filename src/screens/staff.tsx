@@ -1,232 +1,211 @@
 import { useAuth } from '@clerk/expo';
-import { useEffect, useRef, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { Image, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { formatDate } from '@/utils/format-date';
 
 const STAFF_API_URL = 'https://restoquicknuxt-production.up.railway.app/api/staff';
 
-type StaffMember = Record<string, unknown>;
-
-type FetchState =
-  | { status: 'idle' | 'loading'; data: StaffMember[]; error: null }
-  | { status: 'success'; data: StaffMember[]; error: null }
-  | { status: 'error'; data: StaffMember[]; error: string };
-
-function getStringValue(member: StaffMember, keys: string[]) {
-  for (const key of keys) {
-    const value = member[key];
-
-    if (typeof value === 'string' && value.trim()) {
-      return value.trim();
-    }
-
-    if (typeof value === 'number') {
-      return String(value);
-    }
-  }
-
-  return null;
+interface StaffMember {
+  id: string;
+  firstname: string;
+  lastName: string;
+  role: string;
+  email: string;
+  phone: string;
+  employmentType: string;
+  perHourRate: string;
+  availability: string[];
+  joined_date: string;
+  profile_photo_url: string | null;
 }
 
-function getStaffName(member: StaffMember) {
-  const directName = getStringValue(member, ['name', 'fullName', 'displayName', 'username']);
-
-  if (directName) {
-    return directName;
-  }
-
-  const firstName = getStringValue(member, ['firstName', 'first_name']);
-  const lastName = getStringValue(member, ['lastName', 'last_name']);
-  const name = [firstName, lastName].filter(Boolean).join(' ');
-
-  return name || getStringValue(member, ['email', 'phone']) || 'Staff member';
+// "Kitchen_Hand" -> "Kitchen Hand", "PartTime" -> "Part Time"
+function formatLabel(value: string) {
+  return value.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2');
 }
 
-function getStaffMembers(payload: unknown): StaffMember[] {
-  if (Array.isArray(payload)) {
-    return payload.filter((item): item is StaffMember => item !== null && typeof item === 'object');
-  }
-
-  if (!payload || typeof payload !== 'object') {
-    return [];
-  }
-
-  const record = payload as Record<string, unknown>;
-  const possibleKeys = [
-    'staff',
-    'staffMembers',
-    'members',
-    'employees',
-    'users',
-    'data',
-    'items',
-    'results',
-  ];
-
-  for (const key of possibleKeys) {
-    const value = record[key];
-
-    if (Array.isArray(value)) {
-      return value.filter((item): item is StaffMember => item !== null && typeof item === 'object');
-    }
-  }
-
-  return [];
+function getInitials(first: string, last: string) {
+  return `${first?.[0] ?? ''}${last?.[0] ?? ''}`.toUpperCase() || '?';
 }
 
-async function fetchStaffMembers(token: string) {
+async function fetchStaff(token: string): Promise<StaffMember[]> {
   const response = await fetch(STAFF_API_URL, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 
-  const payload: unknown = await response.json().catch(() => null);
-
   if (!response.ok) {
-    const message =
-      payload && typeof payload === 'object' && 'message' in payload
-        ? String((payload as { message?: unknown }).message)
-        : `Unable to load staff (${response.status})`;
-
-    throw new Error(message);
+    throw new Error(`Unable to load staff (${response.status})`);
   }
 
-  return getStaffMembers(payload);
+  const payload = await response.json();
+  return Array.isArray(payload) ? payload : (payload.staff ?? payload.data ?? []);
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View className="flex-row items-center justify-between gap-4">
+      <Text className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{label}</Text>
+      <Text
+        selectable
+        className="flex-1 text-right text-base text-neutral-900 dark:text-neutral-100">
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function StaffCard({ member }: { member: StaffMember }) {
+  return (
+    <View
+      className="gap-4 rounded-3xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+      style={{ borderCurve: 'continuous' }}>
+      <View className="flex-row items-center gap-4">
+        {member.profile_photo_url ? (
+          <Image source={{ uri: member.profile_photo_url }} className="h-14 w-14 rounded-full" />
+        ) : (
+          <View className="h-14 w-14 items-center justify-center rounded-full bg-black dark:bg-white">
+            <Text className="text-lg font-bold text-white dark:text-black">
+              {getInitials(member.firstname, member.lastName)}
+            </Text>
+          </View>
+        )}
+
+        <View className="flex-1 gap-1.5">
+          <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+            {member.firstname} {member.lastName}
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            <View className="bg-accent/15 rounded-full px-3 py-1">
+              <Text className="text-accent dark:text-accent-dark text-xs font-semibold">
+                {formatLabel(member.role)}
+              </Text>
+            </View>
+            <View className="rounded-full bg-neutral-100 px-3 py-1 dark:bg-neutral-800">
+              <Text className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
+                {formatLabel(member.employmentType)}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      <View className="h-px bg-neutral-100 dark:bg-neutral-800" />
+
+      <View className="gap-3">
+        <DetailRow label="Email" value={member.email} />
+        <DetailRow label="Phone" value={member.phone} />
+        <DetailRow label="Rate" value={`$${member.perHourRate}/hr`} />
+        <DetailRow label="Joined" value={formatDate(member.joined_date)} />
+      </View>
+
+      {member.availability?.length ? (
+        <View className="gap-2">
+          <Text className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+            Availability
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            {member.availability.map((day) => (
+              <View
+                key={day}
+                className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-1.5 dark:border-neutral-700 dark:bg-neutral-800">
+                <Text className="text-xs font-semibold text-neutral-700 dark:text-neutral-200">
+                  {day}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
 }
 
 export default function StaffScreen() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
-  const getTokenRef = useRef(getToken);
-  const [fetchKey, setFetchKey] = useState(0);
-  const [state, setState] = useState<FetchState>({ status: 'idle', data: [], error: null });
 
-  useEffect(() => {
-    getTokenRef.current = getToken;
-  }, [getToken]);
-
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn) {
-      return;
-    }
-
-    const abortController = new AbortController();
-
-    setState((current) => ({ status: 'loading', data: current.data, error: null }));
-
-    async function loadStaff() {
-      try {
-        const token = await getTokenRef.current();
-
-        if (!token) {
-          throw new Error('Sign in again to load staff.');
-        }
-
-        const data = await fetchStaffMembers(token);
-
-        if (!abortController.signal.aborted) {
-          setState({ status: 'success', data, error: null });
-        }
-      } catch (error) {
-        if (!abortController.signal.aborted) {
-          setState({
-            status: 'error',
-            data: [],
-            error: error instanceof Error ? error.message : 'Unable to load staff.',
-          });
-        }
-      }
-    }
-
-    loadStaff();
-
-    return () => {
-      abortController.abort();
-    };
-  }, [fetchKey, isLoaded, isSignedIn]);
+  const {
+    data: staff = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['staff'],
+    enabled: isLoaded && isSignedIn,
+    queryFn: async () => {
+      const token = await getToken();
+      if (!token) throw new Error('Sign in again to load staff.');
+      return fetchStaff(token);
+    },
+  });
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-zinc-50 px-5">
-        <Text className="text-base font-medium text-zinc-600">Loading...</Text>
+      <View className="flex-1 items-center justify-center bg-neutral-50 px-5 dark:bg-black">
+        <Text className="text-base font-medium text-neutral-500 dark:text-neutral-400">
+          Loading...
+        </Text>
       </View>
     );
   }
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 items-center justify-center bg-zinc-50 px-5">
-        <Text className="text-center text-xl font-semibold text-zinc-950">Sign in required</Text>
-        <Text className="mt-2 text-center text-base leading-6 text-zinc-600">
+      <View className="flex-1 items-center justify-center bg-neutral-50 px-5 dark:bg-black">
+        <Text className="text-center text-xl font-semibold text-neutral-900 dark:text-neutral-50">
+          Sign in required
+        </Text>
+        <Text className="mt-2 text-center text-base leading-6 text-neutral-500 dark:text-neutral-400">
           Sign in from the Home tab to view staff members.
         </Text>
       </View>
     );
   }
 
-  const isLoading = state.status === 'loading';
-
   return (
     <ScrollView
-      className="flex-1 bg-zinc-50"
+      className="flex-1 bg-neutral-50 dark:bg-black"
       contentContainerClassName="gap-6 px-5 py-6"
       contentInsetAdjustmentBehavior="automatic">
       <View className="gap-2">
-        <Text className="text-3xl font-bold text-zinc-950">Staff</Text>
-        <Text className="text-base leading-6 text-zinc-600">
-          {isLoading ? 'Loading staff members...' : `${state.data.length} staff members`}
+        <Text className="text-3xl font-bold text-neutral-900 dark:text-neutral-50">Staff</Text>
+        <Text className="text-base leading-6 text-neutral-500 dark:text-neutral-400">
+          {isLoading ? 'Loading staff members...' : `${staff.length} staff members`}
         </Text>
       </View>
 
-      {state.status === 'error' ? (
-        <View className="gap-4 rounded-3xl border border-red-200 bg-red-50 p-5">
+      {isError ? (
+        <View
+          className="gap-4 rounded-3xl border border-red-200 bg-red-50 p-5 dark:border-red-900/50 dark:bg-red-950/40"
+          style={{ borderCurve: 'continuous' }}>
           <View className="gap-2">
-            <Text className="text-lg font-semibold text-red-950">Could not load staff</Text>
-            <Text className="text-base leading-6 text-red-700">{state.error}</Text>
+            <Text className="text-lg font-semibold text-red-950 dark:text-red-200">
+              Could not load staff
+            </Text>
+            <Text className="text-base leading-6 text-red-700 dark:text-red-300">
+              {error instanceof Error ? error.message : 'Unable to load staff.'}
+            </Text>
           </View>
-          <Button onPress={() => setFetchKey((key) => key + 1)}>Try again</Button>
+          <Button onPress={() => refetch()}>Try again</Button>
         </View>
       ) : null}
 
-      {state.status === 'success' && state.data.length === 0 ? (
-        <View className="rounded-3xl border border-zinc-200 bg-white p-5">
-          <Text className="text-base leading-6 text-zinc-600">No staff members found.</Text>
+      {!isLoading && !isError && staff.length === 0 ? (
+        <View
+          className="rounded-3xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+          style={{ borderCurve: 'continuous' }}>
+          <Text className="text-base leading-6 text-neutral-500 dark:text-neutral-400">
+            No staff members found.
+          </Text>
         </View>
       ) : null}
 
       <View className="gap-3">
-        {state.data.map((member, index) => {
-          const name = getStaffName(member);
-          const role = getStringValue(member, [
-            'role',
-            'position',
-            'jobTitle',
-            'job_title',
-            'title',
-          ]);
-          const email = getStringValue(member, ['email', 'emailAddress', 'email_address']);
-          const phone = getStringValue(member, ['phone', 'phoneNumber', 'phone_number']);
-          const key =
-            getStringValue(member, ['id', '_id', 'staffId', 'staff_id']) ?? `${name}-${index}`;
-
-          return (
-            <View key={key} className="gap-3 rounded-3xl border border-zinc-200 bg-white p-5">
-              <View className="gap-1">
-                <Text className="text-lg font-semibold text-zinc-950">{name}</Text>
-                {role ? <Text className="text-sm font-medium text-zinc-500">{role}</Text> : null}
-              </View>
-
-              {email || phone ? (
-                <View className="gap-1">
-                  {email ? <Text className="text-base text-zinc-700">{email}</Text> : null}
-                  {phone ? <Text className="text-base text-zinc-700">{phone}</Text> : null}
-                </View>
-              ) : null}
-            </View>
-          );
-        })}
+        {staff.map((member) => (
+          <StaffCard key={member.id} member={member} />
+        ))}
       </View>
     </ScrollView>
   );

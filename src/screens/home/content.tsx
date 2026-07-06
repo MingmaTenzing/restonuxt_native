@@ -27,34 +27,38 @@ export function HomeContent() {
 
   return (
     <ScrollView
-      className="flex-1 bg-zinc-50 dark:bg-zinc-950"
+      className="flex-1 bg-neutral-50 dark:bg-black"
       contentContainerClassName="gap-6 px-5 py-6"
       contentInsetAdjustmentBehavior="automatic">
       <View className="gap-3">
         <View className="flex-row items-start justify-between gap-4">
-          <Text className="flex-1 text-3xl font-bold text-zinc-950 dark:text-zinc-50">
+          <Text className="flex-1 text-3xl font-bold text-neutral-900 dark:text-neutral-50">
             Expo src structure
           </Text>
           <HomeUserIcon />
         </View>
-        <Text className="text-base leading-6 text-zinc-600 dark:text-zinc-300">
+        <Text className="text-base leading-6 text-neutral-500 dark:text-neutral-400">
           Routes live in src/app, screens live in src/screens, and reusable code stays grouped by
           responsibility.
         </Text>
       </View>
 
-      <View className="flex-row items-center justify-between gap-4 rounded-3xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+      <View
+        className="flex-row items-center justify-between gap-4 rounded-3xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+        style={{ borderCurve: 'continuous' }}>
         <View className="flex-1 gap-1">
-          <Text className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">Dark mode</Text>
-          <Text className="text-base leading-6 text-zinc-600 dark:text-zinc-300">
+          <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+            Dark mode
+          </Text>
+          <Text className="text-base leading-6 text-neutral-500 dark:text-neutral-400">
             Switch the app theme between light and dark.
           </Text>
         </View>
         <Switch
           accessibilityLabel="Toggle dark mode"
           onValueChange={theme.toggleColorScheme}
-          thumbColor={theme.isDark ? '#f8fafc' : '#ffffff'}
-          trackColor={{ false: '#d4d4d8', true: '#0ea5e9' }}
+          thumbColor={theme.isDark ? '#ffffff' : '#ffffff'}
+          trackColor={{ false: '#d4d4d4', true: '#06C167' }}
           value={theme.isDark}
         />
       </View>
