@@ -1,5 +1,5 @@
 import { useAuth } from '@clerk/expo';
-import { AuthView } from '@clerk/expo/native';
+import { SignIn } from '@clerk/expo/web';
 import { Text, View } from 'react-native';
 
 import { HomeContent } from './content';
@@ -17,8 +17,8 @@ export default function HomeScreen() {
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 bg-zinc-50">
-        <AuthView isDismissible={false} mode="signInOrUp" />
+      <View className="flex-1 items-center justify-center bg-zinc-50 px-5 py-8">
+        <SignIn />
       </View>
     );
   }
