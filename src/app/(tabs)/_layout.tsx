@@ -14,11 +14,15 @@ export default function TabLayout() {
         />
         <NativeTabs.Trigger.Label>Events</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="staff">
+      <NativeTabs.Trigger name="bookings">
         <NativeTabs.Trigger.Icon
-          md="people"
-          sf={{ default: 'person.2', selected: 'person.2.fill' }}
+          md="book_online"
+          sf={{ default: 'calendar.badge.plus', selected: 'calendar.badge.plus' }}
         />
+        <NativeTabs.Trigger.Label>Bookings</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="staff">
+        <NativeTabs.Trigger.Icon md="people" sf={{ default: 'person.2', selected: 'person.2.fill' }} />
         <NativeTabs.Trigger.Label>Staff</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="settings">

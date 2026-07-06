@@ -7,16 +7,21 @@ import { formatDate } from '@/utils/format-date';
 
 const STAFF_API_URL = 'https://restoquicknuxt-production.up.railway.app/api/staff';
 
+// Types mirror the RestoQuick API contract (see API_REFERENCE.md → Staff / Enums).
+type Role = 'Chef' | 'Waiter' | 'Bartender' | 'Manager' | 'Cook' | 'Kitchen_Hand';
+type EmploymentType = 'PartTime' | 'FullTime' | 'Casual';
+type WeekDay = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+
 interface StaffMember {
   id: string;
   firstname: string;
   lastName: string;
-  role: string;
+  role: Role;
   email: string;
   phone: string;
-  employmentType: string;
-  perHourRate: string;
-  availability: string[];
+  employmentType: EmploymentType;
+  perHourRate: number | string; // Prisma Decimal, serialized as string/number
+  availability: WeekDay[];
   joined_date: string;
   profile_photo_url: string | null;
 }
