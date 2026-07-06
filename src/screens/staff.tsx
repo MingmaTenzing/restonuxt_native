@@ -3,9 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Image, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { apiUrl } from '@/utils/api';
 import { formatDate } from '@/utils/format-date';
 
-const STAFF_API_URL = 'https://restoquicknuxt-production.up.railway.app/api/staff';
+const STAFF_API_URL = apiUrl('/api/staff');
 
 // Types mirror the RestoQuick API contract (see API_REFERENCE.md → Staff / Enums).
 type Role = 'Chef' | 'Waiter' | 'Bartender' | 'Manager' | 'Cook' | 'Kitchen_Hand';

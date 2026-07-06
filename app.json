@@ -29,12 +29,21 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mingmatenzingsherpa.myexpoapp"
+      "bundleIdentifier": "com.mingmatenzingsherpa.myexpoapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "da802191-5fa7-4b69-9bd6-968c5d326032"
       }
     }
   }

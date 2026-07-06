@@ -21,6 +21,13 @@ export default function TabLayout() {
         />
         <NativeTabs.Trigger.Label>Bookings</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="orders">
+        <NativeTabs.Trigger.Icon
+          md="receipt_long"
+          sf={{ default: 'list.bullet.rectangle', selected: 'list.bullet.rectangle.fill' }}
+        />
+        <NativeTabs.Trigger.Label>Orders</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="staff">
         <NativeTabs.Trigger.Icon md="people" sf={{ default: 'person.2', selected: 'person.2.fill' }} />
         <NativeTabs.Trigger.Label>Staff</NativeTabs.Trigger.Label>

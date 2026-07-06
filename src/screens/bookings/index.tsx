@@ -4,12 +4,15 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { apiUrl } from '@/utils/api';
 
 import { AddBookingModal } from './add-booking-modal';
 import { BookingCard } from './booking-card';
+import { computeBookingStats, filterBookings, type BookingFilter } from './booking-stats';
+import { BookingFilterToggle, BookingStatsRow } from './booking-stats-row';
 import type { Booking, NewBooking } from './types';
 
-const BOOKINGS_API_URL = 'https://restoquicknuxt-production.up.railway.app/api/bookings';
+const BOOKINGS_API_URL = apiUrl('/api/bookings');
 
 async function fetchBookings(token: string): Promise<Booking[]> {
   const response = await fetch(BOOKINGS_API_URL, {
@@ -45,6 +48,7 @@ export default function BookingsScreen() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const queryClient = useQueryClient();
   const [isModalVisible, setModalVisible] = useState(false);
+  const [filter, setFilter] = useState<BookingFilter>('today');
 
   const {
     data: bookings = [],
@@ -73,6 +77,9 @@ export default function BookingsScreen() {
       setModalVisible(false);
     },
   });
+
+  const stats = computeBookingStats(bookings);
+  const visibleBookings = filterBookings(bookings, filter);
 
   if (!isLoaded) {
     return (
@@ -110,6 +117,12 @@ export default function BookingsScreen() {
           </Text>
         </View>
 
+        {!isError && bookings.length > 0 ? <BookingStatsRow stats={stats} /> : null}
+
+        {!isError && bookings.length > 0 ? (
+          <BookingFilterToggle value={filter} onChange={setFilter} />
+        ) : null}
+
         {isError ? (
           <View
             className="gap-4 rounded-3xl border border-red-200 bg-red-50 p-5 dark:border-red-900/50 dark:bg-red-950/40"
@@ -136,8 +149,18 @@ export default function BookingsScreen() {
           </View>
         ) : null}
 
+        {!isLoading && !isError && bookings.length > 0 && visibleBookings.length === 0 ? (
+          <View
+            className="rounded-3xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+            style={{ borderCurve: 'continuous' }}>
+            <Text className="text-base leading-6 text-neutral-500 dark:text-neutral-400">
+              No bookings for today. Switch to All to see every booking.
+            </Text>
+          </View>
+        ) : null}
+
         <View className="gap-3">
-          {bookings.map((booking) => (
+          {visibleBookings.map((booking) => (
             <BookingCard key={booking.id} booking={booking} />
           ))}
         </View>
