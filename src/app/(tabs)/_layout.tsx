@@ -14,6 +14,13 @@ export default function TabLayout() {
         />
         <NativeTabs.Trigger.Label>Events</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="staff">
+        <NativeTabs.Trigger.Icon
+          md="people"
+          sf={{ default: 'person.2', selected: 'person.2.fill' }}
+        />
+        <NativeTabs.Trigger.Label>Staff</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="settings">
         <NativeTabs.Trigger.Icon
           md="settings"
