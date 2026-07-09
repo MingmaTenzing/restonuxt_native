@@ -71,8 +71,8 @@ function StaffCard({ member }: { member: StaffMember }) {
         {member.profile_photo_url ? (
           <Image source={{ uri: member.profile_photo_url }} className="h-14 w-14 rounded-full" />
         ) : (
-          <View className="h-14 w-14 items-center justify-center rounded-full bg-black dark:bg-white">
-            <Text className="text-lg font-bold text-white dark:text-black">
+          <View className="h-14 w-14 items-center justify-center rounded-full bg-accent/15">
+            <Text className="text-lg font-bold text-accent dark:text-accent-dark">
               {getInitials(member.firstname, member.lastName)}
             </Text>
           </View>
@@ -83,8 +83,8 @@ function StaffCard({ member }: { member: StaffMember }) {
             {member.firstname} {member.lastName}
           </Text>
           <View className="flex-row flex-wrap gap-2">
-            <View className="bg-accent/15 rounded-full px-3 py-1">
-              <Text className="text-accent dark:text-accent-dark text-xs font-semibold">
+            <View className="rounded-full bg-accent/15 px-3 py-1">
+              <Text className="text-xs font-semibold text-accent dark:text-accent-dark">
                 {formatLabel(member.role)}
               </Text>
             </View>

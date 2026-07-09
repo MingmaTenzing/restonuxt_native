@@ -5,7 +5,7 @@ interface TextFieldProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
-  keyboardType?: 'default' | 'phone-pad' | 'number-pad';
+  keyboardType?: 'default' | 'phone-pad' | 'number-pad' | 'decimal-pad';
   autoCapitalize?: 'none' | 'words' | 'sentences';
 }
 
@@ -24,7 +24,7 @@ export function TextField({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#a3a3a3"
+        placeholderTextColor="#8898AA"
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
         className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3.5 text-base text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-50"

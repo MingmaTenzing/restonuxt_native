@@ -1,4 +1,5 @@
-import { Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Text, useColorScheme, View } from 'react-native';
 
 import { formatMoney } from '@/utils/format-money';
 
@@ -8,14 +9,14 @@ function MetricCard({
   label,
   value,
   accentWrap,
-  accentText,
-  icon,
+  iconName,
+  iconColor,
 }: {
   label: string;
   value: string | number;
   accentWrap: string;
-  accentText: string;
-  icon: string;
+  iconName: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
 }) {
   return (
     <View
@@ -26,7 +27,7 @@ function MetricCard({
         <View
           className={`h-9 w-9 items-center justify-center rounded-full ${accentWrap}`}
           style={{ borderCurve: 'continuous' }}>
-          <Text className={`text-base ${accentText}`}>{icon}</Text>
+          <Ionicons name={iconName} size={18} color={iconColor} />
         </View>
         <Text className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
           {value}
@@ -37,19 +38,20 @@ function MetricCard({
 }
 
 export function OrderStatsRow({ stats }: { stats: OrderStats }) {
+  const isDark = useColorScheme() === 'dark';
   return (
     <View className="gap-3">
       {/* Revenue is the signature metric — given its own full-width, high-contrast card. */}
       <View
-        className="gap-1.5 rounded-3xl bg-black p-5 dark:bg-white"
+        className="gap-1.5 rounded-3xl bg-neutral-950 p-5 dark:bg-neutral-900"
         style={{ borderCurve: 'continuous' }}>
-        <Text className="text-xs font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+        <Text className="text-xs font-medium uppercase tracking-wider text-neutral-400">
           Revenue today
         </Text>
-        <Text className="text-4xl font-bold tracking-tight text-white dark:text-black">
+        <Text className="text-4xl font-bold tracking-tight text-white">
           {formatMoney(stats.todayRevenueCents)}
         </Text>
-        <Text className="text-sm text-neutral-400 dark:text-neutral-500">
+        <Text className="text-sm text-neutral-400">
           {stats.todayCount} {stats.todayCount === 1 ? 'order' : 'orders'} today
         </Text>
       </View>
@@ -58,16 +60,16 @@ export function OrderStatsRow({ stats }: { stats: OrderStats }) {
         <MetricCard
           label="Pending"
           value={stats.pendingCount}
-          icon="⏳"
+          iconName="time-outline"
+          iconColor={isDark ? '#FBBF24' : '#B45309'}
           accentWrap="bg-amber-100 dark:bg-amber-500/15"
-          accentText="text-amber-700 dark:text-amber-400"
         />
         <MetricCard
           label="Unpaid"
           value={stats.unpaidCount}
-          icon="💳"
+          iconName="card-outline"
+          iconColor={isDark ? '#F87171' : '#B91C1C'}
           accentWrap="bg-red-100 dark:bg-red-500/15"
-          accentText="text-red-700 dark:text-red-400"
         />
       </View>
     </View>

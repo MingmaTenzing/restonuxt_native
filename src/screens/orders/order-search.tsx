@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
 import type { OrderRange } from './types';
@@ -25,12 +26,12 @@ export function OrderSearch({
       <View
         className="flex-row items-center gap-2.5 rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900"
         style={{ borderCurve: 'continuous' }}>
-        <Text className="text-base text-neutral-400 dark:text-neutral-500">🔍</Text>
+        <Ionicons name="search" size={18} color="#8898AA" />
         <TextInput
           value={query}
           onChangeText={onQueryChange}
           placeholder="Search name or order #"
-          placeholderTextColor="#a3a3a3"
+          placeholderTextColor="#8898AA"
           autoCapitalize="none"
           autoCorrect={false}
           clearButtonMode="while-editing"

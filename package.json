@@ -13,6 +13,7 @@
   "dependencies": {
     "@clerk/expo": "^3.6.5",
     "@expo/ui": "~56.0.20",
+    "@expo/vector-icons": "15.0.3",
     "@tanstack/react-query": "^5.101.2",
     "expo": "~56.0.4",
     "expo-dev-client": "~56.0.22",

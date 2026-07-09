@@ -28,8 +28,18 @@ export default function TabLayout() {
         />
         <NativeTabs.Trigger.Label>Orders</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="menu">
+        <NativeTabs.Trigger.Icon
+          md="restaurant_menu"
+          sf={{ default: 'fork.knife', selected: 'fork.knife' }}
+        />
+        <NativeTabs.Trigger.Label>Menu</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="staff">
-        <NativeTabs.Trigger.Icon md="people" sf={{ default: 'person.2', selected: 'person.2.fill' }} />
+        <NativeTabs.Trigger.Icon
+          md="people"
+          sf={{ default: 'person.2', selected: 'person.2.fill' }}
+        />
         <NativeTabs.Trigger.Label>Staff</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="settings">

@@ -58,7 +58,7 @@ export function HomeContent() {
           accessibilityLabel="Toggle dark mode"
           onValueChange={theme.toggleColorScheme}
           thumbColor={theme.isDark ? '#ffffff' : '#ffffff'}
-          trackColor={{ false: '#d4d4d4', true: '#06C167' }}
+          trackColor={{ false: '#C9D2DC', true: '#635BFF' }}
           value={theme.isDark}
         />
       </View>

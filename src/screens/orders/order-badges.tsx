@@ -15,8 +15,8 @@ const STATUS_STYLES: Record<OrderStatus, { badge: string; text: string }> = {
     text: 'text-amber-700 dark:text-amber-400',
   },
   COMPLETED: {
-    badge: 'bg-accent/15',
-    text: 'text-accent dark:text-accent-dark',
+    badge: 'bg-emerald-100 dark:bg-emerald-500/15',
+    text: 'text-emerald-700 dark:text-emerald-400',
   },
   CANCELLED: {
     badge: 'bg-red-100 dark:bg-red-500/15',
@@ -26,8 +26,8 @@ const STATUS_STYLES: Record<OrderStatus, { badge: string; text: string }> = {
 
 const PAYMENT_STYLES: Record<PaymentStatus, { badge: string; text: string }> = {
   PAID: {
-    badge: 'bg-accent/15',
-    text: 'text-accent dark:text-accent-dark',
+    badge: 'bg-emerald-100 dark:bg-emerald-500/15',
+    text: 'text-emerald-700 dark:text-emerald-400',
   },
   UNPAID: {
     badge: 'bg-red-100 dark:bg-red-500/15',

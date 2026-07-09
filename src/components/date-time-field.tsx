@@ -32,7 +32,7 @@ export function DateTimeField({
   mode = 'datetime',
   minimumDate,
   maximumDate,
-  accentColor = '#06C167',
+  accentColor = '#635BFF',
 }: DateTimeFieldProps) {
   const [showAndroidPicker, setShowAndroidPicker] = useState(false);
 

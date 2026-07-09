@@ -1,42 +1,49 @@
-import { Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, Text, useColorScheme, View } from 'react-native';
 
 import type { BookingFilter, BookingStats } from './booking-stats';
 
 type Accent = {
-  icon: string;
+  iconName: keyof typeof Ionicons.glyphMap;
   iconWrap: string;
-  iconText: string;
+  iconLight: string;
+  iconDark: string;
   value: string;
 };
 
 const ACCENTS: Record<'today' | 'month' | 'upcoming' | 'guests', Accent> = {
   today: {
-    icon: '📅',
+    iconName: 'calendar-outline',
     iconWrap: 'bg-accent/15',
-    iconText: 'text-accent dark:text-accent-dark',
+    iconLight: '#635BFF',
+    iconDark: '#7A73FF',
     value: 'text-neutral-900 dark:text-neutral-50',
   },
   month: {
-    icon: '📈',
+    iconName: 'trending-up-outline',
     iconWrap: 'bg-blue-100 dark:bg-blue-500/15',
-    iconText: 'text-blue-700 dark:text-blue-400',
+    iconLight: '#1D4ED8',
+    iconDark: '#60A5FA',
     value: 'text-neutral-900 dark:text-neutral-50',
   },
   upcoming: {
-    icon: '⏳',
+    iconName: 'time-outline',
     iconWrap: 'bg-amber-100 dark:bg-amber-500/15',
-    iconText: 'text-amber-700 dark:text-amber-400',
+    iconLight: '#B45309',
+    iconDark: '#FBBF24',
     value: 'text-neutral-900 dark:text-neutral-50',
   },
   guests: {
-    icon: '�',
+    iconName: 'people-outline',
     iconWrap: 'bg-neutral-200 dark:bg-neutral-700',
-    iconText: 'text-neutral-700 dark:text-neutral-200',
+    iconLight: '#404040',
+    iconDark: '#E5E5E5',
     value: 'text-neutral-900 dark:text-neutral-50',
   },
 };
 
 function StatCard({ label, value, accent }: { label: string; value: number; accent: Accent }) {
+  const isDark = useColorScheme() === 'dark';
   return (
     <View
       className="flex-1  gap-3 rounded-3xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
@@ -47,7 +54,11 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
         <View
           className={`h-9 w-9 items-center justify-center rounded-full ${accent.iconWrap}`}
           style={{ borderCurve: 'continuous' }}>
-          <Text className={`text-base ${accent.iconText}`}>{accent.icon}</Text>
+          <Ionicons
+            name={accent.iconName}
+            size={18}
+            color={isDark ? accent.iconDark : accent.iconLight}
+          />
         </View>
         <View className="gap-0.5">
           <Text className={`text-3xl font-bold tracking-tight ${accent.value}`}>{value}</Text>

@@ -1,8 +1,22 @@
-import { Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import {
+  LayoutAnimation,
+  Platform,
+  Pressable,
+  Text,
+  UIManager,
+  useColorScheme,
+  View,
+} from 'react-native';
 
 import { formatDate } from '@/utils/format-date';
 
 import type { Booking, BookingStatus } from './types';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const STATUS_STYLES: Record<BookingStatus, { badge: string; text: string }> = {
   PENDING: {
@@ -14,8 +28,8 @@ const STATUS_STYLES: Record<BookingStatus, { badge: string; text: string }> = {
     text: 'text-blue-700 dark:text-blue-400',
   },
   SEATED: {
-    badge: 'bg-accent/15',
-    text: 'text-accent dark:text-accent-dark',
+    badge: 'bg-emerald-100 dark:bg-emerald-500/15',
+    text: 'text-emerald-700 dark:text-emerald-400',
   },
   COMPLETED: {
     badge: 'bg-neutral-200 dark:bg-neutral-700',
@@ -60,12 +74,23 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 export function BookingCard({ booking }: { booking: Booking }) {
   const status = STATUS_STYLES[booking.status] ?? STATUS_STYLES.PENDING;
+  const [expanded, setExpanded] = useState(false);
+  const isDark = useColorScheme() === 'dark';
+
+  const toggle = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded((prev) => !prev);
+  };
 
   return (
-    <View
-      className="gap-4 rounded-3xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+    <Pressable
+      onPress={toggle}
+      accessibilityRole="button"
+      accessibilityState={{ expanded }}
+      accessibilityLabel={`Booking for ${booking.customerName}`}
+      className="gap-4 rounded-3xl border border-neutral-200 bg-white p-5 active:opacity-90 dark:border-neutral-800 dark:bg-neutral-900"
       style={{ borderCurve: 'continuous' }}>
-      <View className="flex-row items-start justify-between gap-4">
+      <View className="flex-row items-center justify-between gap-4">
         <View className="flex-1 gap-1.5">
           <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
             {booking.customerName}
@@ -79,19 +104,30 @@ export function BookingCard({ booking }: { booking: Booking }) {
             {formatLabel(booking.status)}
           </Text>
         </View>
-      </View>
-
-      <View className="h-px bg-neutral-100 dark:bg-neutral-800" />
-
-      <View className="gap-3">
-        <DetailRow label="Phone" value={booking.customerPhone} />
-        <DetailRow
-          label="Guests"
-          value={`${booking.guestCount} ${booking.guestCount === 1 ? 'guest' : 'guests'}`}
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={18}
+          color={isDark ? '#8898AA' : '#697386'}
         />
-        {booking.table ? <DetailRow label="Table" value={booking.table.number} /> : null}
-        {booking.specialRequest ? <DetailRow label="Note" value={booking.specialRequest} /> : null}
       </View>
-    </View>
+
+      {expanded ? (
+        <>
+          <View className="h-px bg-neutral-100 dark:bg-neutral-800" />
+
+          <View className="gap-3">
+            <DetailRow label="Phone" value={booking.customerPhone} />
+            <DetailRow
+              label="Guests"
+              value={`${booking.guestCount} ${booking.guestCount === 1 ? 'guest' : 'guests'}`}
+            />
+            {booking.table ? <DetailRow label="Table" value={booking.table.number} /> : null}
+            {booking.specialRequest ? (
+              <DetailRow label="Note" value={booking.specialRequest} />
+            ) : null}
+          </View>
+        </>
+      ) : null}
+    </Pressable>
   );
 }

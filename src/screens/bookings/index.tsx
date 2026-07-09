@@ -171,15 +171,15 @@ export default function BookingsScreen() {
         accessibilityRole="button"
         accessibilityLabel="Add booking"
         hitSlop={8}
-        className="absolute bottom-24 right-6 h-14 w-14 items-center justify-center rounded-full bg-black shadow-lg active:opacity-80 dark:bg-white"
+        className="absolute bottom-24 right-6 h-14 w-14 items-center justify-center rounded-full bg-accent shadow-lg active:opacity-80 dark:bg-accent-dark"
         style={{
-          shadowColor: '#000',
+          shadowColor: '#635BFF',
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.2,
+          shadowOpacity: 0.35,
           shadowRadius: 8,
           elevation: 6,
         }}>
-        <Text className="text-3xl font-light leading-none text-white dark:text-black">+</Text>
+        <Text className="text-3xl font-light leading-none text-white">+</Text>
       </Pressable>
 
       <AddBookingModal
