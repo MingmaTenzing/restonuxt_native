@@ -7,6 +7,11 @@ export interface MenuOption {
   menuItemId: string;
 }
 
+export interface MenuOptionInput {
+  name: string;
+  priceCents: number;
+}
+
 export interface MenuItem {
   id: string;
   name: string;

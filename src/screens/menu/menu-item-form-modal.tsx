@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { TextField } from '@/components/text-field';
@@ -88,6 +88,7 @@ export function MenuItemFormModal({
 
   const message = validationError ?? errorMessage;
   const isBusy = isSubmitting || isDeleting;
+  const previewImageUrl = /^https?:\/\//i.test(imageUrl.trim()) ? imageUrl.trim() : '';
 
   return (
     <Modal
@@ -110,94 +111,106 @@ export function MenuItemFormModal({
 
         <ScrollView
           className="flex-1"
-          contentContainerClassName="gap-4 px-5 pb-10 pt-5"
+          contentContainerClassName="pb-10"
           keyboardShouldPersistTaps="handled">
-          <TextField
-            label="Name"
-            value={name}
-            onChangeText={setName}
-            placeholder="Margherita Pizza"
-            autoCapitalize="words"
-          />
-
-          <View className="gap-2">
-            <TextField
-              label="Category"
-              value={category}
-              onChangeText={setCategory}
-              placeholder="Mains"
-              autoCapitalize="words"
+          {previewImageUrl ? (
+            <Image
+              source={{ uri: previewImageUrl }}
+              resizeMode="cover"
+              className="h-56 w-full bg-muted dark:bg-muted-dark"
             />
-            {categories.length > 0 ? (
-              <View className="flex-row flex-wrap gap-2">
-                {categories.map((option) => {
-                  const isActive = option === category.trim();
-                  return (
-                    <Pressable
-                      key={option}
-                      onPress={() => setCategory(option)}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isActive }}
-                      className={`rounded-full px-3 py-1.5 ${
-                        isActive ? 'bg-primary dark:bg-primary-dark' : 'bg-muted dark:bg-muted-dark'
-                      }`}>
-                      <Text
-                        className={`text-xs font-semibold ${
-                          isActive
-                            ? 'text-primary-foreground dark:text-primary-foreground-dark'
-                            : 'text-neutral-600 dark:text-neutral-300'
-                        }`}>
-                        {option}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ) : null}
-          </View>
-
-          <TextField
-            label="Price"
-            value={price}
-            onChangeText={setPrice}
-            placeholder="12.50"
-            keyboardType="decimal-pad"
-          />
-          <TextField
-            label="Description"
-            value={description}
-            onChangeText={setDescription}
-            placeholder="San Marzano tomatoes, fresh basil..."
-            autoCapitalize="sentences"
-          />
-          <TextField
-            label="Image URL"
-            value={imageUrl}
-            onChangeText={setImageUrl}
-            placeholder="https://..."
-            autoCapitalize="none"
-          />
-
-          {message ? (
-            <Text className="text-sm text-red-600 dark:text-red-400">{message}</Text>
           ) : null}
 
-          <View className="mt-2 gap-3">
-            <Button onPress={handleSubmit}>
-              {isSubmitting ? 'Saving...' : item ? 'Save changes' : 'Add item'}
-            </Button>
-            {item ? (
-              <Pressable
-                onPress={() => onDelete(item)}
-                disabled={isBusy}
-                accessibilityRole="button"
-                className="rounded-full border border-red-200 px-5 py-3.5 active:opacity-70 dark:border-red-900/50"
-                style={{ borderCurve: 'continuous' }}>
-                <Text className="text-center text-base font-semibold text-red-600 dark:text-red-400">
-                  {isDeleting ? 'Deleting...' : 'Delete item'}
-                </Text>
-              </Pressable>
+          <View className="gap-4 px-5 pt-5">
+            <TextField
+              label="Name"
+              value={name}
+              onChangeText={setName}
+              placeholder="Margherita Pizza"
+              autoCapitalize="words"
+            />
+
+            <View className="gap-2">
+              <TextField
+                label="Category"
+                value={category}
+                onChangeText={setCategory}
+                placeholder="Mains"
+                autoCapitalize="words"
+              />
+              {categories.length > 0 ? (
+                <View className="flex-row flex-wrap gap-2">
+                  {categories.map((option) => {
+                    const isActive = option === category.trim();
+                    return (
+                      <Pressable
+                        key={option}
+                        onPress={() => setCategory(option)}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: isActive }}
+                        className={`rounded-full px-3 py-1.5 ${
+                          isActive
+                            ? 'bg-primary dark:bg-primary-dark'
+                            : 'bg-muted dark:bg-muted-dark'
+                        }`}>
+                        <Text
+                          className={`text-xs font-semibold ${
+                            isActive
+                              ? 'text-primary-foreground dark:text-primary-foreground-dark'
+                              : 'text-neutral-600 dark:text-neutral-300'
+                          }`}>
+                          {option}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ) : null}
+            </View>
+
+            <TextField
+              label="Price"
+              value={price}
+              onChangeText={setPrice}
+              placeholder="12.50"
+              keyboardType="decimal-pad"
+            />
+            <TextField
+              label="Description"
+              value={description}
+              onChangeText={setDescription}
+              placeholder="San Marzano tomatoes, fresh basil..."
+              autoCapitalize="sentences"
+            />
+            <TextField
+              label="Image URL"
+              value={imageUrl}
+              onChangeText={setImageUrl}
+              placeholder="https://..."
+              autoCapitalize="none"
+            />
+
+            {message ? (
+              <Text className="text-sm text-red-600 dark:text-red-400">{message}</Text>
             ) : null}
+
+            <View className="mt-2 gap-3">
+              <Button onPress={handleSubmit}>
+                {isSubmitting ? 'Saving...' : item ? 'Save changes' : 'Add item'}
+              </Button>
+              {item ? (
+                <Pressable
+                  onPress={() => onDelete(item)}
+                  disabled={isBusy}
+                  accessibilityRole="button"
+                  className="rounded-full border border-red-200 px-5 py-3.5 active:opacity-70 dark:border-red-900/50"
+                  style={{ borderCurve: 'continuous' }}>
+                  <Text className="text-center text-base font-semibold text-red-600 dark:text-red-400">
+                    {isDeleting ? 'Deleting...' : 'Delete item'}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
         </ScrollView>
       </View>
