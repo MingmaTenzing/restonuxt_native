@@ -1,10 +1,10 @@
 import { useAuth } from '@clerk/expo';
-import { SignIn } from '@clerk/expo/web';
+import { AuthView } from '@clerk/expo/native';
 import { Text, View } from 'react-native';
 
-import { HomeContent } from './content';
+import { DashboardContent } from './content';
 
-export default function HomeScreen() {
+export default function DashboardScreen() {
   const { isLoaded, isSignedIn } = useAuth();
 
   if (!isLoaded) {
@@ -19,11 +19,11 @@ export default function HomeScreen() {
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 py-8 dark:bg-background-dark">
-        <SignIn />
+      <View className="flex-1 bg-background dark:bg-background-dark">
+        <AuthView isDismissible={false} mode="signInOrUp" />
       </View>
     );
   }
 
-  return <HomeContent />;
+  return <DashboardContent />;
 }

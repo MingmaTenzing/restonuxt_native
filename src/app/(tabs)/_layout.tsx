@@ -4,8 +4,11 @@ export default function TabLayout() {
   return (
     <NativeTabs minimizeBehavior="onScrollDown">
       <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Icon md="home" sf={{ default: 'house', selected: 'house.fill' }} />
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          md="dashboard"
+          sf={{ default: 'chart.bar', selected: 'chart.bar.fill' }}
+        />
+        <NativeTabs.Trigger.Label>Dashboard</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="events">
         <NativeTabs.Trigger.Icon

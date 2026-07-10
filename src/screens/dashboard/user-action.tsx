@@ -1,7 +1,7 @@
 import { useAuth } from '@clerk/expo';
 import { Pressable, Text } from 'react-native';
 
-export function HomeUserIcon() {
+export function DashboardUserAction() {
   const { signOut } = useAuth();
 
   return (
