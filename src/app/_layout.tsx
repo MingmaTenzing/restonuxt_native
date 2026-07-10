@@ -35,7 +35,7 @@ export default function RootLayout() {
             <Stack
               screenOptions={{
                 headerShown: false,
-                contentStyle: { backgroundColor: isDark ? '#000000' : '#fafafa' },
+                contentStyle: { backgroundColor: isDark ? '#09090B' : '#FFFFFF' },
               }}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />

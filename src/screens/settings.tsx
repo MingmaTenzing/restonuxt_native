@@ -10,12 +10,14 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-neutral-50 dark:bg-black"
-      contentContainerClassName="gap-6 px-5 py-6"
+      className="flex-1 bg-background dark:bg-background-dark"
+      contentContainerClassName="gap-6 px-5 py-7"
       contentInsetAdjustmentBehavior="automatic">
       <View className="gap-2">
-        <Text className="text-3xl font-bold text-neutral-900 dark:text-neutral-50">Settings</Text>
-        <Text className="text-base leading-6 text-neutral-500 dark:text-neutral-400">
+        <Text className="text-4xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+          Settings
+        </Text>
+        <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
           App-level hooks and reusable rows are separated from route files.
         </Text>
       </View>

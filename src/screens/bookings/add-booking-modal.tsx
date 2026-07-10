@@ -76,14 +76,14 @@ export function AddBookingModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={handleClose}>
-      <View className="flex-1 bg-neutral-50 dark:bg-black">
-        <View className="flex-row items-center justify-between px-5 pb-4 pt-6">
+      <View className="flex-1 bg-background dark:bg-background-dark">
+        <View className="flex-row items-center justify-between border-b border-neutral-200/70 px-5 pb-4 pt-6 dark:border-border-dark">
           <Pressable onPress={handleClose} hitSlop={12}>
-            <Text className="text-base font-medium text-neutral-500 dark:text-neutral-400">
+            <Text className="text-base font-medium text-primary dark:text-primary-dark">
               Cancel
             </Text>
           </Pressable>
-          <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
             New Booking
           </Text>
           <View className="w-14" />
@@ -91,7 +91,7 @@ export function AddBookingModal({
 
         <ScrollView
           className="flex-1"
-          contentContainerClassName="gap-4 px-5 pb-10"
+          contentContainerClassName="gap-4 px-5 pb-10 pt-5"
           keyboardShouldPersistTaps="handled">
           <TextField
             label="Customer name"
@@ -133,7 +133,7 @@ export function AddBookingModal({
           ) : null}
 
           <View className="mt-2">
-            <Button onPress={handleSubmit}>{isSubmitting ? 'Saving...' : 'Create Booking'}</Button>
+            <Button onPress={handleSubmit}>{isSubmitting ? 'Saving...' : 'Create booking'}</Button>
           </View>
         </ScrollView>
       </View>

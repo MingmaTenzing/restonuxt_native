@@ -20,16 +20,18 @@ function MetricCard({
 }) {
   return (
     <View
-      className="flex-1 gap-3 rounded-3xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
-      style={{ borderCurve: 'continuous' }}>
-      <Text className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{label}</Text>
+      className="flex-1 gap-3 rounded-3xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+      style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
+      <Text className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
+        {label}
+      </Text>
       <View className="flex-row items-center gap-2">
         <View
           className={`h-9 w-9 items-center justify-center rounded-full ${accentWrap}`}
           style={{ borderCurve: 'continuous' }}>
           <Ionicons name={iconName} size={18} color={iconColor} />
         </View>
-        <Text className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+        <Text className="text-3xl font-semibold tracking-tight text-foreground dark:text-foreground-dark">
           {value}
         </Text>
       </View>
@@ -43,12 +45,12 @@ export function OrderStatsRow({ stats }: { stats: OrderStats }) {
     <View className="gap-3">
       {/* Revenue is the signature metric — given its own full-width, high-contrast card. */}
       <View
-        className="gap-1.5 rounded-3xl bg-neutral-950 p-5 dark:bg-neutral-900"
-        style={{ borderCurve: 'continuous' }}>
-        <Text className="text-xs font-medium uppercase tracking-wider text-neutral-400">
+        className="gap-1.5 rounded-3xl bg-neutral-950 p-5 dark:bg-card-dark"
+        style={{ borderCurve: 'continuous', boxShadow: '0 14px 30px rgba(0, 0, 0, 0.16)' }}>
+        <Text className="text-xs font-medium uppercase tracking-wider text-neutral-300">
           Revenue today
         </Text>
-        <Text className="text-4xl font-bold tracking-tight text-white">
+        <Text className="text-4xl font-semibold tracking-tight text-white">
           {formatMoney(stats.todayRevenueCents)}
         </Text>
         <Text className="text-sm text-neutral-400">

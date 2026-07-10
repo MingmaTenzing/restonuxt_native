@@ -9,8 +9,8 @@ export default function HomeScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-neutral-50 px-5 dark:bg-black">
-        <Text className="text-base font-medium text-neutral-500 dark:text-neutral-400">
+      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
+        <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
           Loading...
         </Text>
       </View>
@@ -19,7 +19,7 @@ export default function HomeScreen() {
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 items-center justify-center bg-neutral-50 px-5 py-8 dark:bg-black">
+      <View className="flex-1 items-center justify-center bg-background px-5 py-8 dark:bg-background-dark">
         <SignIn />
       </View>
     );

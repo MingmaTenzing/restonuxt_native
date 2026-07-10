@@ -50,12 +50,14 @@ export function MenuItemFormModal({
   // Re-seed the form whenever the modal opens for a different item.
   useEffect(() => {
     if (!visible) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- The sheet keeps local draft fields and re-seeds them only when opened. */
     setName(item?.name ?? '');
     setCategory(item?.category ?? '');
     setPrice(item ? centsToPriceText(item.priceCents) : '');
     setDescription(item?.description ?? '');
     setImageUrl(item?.imageUrl ?? '');
     setValidationError(null);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [visible, item]);
 
   const handleSubmit = () => {
@@ -93,22 +95,22 @@ export function MenuItemFormModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}>
-      <View className="flex-1 bg-neutral-50 dark:bg-black">
-        <View className="flex-row items-center justify-between px-5 pb-4 pt-6">
+      <View className="flex-1 bg-background dark:bg-background-dark">
+        <View className="flex-row items-center justify-between border-b border-neutral-200/70 px-5 pb-4 pt-6 dark:border-border-dark">
           <Pressable onPress={onClose} hitSlop={12} disabled={isBusy}>
-            <Text className="text-base font-medium text-neutral-500 dark:text-neutral-400">
+            <Text className="text-base font-medium text-primary dark:text-primary-dark">
               Cancel
             </Text>
           </Pressable>
-          <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
-            {item ? 'Edit Item' : 'New Item'}
+          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+            {item ? 'Edit item' : 'New item'}
           </Text>
           <View className="w-14" />
         </View>
 
         <ScrollView
           className="flex-1"
-          contentContainerClassName="gap-4 px-5 pb-10"
+          contentContainerClassName="gap-4 px-5 pb-10 pt-5"
           keyboardShouldPersistTaps="handled">
           <TextField
             label="Name"
@@ -137,13 +139,13 @@ export function MenuItemFormModal({
                       accessibilityRole="button"
                       accessibilityState={{ selected: isActive }}
                       className={`rounded-full px-3 py-1.5 ${
-                        isActive
-                          ? 'bg-accent dark:bg-accent-dark'
-                          : 'bg-neutral-200/70 dark:bg-neutral-800/70'
+                        isActive ? 'bg-primary dark:bg-primary-dark' : 'bg-muted dark:bg-muted-dark'
                       }`}>
                       <Text
                         className={`text-xs font-semibold ${
-                          isActive ? 'text-white' : 'text-neutral-600 dark:text-neutral-300'
+                          isActive
+                            ? 'text-primary-foreground dark:text-primary-foreground-dark'
+                            : 'text-neutral-600 dark:text-neutral-300'
                         }`}>
                         {option}
                       </Text>
@@ -182,17 +184,17 @@ export function MenuItemFormModal({
 
           <View className="mt-2 gap-3">
             <Button onPress={handleSubmit}>
-              {isSubmitting ? 'Saving...' : item ? 'Save Changes' : 'Add Item'}
+              {isSubmitting ? 'Saving...' : item ? 'Save changes' : 'Add item'}
             </Button>
             {item ? (
               <Pressable
                 onPress={() => onDelete(item)}
                 disabled={isBusy}
                 accessibilityRole="button"
-                className="rounded-2xl border border-red-200 px-5 py-4 active:opacity-70 dark:border-red-900/50"
+                className="rounded-full border border-red-200 px-5 py-3.5 active:opacity-70 dark:border-red-900/50"
                 style={{ borderCurve: 'continuous' }}>
                 <Text className="text-center text-base font-semibold text-red-600 dark:text-red-400">
-                  {isDeleting ? 'Deleting...' : 'Delete Item'}
+                  {isDeleting ? 'Deleting...' : 'Delete item'}
                 </Text>
               </Pressable>
             ) : null}

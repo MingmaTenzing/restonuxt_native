@@ -20,28 +20,28 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 const STATUS_STYLES: Record<BookingStatus, { badge: string; text: string }> = {
   PENDING: {
-    badge: 'bg-amber-100 dark:bg-amber-500/15',
-    text: 'text-amber-700 dark:text-amber-400',
+    badge: 'bg-amber-100/80 dark:bg-amber-500/15',
+    text: 'text-amber-800 dark:text-amber-300',
   },
   CONFIRMED: {
-    badge: 'bg-blue-100 dark:bg-blue-500/15',
-    text: 'text-blue-700 dark:text-blue-400',
+    badge: 'bg-blue-100/80 dark:bg-blue-500/15',
+    text: 'text-blue-800 dark:text-blue-300',
   },
   SEATED: {
-    badge: 'bg-emerald-100 dark:bg-emerald-500/15',
-    text: 'text-emerald-700 dark:text-emerald-400',
+    badge: 'bg-emerald-100/80 dark:bg-emerald-500/15',
+    text: 'text-emerald-800 dark:text-emerald-300',
   },
   COMPLETED: {
     badge: 'bg-neutral-200 dark:bg-neutral-700',
     text: 'text-neutral-700 dark:text-neutral-200',
   },
   CANCELLED: {
-    badge: 'bg-red-100 dark:bg-red-500/15',
-    text: 'text-red-700 dark:text-red-400',
+    badge: 'bg-red-100/80 dark:bg-red-500/15',
+    text: 'text-red-800 dark:text-red-300',
   },
   NO_SHOW: {
-    badge: 'bg-red-100 dark:bg-red-500/15',
-    text: 'text-red-700 dark:text-red-400',
+    badge: 'bg-red-100/80 dark:bg-red-500/15',
+    text: 'text-red-800 dark:text-red-300',
   },
 };
 
@@ -62,10 +62,12 @@ export function formatBookingTime(iso: string) {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row items-center justify-between gap-4">
-      <Text className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{label}</Text>
+      <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+        {label}
+      </Text>
       <Text
         selectable
-        className="flex-1 text-right text-base text-neutral-900 dark:text-neutral-100">
+        className="flex-1 text-right text-base text-foreground dark:text-foreground-dark">
         {value}
       </Text>
     </View>
@@ -88,14 +90,14 @@ export function BookingCard({ booking }: { booking: Booking }) {
       accessibilityRole="button"
       accessibilityState={{ expanded }}
       accessibilityLabel={`Booking for ${booking.customerName}`}
-      className="gap-4 rounded-3xl border border-neutral-200 bg-white p-5 active:opacity-90 dark:border-neutral-800 dark:bg-neutral-900"
-      style={{ borderCurve: 'continuous' }}>
+      className="gap-4 rounded-3xl border border-border bg-card p-5 active:opacity-90 dark:border-border-dark dark:bg-card-dark"
+      style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
       <View className="flex-row items-center justify-between gap-4">
         <View className="flex-1 gap-1.5">
-          <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
             {booking.customerName}
           </Text>
-          <Text className="text-sm text-neutral-500 dark:text-neutral-400">
+          <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
             {formatBookingTime(booking.bookingTime)}
           </Text>
         </View>
@@ -107,13 +109,13 @@ export function BookingCard({ booking }: { booking: Booking }) {
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={18}
-          color={isDark ? '#8898AA' : '#697386'}
+          color={isDark ? '#98989D' : '#8E8E93'}
         />
       </View>
 
       {expanded ? (
         <>
-          <View className="h-px bg-neutral-100 dark:bg-neutral-800" />
+          <View className="h-px bg-muted dark:bg-muted-dark" />
 
           <View className="gap-3">
             <DetailRow label="Phone" value={booking.customerPhone} />

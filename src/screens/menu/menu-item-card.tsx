@@ -1,4 +1,4 @@
-import { Image, Pressable, Switch, Text, View } from 'react-native';
+import { Image, Pressable, Switch, Text, useColorScheme, View } from 'react-native';
 
 import { formatMoney } from '@/utils/format-money';
 
@@ -18,25 +18,25 @@ export function MenuItemCard({
   isToggling,
 }: MenuItemCardProps) {
   const optionCount = item.options?.length ?? 0;
+  const isDark = useColorScheme() === 'dark';
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Edit ${item.name}`}
-      className="flex-row items-center gap-4 rounded-3xl border border-neutral-200 bg-white p-4 active:opacity-70 dark:border-neutral-800 dark:bg-neutral-900"
-      style={{ borderCurve: 'continuous' }}>
+      className="flex-row items-center gap-4 rounded-3xl border border-border bg-card p-4 active:opacity-70 dark:border-border-dark dark:bg-card-dark"
+      style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
       {item.imageUrl ? (
         <Image
           source={{ uri: item.imageUrl }}
           className={`h-16 w-16 rounded-2xl ${item.isAvailable ? '' : 'opacity-40'}`}
-          style={{ borderCurve: 'continuous' }}
         />
       ) : (
         <View
-          className="h-16 w-16 items-center justify-center rounded-2xl bg-accent/10"
+          className="h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary-dark/15"
           style={{ borderCurve: 'continuous' }}>
-          <Text className="text-xl font-bold text-accent dark:text-accent-dark">
+          <Text className="text-xl font-bold text-primary dark:text-primary-dark">
             {item.name.slice(0, 1).toUpperCase()}
           </Text>
         </View>
@@ -47,22 +47,24 @@ export function MenuItemCard({
           numberOfLines={1}
           className={`text-base font-semibold ${
             item.isAvailable
-              ? 'text-neutral-900 dark:text-neutral-50'
-              : 'text-neutral-400 dark:text-neutral-500'
+              ? 'text-foreground dark:text-foreground-dark'
+              : 'text-muted-foreground dark:text-muted-foreground-dark'
           }`}>
           {item.name}
         </Text>
         {item.description ? (
-          <Text numberOfLines={1} className="text-sm text-neutral-500 dark:text-neutral-400">
+          <Text
+            numberOfLines={1}
+            className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
             {item.description}
           </Text>
         ) : null}
         <View className="flex-row items-center gap-2">
-          <Text className="text-base font-bold tracking-tight text-accent dark:text-accent-dark">
+          <Text className="text-base font-semibold tracking-tight text-primary dark:text-primary-dark">
             {formatMoney(item.priceCents)}
           </Text>
           {optionCount > 0 ? (
-            <Text className="text-xs font-medium text-neutral-400 dark:text-neutral-500">
+            <Text className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
               {optionCount} {optionCount === 1 ? 'option' : 'options'}
             </Text>
           ) : null}
@@ -75,7 +77,10 @@ export function MenuItemCard({
         disabled={isToggling}
         onValueChange={onToggleAvailability}
         thumbColor="#ffffff"
-        trackColor={{ false: '#C9D2DC', true: '#635BFF' }}
+        trackColor={{
+          false: isDark ? '#52525B' : '#D4D4D8',
+          true: isDark ? '#E4E4E7' : '#18181B',
+        }}
       />
     </Pressable>
   );

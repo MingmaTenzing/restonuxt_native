@@ -54,10 +54,12 @@ function formatLabel(value: string) {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row items-center justify-between gap-4">
-      <Text className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{label}</Text>
+      <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+        {label}
+      </Text>
       <Text
         selectable
-        className="flex-1 text-right text-base text-neutral-900 dark:text-neutral-100">
+        className="flex-1 text-right text-base text-foreground dark:text-foreground-dark">
         {value}
       </Text>
     </View>
@@ -67,12 +69,12 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View className="gap-3">
-      <Text className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+      <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
         {title}
       </Text>
       <View
-        className="gap-3 rounded-3xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
-        style={{ borderCurve: 'continuous' }}>
+        className="gap-3 rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+        style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
         {children}
       </View>
     </View>
@@ -85,14 +87,14 @@ function ItemRow({ item }: { item: OrderItem }) {
     <View className="gap-1.5">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 flex-row gap-2">
-          <Text className="text-base font-semibold text-neutral-400 dark:text-neutral-500">
+          <Text className="text-base font-semibold text-muted-foreground dark:text-muted-foreground-dark">
             {item.quantity}×
           </Text>
-          <Text className="flex-1 text-base font-medium text-neutral-900 dark:text-neutral-50">
+          <Text className="flex-1 text-base font-medium text-foreground dark:text-foreground-dark">
             {item.itemName}
           </Text>
         </View>
-        <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
+        <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
           {formatMoney(itemLineTotalCents(item))}
         </Text>
       </View>
@@ -101,12 +103,12 @@ function ItemRow({ item }: { item: OrderItem }) {
         <View className="gap-0.5 pl-7">
           {options.map((option) => (
             <View key={option.id} className="flex-row items-center justify-between gap-3">
-              <Text className="flex-1 text-sm text-neutral-500 dark:text-neutral-400">
+              <Text className="flex-1 text-sm text-muted-foreground dark:text-muted-foreground-dark">
                 + {option.name}
                 {option.quantity > 1 ? ` ×${option.quantity}` : ''}
               </Text>
               {option.priceCents > 0 ? (
-                <Text className="text-sm text-neutral-500 dark:text-neutral-400">
+                <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
                   {formatMoney(option.priceCents * (option.quantity ?? 1))}
                 </Text>
               ) : null}
@@ -116,7 +118,7 @@ function ItemRow({ item }: { item: OrderItem }) {
       ) : null}
 
       {item.specialInstructions ? (
-        <Text className="pl-7 text-sm italic text-neutral-500 dark:text-neutral-400">
+        <Text className="pl-7 text-sm italic text-muted-foreground dark:text-muted-foreground-dark">
           “{item.specialInstructions}”
         </Text>
       ) : null}
@@ -156,12 +158,12 @@ export default function OrderDetailScreen() {
         }}
       />
       <ScrollView
-        className="flex-1 bg-neutral-50 dark:bg-black"
-        contentContainerClassName="gap-6 px-5 py-6"
+        className="flex-1 bg-background dark:bg-background-dark"
+        contentContainerClassName="gap-6 px-5 py-7"
         contentInsetAdjustmentBehavior="automatic">
         {isLoading ? (
           <View className="items-center justify-center py-16">
-            <Text className="text-base font-medium text-neutral-500 dark:text-neutral-400">
+            <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
               Loading order...
             </Text>
           </View>
@@ -169,7 +171,7 @@ export default function OrderDetailScreen() {
 
         {isError ? (
           <View
-            className="gap-4 rounded-3xl border border-red-200 bg-red-50 p-5 dark:border-red-900/50 dark:bg-red-950/40"
+            className="gap-4 rounded-3xl border border-red-200/80 bg-red-50 p-5 dark:border-red-900/50 dark:bg-red-950/40"
             style={{ borderCurve: 'continuous' }}>
             <Text className="text-lg font-semibold text-red-950 dark:text-red-200">
               Could not load order
@@ -186,10 +188,10 @@ export default function OrderDetailScreen() {
             <View className="gap-3">
               <View className="flex-row items-start justify-between gap-4">
                 <View className="flex-1 gap-1">
-                  <Text className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+                  <Text className="text-4xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
                     {order.customerName || 'Guest'}
                   </Text>
-                  <Text className="text-base text-neutral-500 dark:text-neutral-400">
+                  <Text className="text-base text-muted-foreground dark:text-muted-foreground-dark">
                     Order #{order.orderNo}
                   </Text>
                 </View>
@@ -203,25 +205,23 @@ export default function OrderDetailScreen() {
 
             <SectionCard title={`Items (${(order.items ?? []).length})`}>
               {(order.items ?? []).length === 0 ? (
-                <Text className="text-base text-neutral-500 dark:text-neutral-400">
+                <Text className="text-base text-muted-foreground dark:text-muted-foreground-dark">
                   No items on this order.
                 </Text>
               ) : (
                 (order.items ?? []).map((item, index) => (
                   <View key={item.id} className="gap-3">
-                    {index > 0 ? (
-                      <View className="h-px bg-neutral-100 dark:bg-neutral-800" />
-                    ) : null}
+                    {index > 0 ? <View className="h-px bg-muted dark:bg-muted-dark" /> : null}
                     <ItemRow item={item} />
                   </View>
                 ))
               )}
-              <View className="h-px bg-neutral-100 dark:bg-neutral-800" />
+              <View className="h-px bg-muted dark:bg-muted-dark" />
               <View className="flex-row items-center justify-between">
-                <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
+                <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
                   Total
                 </Text>
-                <Text className="text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+                <Text className="text-xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
                   {formatMoney(order.totalAmountCents)}
                 </Text>
               </View>

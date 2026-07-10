@@ -19,12 +19,14 @@ export function useTheme() {
     setColorScheme,
     toggleColorScheme,
     colors: {
-      accent: colorScheme === 'dark' ? '#7A73FF' : '#635BFF',
-      background: colorScheme === 'dark' ? '#000000' : '#F6F9FC',
-      surface: colorScheme === 'dark' ? '#1A1F36' : '#ffffff',
-      border: colorScheme === 'dark' ? '#2A2F45' : '#E3E8EE',
-      text: colorScheme === 'dark' ? '#F6F9FC' : '#0A2540',
-      mutedText: colorScheme === 'dark' ? '#8898AA' : '#697386',
+      accent: colorScheme === 'dark' ? '#3F3F46' : '#F4F4F5',
+      background: colorScheme === 'dark' ? '#09090B' : '#FFFFFF',
+      surface: colorScheme === 'dark' ? '#18181B' : '#FFFFFF',
+      border: colorScheme === 'dark' ? '#3F3F46' : '#E4E4E7',
+      text: colorScheme === 'dark' ? '#FAFAFA' : '#09090B',
+      mutedText: colorScheme === 'dark' ? '#A1A1AA' : '#71717A',
+      primary: colorScheme === 'dark' ? '#E4E4E7' : '#18181B',
+      primaryForeground: colorScheme === 'dark' ? '#18181B' : '#FAFAFA',
     },
   };
 }

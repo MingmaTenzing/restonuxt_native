@@ -19,15 +19,17 @@ export function TextField({
 }: TextFieldProps) {
   return (
     <View className="gap-2">
-      <Text className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{label}</Text>
+      <Text className="px-1 text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+        {label}
+      </Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#8898AA"
+        placeholderTextColor="#8E8E93"
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
-        className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3.5 text-base text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-50"
+        className="rounded-2xl border border-input bg-card px-4 py-3.5 text-base text-foreground dark:border-input-dark dark:bg-card-dark dark:text-foreground-dark"
         style={{ borderCurve: 'continuous' }}
       />
     </View>

@@ -24,24 +24,24 @@ export function OrderSearch({
   return (
     <View className="gap-3">
       <View
-        className="flex-row items-center gap-2.5 rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900"
+        className="flex-row items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3 dark:border-border-dark dark:bg-card-dark"
         style={{ borderCurve: 'continuous' }}>
-        <Ionicons name="search" size={18} color="#8898AA" />
+        <Ionicons name="search" size={18} color="#8E8E93" />
         <TextInput
           value={query}
           onChangeText={onQueryChange}
           placeholder="Search name or order #"
-          placeholderTextColor="#8898AA"
+          placeholderTextColor="#8E8E93"
           autoCapitalize="none"
           autoCorrect={false}
           clearButtonMode="while-editing"
           returnKeyType="search"
-          className="flex-1 text-base text-neutral-900 dark:text-neutral-50"
+          className="flex-1 text-base text-foreground dark:text-foreground-dark"
         />
       </View>
 
       <View
-        className="flex-row gap-1 rounded-full bg-neutral-200/70 p-1 dark:bg-neutral-800/70"
+        className="flex-row gap-1 rounded-full bg-muted p-1 dark:bg-muted-dark"
         style={{ borderCurve: 'continuous' }}>
         {RANGE_OPTIONS.map((option) => {
           const isActive = option.value === range;
@@ -52,14 +52,17 @@ export function OrderSearch({
               accessibilityRole="button"
               accessibilityState={{ selected: isActive }}
               className={`flex-1 items-center rounded-full px-3 py-2 ${
-                isActive ? 'bg-white dark:bg-neutral-700' : ''
+                isActive ? 'bg-card dark:bg-accent-dark' : ''
               }`}
-              style={{ borderCurve: 'continuous' }}>
+              style={{
+                borderCurve: 'continuous',
+                boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.10)' : 'none',
+              }}>
               <Text
                 className={`text-sm font-semibold ${
                   isActive
-                    ? 'text-neutral-900 dark:text-neutral-50'
-                    : 'text-neutral-500 dark:text-neutral-400'
+                    ? 'text-foreground dark:text-foreground-dark'
+                    : 'text-muted-foreground dark:text-muted-foreground-dark'
                 }`}>
                 {option.label}
               </Text>

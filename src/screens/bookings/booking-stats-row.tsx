@@ -14,31 +14,31 @@ type Accent = {
 const ACCENTS: Record<'today' | 'month' | 'upcoming' | 'guests', Accent> = {
   today: {
     iconName: 'calendar-outline',
-    iconWrap: 'bg-accent/15',
-    iconLight: '#635BFF',
-    iconDark: '#7A73FF',
-    value: 'text-neutral-900 dark:text-neutral-50',
+    iconWrap: 'bg-primary/10 dark:bg-primary-dark/15',
+    iconLight: '#18181B',
+    iconDark: '#E4E4E7',
+    value: 'text-foreground dark:text-foreground-dark',
   },
   month: {
     iconName: 'trending-up-outline',
     iconWrap: 'bg-blue-100 dark:bg-blue-500/15',
     iconLight: '#1D4ED8',
     iconDark: '#60A5FA',
-    value: 'text-neutral-900 dark:text-neutral-50',
+    value: 'text-foreground dark:text-foreground-dark',
   },
   upcoming: {
     iconName: 'time-outline',
     iconWrap: 'bg-amber-100 dark:bg-amber-500/15',
     iconLight: '#B45309',
     iconDark: '#FBBF24',
-    value: 'text-neutral-900 dark:text-neutral-50',
+    value: 'text-foreground dark:text-foreground-dark',
   },
   guests: {
     iconName: 'people-outline',
-    iconWrap: 'bg-neutral-200 dark:bg-neutral-700',
+    iconWrap: 'bg-muted dark:bg-accent-dark',
     iconLight: '#404040',
     iconDark: '#E5E5E5',
-    value: 'text-neutral-900 dark:text-neutral-50',
+    value: 'text-foreground dark:text-foreground-dark',
   },
 };
 
@@ -46,9 +46,11 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
   const isDark = useColorScheme() === 'dark';
   return (
     <View
-      className="flex-1  gap-3 rounded-3xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
-      style={{ borderCurve: 'continuous' }}>
-      <Text className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{label}</Text>
+      className="flex-1  gap-3 rounded-3xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+      style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
+      <Text className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
+        {label}
+      </Text>
 
       <View className=" flex flex-row gap-2">
         <View
@@ -61,7 +63,7 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
           />
         </View>
         <View className="gap-0.5">
-          <Text className={`text-3xl font-bold tracking-tight ${accent.value}`}>{value}</Text>
+          <Text className={`text-3xl font-semibold tracking-tight ${accent.value}`}>{value}</Text>
         </View>
       </View>
     </View>
@@ -94,7 +96,7 @@ export function BookingFilterToggle({
 }) {
   return (
     <View
-      className="flex-row gap-1 rounded-full bg-neutral-200/70 p-1 dark:bg-neutral-800/70"
+      className="flex-row gap-1 rounded-full bg-muted p-1 dark:bg-muted-dark"
       style={{ borderCurve: 'continuous' }}>
       {OPTIONS.map((option) => {
         const isActive = option.value === value;
@@ -105,14 +107,17 @@ export function BookingFilterToggle({
             accessibilityRole="button"
             accessibilityState={{ selected: isActive }}
             className={`flex-1 items-center rounded-full px-4 py-2 ${
-              isActive ? 'bg-white dark:bg-neutral-700' : ''
+              isActive ? 'bg-card dark:bg-accent-dark' : ''
             }`}
-            style={{ borderCurve: 'continuous' }}>
+            style={{
+              borderCurve: 'continuous',
+              boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.10)' : 'none',
+            }}>
             <Text
               className={`text-sm font-semibold ${
                 isActive
-                  ? 'text-neutral-900 dark:text-neutral-50'
-                  : 'text-neutral-500 dark:text-neutral-400'
+                  ? 'text-foreground dark:text-foreground-dark'
+                  : 'text-muted-foreground dark:text-muted-foreground-dark'
               }`}>
               {option.label}
             </Text>

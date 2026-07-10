@@ -1,6 +1,6 @@
-import DateTimePicker from '@expo/ui/community/datetime-picker';
+import CommunityDateTimePicker from '@expo/ui/community/datetime-picker';
 import { useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, useColorScheme, View } from 'react-native';
 
 interface DateTimeFieldProps {
   label: string;
@@ -32,22 +32,26 @@ export function DateTimeField({
   mode = 'datetime',
   minimumDate,
   maximumDate,
-  accentColor = '#635BFF',
+  accentColor,
 }: DateTimeFieldProps) {
   const [showAndroidPicker, setShowAndroidPicker] = useState(false);
+  const isDark = useColorScheme() === 'dark';
+  const resolvedAccentColor = accentColor ?? (isDark ? '#E4E4E7' : '#18181B');
 
   return (
     <View className="gap-2">
-      <Text className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{label}</Text>
+      <Text className="px-1 text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+        {label}
+      </Text>
       {Platform.OS === 'ios' ? (
-        <View className="flex-row items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-2 dark:border-neutral-700 dark:bg-neutral-800">
-          <DateTimePicker
+        <View className="flex-row items-center justify-between rounded-2xl border border-input bg-card px-4 py-2 dark:border-input-dark dark:bg-card-dark">
+          <CommunityDateTimePicker
             value={value}
             mode={mode}
             display="compact"
             minimumDate={minimumDate}
             maximumDate={maximumDate}
-            accentColor={accentColor}
+            accentColor={resolvedAccentColor}
             onValueChange={(_event, date) => onChange(date)}
           />
         </View>
@@ -55,20 +59,20 @@ export function DateTimeField({
         <>
           <Pressable
             onPress={() => setShowAndroidPicker(true)}
-            className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3.5 dark:border-neutral-700 dark:bg-neutral-800"
+            className="rounded-2xl border border-input bg-card px-4 py-3.5 dark:border-input-dark dark:bg-card-dark"
             style={{ borderCurve: 'continuous' }}>
-            <Text className="text-base text-neutral-900 dark:text-neutral-50">
+            <Text className="text-base text-foreground dark:text-foreground-dark">
               {formatValue(value, mode)}
             </Text>
           </Pressable>
           {showAndroidPicker ? (
-            <DateTimePicker
+            <CommunityDateTimePicker
               value={value}
               mode={mode}
               presentation="dialog"
               minimumDate={minimumDate}
               maximumDate={maximumDate}
-              accentColor={accentColor}
+              accentColor={resolvedAccentColor}
               onValueChange={(_event, date) => {
                 setShowAndroidPicker(false);
                 onChange(date);

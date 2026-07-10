@@ -6,8 +6,8 @@ export { TableCell } from './cell';
 export function Table({ children }: PropsWithChildren) {
   return (
     <View
-      className="overflow-hidden rounded-3xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
-      style={{ borderCurve: 'continuous' }}>
+      className="overflow-hidden rounded-3xl border border-border bg-card dark:border-border-dark dark:bg-card-dark"
+      style={{ borderCurve: 'continuous', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.06)' }}>
       {children}
     </View>
   );
@@ -15,7 +15,7 @@ export function Table({ children }: PropsWithChildren) {
 
 export function TableRow({ children }: PropsWithChildren) {
   return (
-    <View className="flex-row border-b border-neutral-100 last:border-b-0 dark:border-neutral-800">
+    <View className="flex-row border-b border-neutral-100 last:border-b-0 dark:border-border-dark">
       {children}
     </View>
   );

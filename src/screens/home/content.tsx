@@ -27,30 +27,29 @@ export function HomeContent() {
 
   return (
     <ScrollView
-      className="flex-1 bg-neutral-50 dark:bg-black"
-      contentContainerClassName="gap-6 px-5 py-6"
+      className="flex-1 bg-background dark:bg-background-dark"
+      contentContainerClassName="gap-6 px-5 py-7"
       contentInsetAdjustmentBehavior="automatic">
       <View className="gap-3">
         <View className="flex-row items-start justify-between gap-4">
-          <Text className="flex-1 text-3xl font-bold text-neutral-900 dark:text-neutral-50">
-            Expo src structure
+          <Text className="flex-1 text-4xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+            Service desk
           </Text>
           <HomeUserIcon />
         </View>
-        <Text className="text-base leading-6 text-neutral-500 dark:text-neutral-400">
-          Routes live in src/app, screens live in src/screens, and reusable code stays grouped by
-          responsibility.
+        <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+          A calmer place to watch bookings, orders, menu changes, and staff activity.
         </Text>
       </View>
 
       <View
-        className="flex-row items-center justify-between gap-4 rounded-3xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
-        style={{ borderCurve: 'continuous' }}>
+        className="flex-row items-center justify-between gap-4 rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+        style={{ borderCurve: 'continuous', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.06)' }}>
         <View className="flex-1 gap-1">
-          <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
             Dark mode
           </Text>
-          <Text className="text-base leading-6 text-neutral-500 dark:text-neutral-400">
+          <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
             Switch the app theme between light and dark.
           </Text>
         </View>
@@ -58,7 +57,7 @@ export function HomeContent() {
           accessibilityLabel="Toggle dark mode"
           onValueChange={theme.toggleColorScheme}
           thumbColor={theme.isDark ? '#ffffff' : '#ffffff'}
-          trackColor={{ false: '#C9D2DC', true: '#635BFF' }}
+          trackColor={{ false: '#D4D4D8', true: theme.colors.primary }}
           value={theme.isDark}
         />
       </View>

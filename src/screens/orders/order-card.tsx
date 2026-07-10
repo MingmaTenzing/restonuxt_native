@@ -20,26 +20,26 @@ export function OrderCard({ order, onPress }: { order: Order; onPress: () => voi
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Order number ${order.orderNo} for ${order.customerName}`}
-      className="gap-4 rounded-3xl border border-neutral-200 bg-white p-5 active:opacity-70 dark:border-neutral-800 dark:bg-neutral-900"
-      style={{ borderCurve: 'continuous' }}>
+      className="gap-4 rounded-3xl border border-border bg-card p-5 active:opacity-70 dark:border-border-dark dark:bg-card-dark"
+      style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
       <View className="flex-row items-start justify-between gap-4">
         <View className="flex-1 gap-1">
           <View className="flex-row items-center gap-2">
-            <Text className="text-base font-bold text-neutral-400 dark:text-neutral-500">
+            <Text className="text-base font-semibold text-muted-foreground dark:text-muted-foreground-dark">
               #{order.orderNo}
             </Text>
             <Text
               numberOfLines={1}
-              className="flex-1 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+              className="flex-1 text-lg font-semibold text-foreground dark:text-foreground-dark">
               {order.customerName || 'Guest'}
             </Text>
           </View>
-          <Text className="text-sm text-neutral-500 dark:text-neutral-400">
+          <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
             {itemCount} {itemCount === 1 ? 'item' : 'items'}
             {formatTime(order.createdAt) ? ` · ${formatTime(order.createdAt)}` : ''}
           </Text>
         </View>
-        <Text className="text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+        <Text className="text-lg font-semibold tracking-tight text-foreground dark:text-foreground-dark">
           {formatMoney(order.totalAmountCents)}
         </Text>
       </View>
