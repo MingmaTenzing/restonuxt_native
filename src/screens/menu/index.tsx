@@ -8,6 +8,7 @@ import { Button } from '@/components/button';
 import { apiUrl } from '@/utils/api';
 
 import { MenuItemCard } from './menu-item-card';
+import { buildCreateMenuItemBody } from './menu-form-utils';
 import { MenuItemFormModal } from './menu-item-form-modal';
 import type { MenuItem, MenuItemInput, MenuOption, MenuOptionInput } from './types';
 
@@ -21,7 +22,15 @@ async function apiRequest<T>(token: string, path: string, init?: RequestInit): P
     },
   });
   if (!response.ok) {
-    throw new Error(`Request failed (${response.status})`);
+    let message = `Request failed (${response.status})`;
+    try {
+      const errorBody = (await response.json()) as { statusMessage?: string; message?: string };
+      const detail = errorBody.statusMessage ?? errorBody.message;
+      if (detail) message = detail;
+    } catch {
+      // Keep generic message when the body is not JSON.
+    }
+    throw new Error(message);
   }
   return response.json();
 }
@@ -137,7 +146,10 @@ export default function MenuScreen() {
             method: 'PUT',
             body: JSON.stringify(input),
           })
-        : apiRequest(token, '/api/menu', { method: 'POST', body: JSON.stringify(input) });
+        : apiRequest(token, '/api/menu', {
+            method: 'POST',
+            body: JSON.stringify(buildCreateMenuItemBody(input)),
+          });
     },
     onSuccess: () => {
       invalidateMenu();
