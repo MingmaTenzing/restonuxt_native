@@ -31,6 +31,20 @@ export default function TabLayout() {
         />
         <NativeTabs.Trigger.Label>Orders</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="tables">
+        <NativeTabs.Trigger.Icon
+          md="table_restaurant"
+          sf={{ default: 'square.grid.2x2', selected: 'square.grid.2x2.fill' }}
+        />
+        <NativeTabs.Trigger.Label>Tables</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="sessions">
+        <NativeTabs.Trigger.Icon
+          md="schedule"
+          sf={{ default: 'clock', selected: 'clock.fill' }}
+        />
+        <NativeTabs.Trigger.Label>Sessions</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="menu">
         <NativeTabs.Trigger.Icon
           md="restaurant_menu"
