@@ -9,7 +9,7 @@ import { apiUrl } from '@/utils/api';
 
 import { MenuItemCard } from './menu-item-card';
 import { MenuItemFormModal } from './menu-item-form-modal';
-import type { MenuItem, MenuItemInput } from './types';
+import type { MenuItem, MenuItemInput, MenuOption, MenuOptionInput } from './types';
 
 async function apiRequest<T>(token: string, path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(apiUrl(path), {
@@ -24,6 +24,58 @@ async function apiRequest<T>(token: string, path: string, init?: RequestInit): P
     throw new Error(`Request failed (${response.status})`);
   }
   return response.json();
+}
+
+function normalizeMenuOption(raw: Record<string, unknown>): MenuOption | null {
+  const id = typeof raw.id === 'string' ? raw.id : null;
+  const name = typeof raw.name === 'string' ? raw.name : null;
+  const menuItemId =
+    typeof raw.menuItemId === 'string'
+      ? raw.menuItemId
+      : typeof raw.menu_item_id === 'string'
+        ? raw.menu_item_id
+        : null;
+  const priceCents =
+    typeof raw.priceCents === 'number'
+      ? raw.priceCents
+      : typeof raw.price_cents === 'number'
+        ? raw.price_cents
+        : null;
+
+  if (!id || !name || !menuItemId || priceCents === null) return null;
+  return { id, name, menuItemId, priceCents };
+}
+
+function normalizeMenuItem(raw: Record<string, unknown>): MenuItem {
+  const optionsRaw = raw.options ?? raw.menuOptions ?? raw.menu_item_options;
+  const options = Array.isArray(optionsRaw)
+    ? optionsRaw
+        .map((option) => normalizeMenuOption(option as Record<string, unknown>))
+        .filter((option): option is MenuOption => option !== null)
+    : undefined;
+
+  return {
+    id: String(raw.id),
+    name: String(raw.name ?? ''),
+    description: typeof raw.description === 'string' ? raw.description : null,
+    priceCents: Number(raw.priceCents ?? raw.price_cents ?? 0),
+    category: String(raw.category ?? ''),
+    imageUrl: typeof raw.imageUrl === 'string' ? raw.imageUrl : null,
+    isAvailable: Boolean(raw.isAvailable ?? raw.is_available ?? true),
+    options,
+  };
+}
+
+function normalizeMenuResponse(payload: unknown): MenuItem[] {
+  const list = Array.isArray(payload)
+    ? payload
+    : ((payload as { data?: unknown; menu?: unknown; items?: unknown })?.data ??
+      (payload as { menu?: unknown })?.menu ??
+      (payload as { items?: unknown })?.items ??
+      []);
+
+  if (!Array.isArray(list)) return [];
+  return list.map((item) => normalizeMenuItem(item as Record<string, unknown>));
 }
 
 function groupByCategory(items: MenuItem[]) {
@@ -69,7 +121,10 @@ export default function MenuScreen() {
   } = useQuery({
     queryKey: ['menu'],
     enabled: isLoaded && isSignedIn,
-    queryFn: async () => apiRequest<MenuItem[]>(await withToken(), '/api/menu'),
+    queryFn: async () => {
+      const payload = await apiRequest<unknown>(await withToken(), '/api/menu');
+      return normalizeMenuResponse(payload);
+    },
   });
 
   const invalidateMenu = () => queryClient.invalidateQueries({ queryKey: ['menu'] });
@@ -107,7 +162,6 @@ export default function MenuScreen() {
         method: 'PATCH',
         body: JSON.stringify({ isAvailable }),
       }),
-    // Optimistically flip the switch so the UI feels instant.
     onMutate: async ({ item, isAvailable }) => {
       await queryClient.cancelQueries({ queryKey: ['menu'] });
       const previous = queryClient.getQueryData<MenuItem[]>(['menu']);
@@ -122,6 +176,47 @@ export default function MenuScreen() {
     onSettled: () => invalidateMenu(),
   });
 
+  const createOptionMutation = useMutation({
+    mutationFn: async ({
+      menuItemId,
+      input,
+    }: {
+      menuItemId: string;
+      input: MenuOptionInput;
+    }) =>
+      apiRequest<MenuOption>(await withToken(), '/api/menu/menu_item_options', {
+        method: 'POST',
+        body: JSON.stringify({
+          create_menu_option: {
+            menuItemId,
+            name: input.name,
+            priceCents: input.priceCents,
+          },
+        }),
+      }),
+    onSuccess: () => invalidateMenu(),
+  });
+
+  const updateOptionMutation = useMutation({
+    mutationFn: async ({
+      optionId,
+      input,
+    }: {
+      optionId: string;
+      input: MenuOptionInput;
+    }) =>
+      apiRequest<MenuOption>(await withToken(), `/api/menu/menu_item_options/${optionId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          update_menu_option: {
+            name: input.name,
+            priceCents: input.priceCents,
+          },
+        }),
+      }),
+    onSuccess: () => invalidateMenu(),
+  });
+
   const categories = [...new Set(items.map((item) => item.category))];
   const filteredItems = searchItems(
     categoryFilter ? items.filter((item) => item.category === categoryFilter) : items,
@@ -130,10 +225,16 @@ export default function MenuScreen() {
   const sections = groupByCategory(filteredItems);
   const availableCount = items.filter((item) => item.isAvailable).length;
 
+  const editingItemLive = editingItem
+    ? (items.find((item) => item.id === editingItem.id) ?? editingItem)
+    : null;
+
   const openAdd = () => {
     setEditingItem(null);
     saveMutation.reset();
     deleteMutation.reset();
+    createOptionMutation.reset();
+    updateOptionMutation.reset();
     setModalVisible(true);
   };
 
@@ -141,6 +242,8 @@ export default function MenuScreen() {
     setEditingItem(item);
     saveMutation.reset();
     deleteMutation.reset();
+    createOptionMutation.reset();
+    updateOptionMutation.reset();
     setModalVisible(true);
   };
 
@@ -323,7 +426,7 @@ export default function MenuScreen() {
 
       <MenuItemFormModal
         visible={isModalVisible}
-        item={editingItem}
+        item={editingItemLive}
         categories={categories}
         onClose={() => {
           setModalVisible(false);
@@ -331,13 +434,25 @@ export default function MenuScreen() {
         }}
         onSubmit={(input) => saveMutation.mutate(input)}
         onDelete={confirmDelete}
+        onCreateOption={(menuItemId, input) =>
+          createOptionMutation.mutate({ menuItemId, input })
+        }
+        onUpdateOption={(optionId, input) => updateOptionMutation.mutate({ optionId, input })}
         isSubmitting={saveMutation.isPending}
         isDeleting={deleteMutation.isPending}
+        isSavingOption={createOptionMutation.isPending || updateOptionMutation.isPending}
         errorMessage={
           saveMutation.isError
             ? (saveMutation.error as Error).message
             : deleteMutation.isError
               ? (deleteMutation.error as Error).message
+              : null
+        }
+        optionError={
+          createOptionMutation.isError
+            ? (createOptionMutation.error as Error).message
+            : updateOptionMutation.isError
+              ? (updateOptionMutation.error as Error).message
               : null
         }
       />

@@ -19,7 +19,13 @@
       ],
       "expo-router",
       "@clerk/expo",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow access to your photos to upload menu item images."
+        }
+      ]
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",

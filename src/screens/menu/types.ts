@@ -31,4 +31,5 @@ export interface MenuItemInput {
   description?: string;
   imageUrl?: string;
   isAvailable?: boolean;
+  options?: MenuOptionInput[];
 }
