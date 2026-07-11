@@ -246,20 +246,363 @@ interface StockItem {
 
 ## WebSocket (real-time kitchen)
 
-`WS /api/websocket`
+This section is the **authoritative guide** for implementing the kitchen display realtime layer in a native mobile client (iOS, Android, React Native, etc.). The web app uses the same contract.
 
-- Clients join the **"KITCHEN"** room on connect.
-- Heartbeat: send `"ping"`, server replies `"pong"`.
-- The server broadcasts JSON messages of shape:
+### Overview
+
+The kitchen display uses a **hybrid REST + WebSocket** pattern:
+
+1. **Initial load (REST):** fetch the current order list from the database.
+2. **Live updates (WebSocket):** apply incremental changes pushed by the server when orders are created or their status changes elsewhere (POS, cashier, Stripe QR, kitchen buttons, orders dashboard).
+
+The WebSocket channel is **kitchen-specific**. It broadcasts order lifecycle events only — not menu, stock, bookings, or other domains.
+
+```
+┌─────────────────┐     REST (bootstrap)      ┌──────────────────┐
+│  Native client  │ ─────────────────────────►│  Nitro HTTP API  │
+│  (kitchen UI)   │   GET /api/orders/pending │  + Prisma/DB     │
+└────────┬────────┘                           └────────┬─────────┘
+         │                                             │
+         │  WS connect                                 │  HTTP handlers
+         │  wss://<host>/api/websocket                 │  call broadCast()
+         ▼                                             ▼
+┌─────────────────┐   JSON events (see below)  ┌──────────────────┐
+│  WebSocket      │ ◄──────────────────────────│  kitchenSocket   │
+│  connection     │                            │  (in-memory peers)│
+└─────────────────┘                            └──────────────────┘
+```
+
+### Connection
+
+| Item | Value |
+| ---- | ----- |
+| **Endpoint** | `WS /api/websocket` |
+| **Production URL** | `wss://restoquicknuxt-production.up.railway.app/api/websocket` |
+| **Local dev URL** | `ws://localhost:3000/api/websocket` |
+| **URL rule** | Derive from the same **host** used for REST. Convert `https://` → `wss://`, `http://` → `ws://`, then append `/api/websocket`. Do **not** use a separate websocket host unless it is guaranteed to be the same server process that handles your REST calls. |
+
+**Why same-host matters:** broadcasts are stored in an **in-memory peer set** on the server instance that handled the HTTP request. If the native app calls REST on `localhost:3000` but connects WebSocket to production, it will never receive local broadcasts.
+
+**Native URL example (Swift/Kotlin pseudocode):**
+
+```ts
+function kitchenWebSocketUrl(apiBaseUrl: string): string {
+  const url = new URL(apiBaseUrl);
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  url.pathname = "/api/websocket";
+  url.search = "";
+  url.hash = "";
+  return url.toString();
+}
+// kitchenWebSocketUrl("https://restoquicknuxt-production.up.railway.app")
+// → "wss://restoquicknuxt-production.up.railway.app/api/websocket"
+```
+
+### Authentication
+
+- All REST routes under `/api/*` require a valid **Clerk session** (401 if missing).
+- The WebSocket route is `/api/websocket`. Pass the same Clerk session token your native app uses for REST (typically as an `Authorization: Bearer <token>` header on the WebSocket upgrade request, depending on your WebSocket library).
+- If the connection fails with 401, refresh the Clerk session and reconnect.
+
+### Server implementation (reference)
+
+These files implement the channel on the backend. A native client does not need to replicate them, but understanding them explains message timing and payload shape.
+
+| File | Role |
+| ---- | ---- |
+| `server/api/websocket.ts` | WebSocket handler (Nitro experimental + `crossws`). Registers each client as a peer and subscribes it to room `"KITCHEN"`. Handles heartbeat. |
+| `server/utils/kitchenSocket.ts` | In-memory `Set` of connected peers. `broadCast(data)` iterates all peers and `send(JSON.stringify(data))`. |
+| `nuxt.config.ts` | `nitro.experimental.websocket: true` enables the handler. |
+
+**Heartbeat (client → server):**
+
+- Client sends the plain-text string `"ping"` every **30 seconds** (recommended).
+- Server replies with plain-text `"pong"`.
+- Ignore `"pong"` in your event handler — it is not JSON.
+- Recommended timeouts (matching the web client): ping interval **30s**, pong timeout **20s**, auto-reconnect with backoff.
+
+**Server handler behaviour (`server/api/websocket.ts`):**
+
+```ts
+// On connect: add peer to in-memory set, subscribe to "KITCHEN" room
+// On message "ping": reply "pong"
+// On close: remove peer from set
+```
+
+### Message format
+
+Every broadcast is a **single JSON text frame** (not binary):
 
 ```ts
 interface WebSocketPayload {
-  type: "ORDER_CREATED" | "ORDER_MARKED_COMPLETED";
-  payload: unknown; // order data relevant to the event
+  type: SocketEventType;
+  payload: OrderDetailsWithInclude;
+}
+
+type SocketEventType =
+  | "ORDER_CREATED"
+  | "ORDER_MARKED_COMPLETED"
+  | "ORDER_RECALL"
+  | "ORDER_CANCELLED";
+```
+
+**`OrderDetailsWithInclude`** is the full order object returned by order APIs, always including:
+
+```ts
+interface OrderDetailsWithInclude extends Order {
+  table: Table | null;
+  items: (OrderItem & {
+    menuItem: MenuItem | null;
+    orderItemOptions: OrderItemOption[];
+  })[];
 }
 ```
 
-Broadcasts are emitted when orders are created (`ORDER_CREATED`) and when orders are marked paid/completed (`ORDER_MARKED_COMPLETED`). Kitchen/display clients should subscribe here to update in real time.
+Money fields remain in **cents**. Dates are ISO 8601 strings.
+
+**Example broadcast:**
+
+```json
+{
+  "type": "ORDER_MARKED_COMPLETED",
+  "payload": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "orderNo": 42,
+    "status": "COMPLETED",
+    "orderType": "DINING",
+    "customerName": "Jane Doe",
+    "totalAmountCents": 3250,
+    "paymentStatus": "UNPAID",
+    "paymentMethod": null,
+    "paidAt": null,
+    "tableId": "...",
+    "tableSessionId": "...",
+    "checkoutSessionId": "pos_...",
+    "createdAt": "2026-07-10T12:00:00.000Z",
+    "updatedAt": "2026-07-10T12:15:00.000Z",
+    "table": { "id": "...", "number": "A1", "capacity": 4 },
+    "items": [
+      {
+        "id": "...",
+        "itemName": "Margherita Pizza",
+        "quantity": 2,
+        "unitPriceCents": 1500,
+        "specialInstructions": "Extra basil",
+        "menuItem": { /* ... */ },
+        "orderItemOptions": []
+      }
+    ]
+  }
+}
+```
+
+### Event catalogue — when each event is broadcast
+
+| Event | Triggered by (HTTP route) | DB change | Typical source |
+| ----- | ------------------------- | --------- | -------------- |
+| `ORDER_CREATED` | `POST /api/orders/pos/dining` | New order, `status = "PENDING"` | POS dining order |
+| `ORDER_CREATED` | `POST /api/orders/pos/takeaway` | New order, `status = "PENDING"` | POS takeaway order |
+| `ORDER_CREATED` | `GET /api/stripe-checkout/session-status?session_id=...` (on first successful completion) | New order, `status = "PENDING"`, `paymentStatus = "PAID"` | Customer QR/Stripe self-order |
+| `ORDER_MARKED_COMPLETED` | `POST /api/orders/checkout/table/mark-paid` | `status = "COMPLETED"`, `paymentStatus = "PAID"` | Cashier table checkout |
+| `ORDER_MARKED_COMPLETED` | `POST /api/orders/checkout/takeaway/closesales` | `status = "COMPLETED"`, `paymentStatus = "PAID"` | Cashier takeaway checkout |
+| `ORDER_MARKED_COMPLETED` | `PATCH /api/orders/{order_id}/status` with `{ "status": "COMPLETED" }` | `status = "COMPLETED"` | Kitchen "Mark as Completed", orders dashboard |
+| `ORDER_RECALL` | `PATCH /api/orders/{order_id}/status` with `{ "status": "PENDING" }` **only when previous status was `COMPLETED`** | `status = "PENDING"` | Kitchen "Recall to Kitchen" |
+| `ORDER_CANCELLED` | `PATCH /api/orders/{order_id}/status` with `{ "status": "CANCELLED" }` | `status = "CANCELLED"` | Orders dashboard cancel |
+
+**Important:** changing status to `PENDING` from a non-`COMPLETED` state does **not** broadcast. Only the completed → pending transition emits `ORDER_RECALL`.
+
+Broadcasts are **best-effort** — failures are logged server-side but do not roll back the DB write.
+
+### REST endpoints used with WebSocket (kitchen screen)
+
+These REST calls bootstrap and mutate state; WebSocket keeps all connected clients in sync.
+
+| Purpose | Method | Endpoint | Notes |
+| ------- | ------ | -------- | ----- |
+| Load active kitchen queue | `GET` | `/api/orders/pending` | All orders where `status = "PENDING"`. Call on screen open and on pull-to-refresh. |
+| Load completed orders (last 24h) | `GET` | `/api/orders/completed` | All orders where `status = "COMPLETED"` and `createdAt` within 24 hours. |
+| Mark order complete (kitchen) | `PATCH` | `/api/orders/{order_id}/status` | Body: `{ "status": "COMPLETED" }`. Returns updated order. Broadcasts `ORDER_MARKED_COMPLETED`. |
+| Recall order to kitchen | `PATCH` | `/api/orders/{order_id}/status` | Body: `{ "status": "PENDING" }`. Only broadcasts `ORDER_RECALL` if order was `COMPLETED`. |
+| Cancel order | `PATCH` | `/api/orders/{order_id}/status` | Body: `{ "status": "CANCELLED" }`. Broadcasts `ORDER_CANCELLED`. |
+
+### Native client implementation guide
+
+Implement **two data sources** that merge into local UI state:
+
+#### Step 1 — Bootstrap on screen open
+
+```
+GET /api/orders/pending          → activeQueue: OrderDetailsWithInclude[]
+GET /api/orders/completed        → completedQueue: OrderDetailsWithInclude[]  (optional, for completed tab/modal)
+```
+
+Store both in local state (in-memory, ViewModel, Redux, etc.).
+
+#### Step 2 — Open WebSocket and listen
+
+```
+connect wss://<host>/api/websocket
+start heartbeat timer (send "ping" every 30s)
+on message:
+  if text == "pong": ignore
+  else: parse JSON as WebSocketPayload
+  apply event to local state (see table below)
+```
+
+#### Step 3 — Apply events to local state
+
+This mirrors the web reference implementation (`app/composables/useKitchenOrderEvents.ts`).
+
+| Event | Active queue (`pending`) | Completed list (24h) |
+| ----- | ------------------------ | -------------------- |
+| `ORDER_CREATED` | **Add** `payload` to end (skip if `id` already exists) | No change |
+| `ORDER_MARKED_COMPLETED` | **Remove** order where `id === payload.id` | **Prepend** `payload` if within last 24h and not already present |
+| `ORDER_RECALL` | **Add** `payload` (skip duplicates) | **Remove** order where `id === payload.id` |
+| `ORDER_CANCELLED` | **Remove** order where `id === payload.id` | **Remove** order where `id === payload.id` |
+
+**24-hour filter for completed list (client-side):**
+
+```ts
+function isWithinLast24Hours(createdAt: string): boolean {
+  return Date.now() - new Date(createdAt).getTime() <= 24 * 60 * 60 * 1000;
+}
+```
+
+#### Step 4 — Optimistic UI on user actions
+
+When the user taps **Mark as Completed** or **Recall**, update local state **immediately** after a successful REST response, without waiting for the WebSocket echo. The broadcast will arrive shortly after and should be idempotent (same add/remove logic handles duplicates).
+
+```
+User taps "Mark as Completed"
+  → PATCH /api/orders/{id}/status  { status: "COMPLETED" }
+  → on 200: remove from activeQueue locally
+  → WebSocket ORDER_MARKED_COMPLETED arrives → remove again (no-op)
+
+User taps "Recall to Kitchen"
+  → PATCH /api/orders/{id}/status  { status: "PENDING" }
+  → on 200: remove from completedQueue, add to activeQueue
+  → WebSocket ORDER_RECALL arrives → same (idempotent)
+```
+
+#### Step 5 — Reconnection strategy
+
+```
+on disconnect:
+  retry up to 3 times with 1s delay
+  on reconnect success:
+    re-fetch GET /api/orders/pending (and /completed if visible)
+    resume heartbeat
+  on permanent failure:
+    show "Not Connected" UI; allow manual refresh
+```
+
+After reconnect, **always re-bootstrap via REST** to heal any missed events.
+
+### End-to-end sequence examples
+
+**New POS order appears on kitchen display:**
+
+```
+POS app          Server                    Kitchen client
+  │                │                            │
+  │ POST /pos/     │                            │
+  │ dining         │                            │
+  ├───────────────►│ create order (PENDING)     │
+  │                │ broadCast(ORDER_CREATED)   │
+  │◄───────────────┤                            │
+  │   201 + order  │ ─── WS JSON frame ────────►│ add to activeQueue
+  │                │                            │
+```
+
+**Kitchen marks order complete:**
+
+```
+Kitchen client   Server                    Other kitchen clients
+  │                │                            │
+  │ PATCH status   │                            │
+  │ COMPLETED      │                            │
+  ├───────────────►│ update DB                  │
+  │                │ broadCast(ORDER_MARKED_     │
+  │                │   COMPLETED)               │
+  │◄───────────────┤                            │
+  │ 200 + order    │ ─── WS JSON frame ────────►│ remove from activeQueue
+  │ (also update   │                            │
+  │  locally)      │                            │
+```
+
+### Connection status UI
+
+The web client exposes three states derived from the WebSocket library:
+
+| State | Meaning | Suggested native UI |
+| ----- | ------- | ------------------- |
+| `CONNECTING` | Handshake in progress | Gray indicator, "Connecting…" |
+| `OPEN` | Connected, heartbeat active | Green indicator, "Connected" |
+| `CLOSED` | Disconnected | Red indicator, "Not Connected" |
+
+### Limitations and production notes
+
+1. **In-memory broadcasting:** peers are stored in a process-local `Set`. All connected clients on the **same server instance** receive events. If the backend is scaled to multiple replicas without a shared pub/sub layer, clients on different instances may miss events. Mitigation: re-fetch `/api/orders/pending` on reconnect and on app foreground.
+2. **No historical replay:** WebSocket only pushes live events. There is no backlog — bootstrap via REST is mandatory.
+3. **No client → server events:** clients only send `"ping"`. Order mutations always go through REST; the server broadcasts to all peers after the DB write.
+4. **Stripe QR orders:** `ORDER_CREATED` fires when `GET /api/stripe-checkout/session-status` creates the order after payment — not at cart submission time.
+5. **Cashier completion vs kitchen completion:** table/takeaway checkout sets both `COMPLETED` and `PAID`. Kitchen "Mark as Completed" sets `COMPLETED` only (payment may still be `UNPAID` for dining orders).
+
+### Reference: web client files
+
+| File | Purpose |
+| ---- | ------- |
+| `app/composables/useKitchenWebSocket.ts` | WebSocket URL (same-origin), heartbeat, `onMessage` parsing |
+| `app/composables/useKitchenOrderEvents.ts` | Event → state mutation mapping |
+| `app/pages/Dashboard/kitchen/index.vue` | Active queue screen |
+| `app/components/kitchenDisplay_components/Completed_Orders/Complete_Order_Popup.vue` | Completed orders modal |
+| `types/websocket_payload.ts` | Event type definitions |
+
+### Minimal native pseudocode (complete kitchen screen)
+
+```ts
+class KitchenScreen {
+  activeQueue: Order[] = [];
+  ws: WebSocket;
+  heartbeat?: Timer;
+
+  async onAppear() {
+    this.activeQueue = await api.get("/api/orders/pending");
+    this.ws = new WebSocket(kitchenWebSocketUrl(API_BASE_URL));
+    this.ws.onmessage = (e) => this.handleMessage(String(e.data));
+    this.ws.onopen = () => {
+      this.heartbeat = setInterval(() => this.ws.send("ping"), 30_000);
+    };
+    this.ws.onclose = () => this.scheduleReconnect();
+  }
+
+  handleMessage(raw: string) {
+    if (raw === "pong") return;
+    const event = JSON.parse(raw) as WebSocketPayload;
+    switch (event.type) {
+      case "ORDER_CREATED":
+        if (!this.activeQueue.find(o => o.id === event.payload.id))
+          this.activeQueue.push(event.payload);
+        break;
+      case "ORDER_MARKED_COMPLETED":
+      case "ORDER_CANCELLED":
+        this.activeQueue = this.activeQueue.filter(o => o.id !== event.payload.id);
+        break;
+      case "ORDER_RECALL":
+        if (!this.activeQueue.find(o => o.id === event.payload.id))
+          this.activeQueue.push(event.payload);
+        break;
+    }
+    this.render();
+  }
+
+  async markComplete(orderId: string) {
+    await api.patch(`/api/orders/${orderId}/status`, { status: "COMPLETED" });
+    this.activeQueue = this.activeQueue.filter(o => o.id !== orderId);
+    this.render();
+  }
+}
+```
 
 ---
 
@@ -456,9 +799,17 @@ Order responses include `table`, `items` (with `menuItem` and `orderItemOptions`
 
 ### `PATCH /api/orders/{order_id}/status`
 
+Update an order's kitchen lifecycle status. **Broadcasts a WebSocket event** to all connected kitchen clients (see [WebSocket (real-time kitchen)](#websocket-real-time-kitchen)).
+
 - **Path:** `order_id: string`
-- **Body:** `{ status?: OrderStatus }`
-- **Response:** `{ success: true }`
+- **Body:** `{ status: OrderStatus }` (`status` is required)
+- **Response:** updated `OrderDetailsWithInclude` (includes `table`, `items` with `menuItem` and `orderItemOptions`)
+- **WebSocket side effects:**
+  - `"COMPLETED"` → broadcasts `ORDER_MARKED_COMPLETED`
+  - `"CANCELLED"` → broadcasts `ORDER_CANCELLED`
+  - `"PENDING"` when previous status was `"COMPLETED"` → broadcasts `ORDER_RECALL`
+  - `"PENDING"` from any other previous status → no broadcast
+- **Errors:** `400` if `status` missing · `404` if order not found
 
 ### `GET /api/orders/pending`
 

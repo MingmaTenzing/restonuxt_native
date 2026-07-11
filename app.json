@@ -25,7 +25,8 @@
         {
           "photosPermission": "Allow access to your photos to upload menu item images."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
