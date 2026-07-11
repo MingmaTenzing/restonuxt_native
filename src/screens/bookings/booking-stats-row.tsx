@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, Text, useColorScheme, View } from 'react-native';
+import { Pressable, Text, useColorScheme, useWindowDimensions, View } from 'react-native';
 
 import type { BookingFilter, BookingStats } from './booking-stats';
 
@@ -42,19 +42,52 @@ const ACCENTS: Record<'today' | 'month' | 'upcoming' | 'guests', Accent> = {
   },
 };
 
-function StatCard({ label, value, accent }: { label: string; value: number; accent: Accent }) {
+const STAT_ITEMS: {
+  key: keyof typeof ACCENTS;
+  label: string;
+  valueKey: keyof BookingStats;
+}[] = [
+  { key: 'today', label: 'Today', valueKey: 'today' },
+  { key: 'month', label: 'This month', valueKey: 'thisMonth' },
+  { key: 'upcoming', label: 'Upcoming', valueKey: 'upcoming' },
+  { key: 'guests', label: 'Total guests', valueKey: 'totalGuests' },
+];
+
+const HORIZONTAL_PADDING = 40; // matches px-5 on the bookings screen
+const CARD_GAP = 12;
+const WIDE_LAYOUT_MIN_WIDTH = 640;
+
+function StatCard({
+  label,
+  value,
+  accent,
+  width,
+}: {
+  label: string;
+  value: number;
+  accent: Accent;
+  width: number;
+}) {
   const isDark = useColorScheme() === 'dark';
+  const valueSize = width < 150 ? 24 : width < 180 ? 28 : 30;
+
   return (
     <View
-      className="flex-1  gap-3 rounded-3xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
-      style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
-      <Text className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      className="gap-3 rounded-3xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+      style={{
+        width,
+        borderCurve: 'continuous',
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)',
+      }}>
+      <Text
+        numberOfLines={1}
+        className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
         {label}
       </Text>
 
-      <View className=" flex flex-row gap-2">
+      <View className="min-w-0 flex-row items-center gap-2">
         <View
-          className={`h-9 w-9 items-center justify-center rounded-full ${accent.iconWrap}`}
+          className={`h-9 w-9 shrink-0 items-center justify-center rounded-full ${accent.iconWrap}`}
           style={{ borderCurve: 'continuous' }}>
           <Ionicons
             name={accent.iconName}
@@ -62,22 +95,38 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
             color={isDark ? accent.iconDark : accent.iconLight}
           />
         </View>
-        <View className="gap-0.5">
-          <Text className={`text-3xl font-semibold tracking-tight ${accent.value}`}>{value}</Text>
-        </View>
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.75}
+          className={`min-w-0 flex-1 font-semibold tracking-tight ${accent.value}`}
+          style={{ fontSize: valueSize, fontVariant: ['tabular-nums'] }}>
+          {value}
+        </Text>
       </View>
     </View>
   );
 }
 
 export function BookingStatsRow({ stats }: { stats: BookingStats }) {
-  return (
-    <View className="flex-1  flex-row flex-wrap gap-3">
-      <StatCard label="Today" value={stats.today} accent={ACCENTS.today} />
-      <StatCard label="This month" value={stats.thisMonth} accent={ACCENTS.month} />
+  const { width: screenWidth } = useWindowDimensions();
+  const isWide = screenWidth >= WIDE_LAYOUT_MIN_WIDTH;
+  const columns = isWide ? 4 : 2;
+  const cardWidth = Math.floor(
+    (screenWidth - HORIZONTAL_PADDING - CARD_GAP * (columns - 1)) / columns
+  );
 
-      <StatCard label="Upcoming" value={stats.upcoming} accent={ACCENTS.upcoming} />
-      <StatCard label="Total guests" value={stats.totalGuests} accent={ACCENTS.guests} />
+  return (
+    <View className="flex-row flex-wrap" style={{ gap: CARD_GAP }}>
+      {STAT_ITEMS.map((item) => (
+        <StatCard
+          key={item.key}
+          label={item.label}
+          value={stats[item.valueKey]}
+          accent={ACCENTS[item.key]}
+          width={cardWidth}
+        />
+      ))}
     </View>
   );
 }

@@ -31,6 +31,13 @@ export default function TabLayout() {
         />
         <NativeTabs.Trigger.Label>Orders</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="kitchen">
+        <NativeTabs.Trigger.Icon
+          md="soup_kitchen"
+          sf={{ default: 'frying.pan', selected: 'frying.pan.fill' }}
+        />
+        <NativeTabs.Trigger.Label>Kitchen</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="tables">
         <NativeTabs.Trigger.Icon
           md="table_restaurant"
