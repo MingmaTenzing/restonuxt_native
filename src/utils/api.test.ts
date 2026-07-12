@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 
-import { apiRequest, apiUrl, unwrapList } from '@/utils/api';
+import { API_BASE_URL, apiRequest, apiUrl, unwrapList } from '@/utils/api';
 import { jsonResponse, withMockFetch } from '@/test/mock-fetch';
 
 describe('apiUrl', () => {
   test('joins base URL and path', () => {
-    expect(apiUrl('/api/menu')).toBe('http://localhost:3000/api/menu');
-    expect(apiUrl('api/menu')).toBe('http://localhost:3000/api/menu');
+    expect(apiUrl('/api/menu')).toBe(`${API_BASE_URL}/api/menu`);
+    expect(apiUrl('api/menu')).toBe(`${API_BASE_URL}/api/menu`);
   });
 });
 
@@ -49,8 +49,8 @@ describe('apiRequest', () => {
     expect(result).toEqual({ ok: true });
     expect(capturedInit?.headers).toMatchObject({
       Authorization: 'Bearer token-123',
-      'Content-Type': 'application/json',
     });
+    expect(capturedInit?.headers).not.toHaveProperty('Content-Type');
   });
 
   test('throws Nitro statusMessage when present', async () => {
@@ -82,5 +82,8 @@ describe('apiRequest', () => {
 
     expect(capturedInit?.method).toBe('POST');
     expect(capturedInit?.body).toBe(JSON.stringify({ items: [] }));
+    expect(capturedInit?.headers).toMatchObject({
+      'Content-Type': 'application/json',
+    });
   });
 });

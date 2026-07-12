@@ -27,7 +27,10 @@ describe('cashier api', () => {
           id: 'session-1',
           tableId: 'table-1',
           status: 'ACTIVE',
-          startedAt: '2026-07-12T10:00:00.000Z',
+          openedAt: '2026-07-12T10:00:00.000Z',
+          closedAt: null,
+          createdAt: '2026-07-12T10:00:00.000Z',
+          updatedAt: '2026-07-12T10:00:00.000Z',
           orders: [
             {
               id: 'o1',
@@ -53,12 +56,31 @@ describe('cashier api', () => {
   test('fetchSessionCheckout requests checkout endpoint', async () => {
     restore = withMockFetch((input) => {
       expect(String(input)).toBe(apiUrl('/api/orders/checkout/table/session-9'));
-      return jsonResponse({ sessionId: 'session-9', orders: [], totalCents: 0 });
+      return jsonResponse({
+        id: 'session-9',
+        tableId: 'table-1',
+        status: 'ACTIVE',
+        openedAt: '2026-07-12T10:00:00.000Z',
+        closedAt: null,
+        createdAt: '2026-07-12T10:00:00.000Z',
+        updatedAt: '2026-07-12T10:00:00.000Z',
+        orders: [],
+        summary: {
+          orderCount: 0,
+          payableOrderCount: 0,
+          paidOrderCount: 0,
+          payableOrderIds: [],
+          sessionTotalCents: 0,
+          payableTotalCents: 0,
+          paidTotalCents: 0,
+          hasOutstandingBalance: false,
+        },
+      });
     });
 
     const checkout = await fetchSessionCheckout('token', 'session-9');
 
-    expect(checkout.sessionId).toBe('session-9');
+    expect(checkout.id).toBe('session-9');
   });
 
   test('fetchUnpaidTakeawayOrders returns order list', async () => {
@@ -83,16 +105,16 @@ describe('cashier api', () => {
     });
 
     await markTablePaid('token', {
-      sessionId: 'session-1',
+      tableSessionId: 'session-1',
+      orderIds: ['o1', 'o2'],
       paymentMethod: 'CASH',
-      amountReceivedCents: 5000,
     });
 
     expect(capturedInit?.method).toBe('POST');
     expect(JSON.parse(String(capturedInit?.body))).toEqual({
-      sessionId: 'session-1',
+      tableSessionId: 'session-1',
+      orderIds: ['o1', 'o2'],
       paymentMethod: 'CASH',
-      amountReceivedCents: 5000,
     });
   });
 
@@ -108,14 +130,12 @@ describe('cashier api', () => {
     const order = await closeTakeawaySale('token', {
       orderId: 'order-7',
       paymentMethod: 'CARD',
-      amountReceivedCents: 1800,
     });
 
     expect(order.id).toBe('order-7');
     expect(JSON.parse(String(capturedInit?.body))).toEqual({
       orderId: 'order-7',
       paymentMethod: 'CARD',
-      amountReceivedCents: 1800,
     });
   });
 });

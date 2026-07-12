@@ -4,11 +4,15 @@ import { toCashierSession } from './cashier-sessions';
 import type { TableSession } from '@/screens/sessions/types';
 
 function makeSession(overrides: Partial<TableSession> = {}): TableSession {
+  const now = '2026-07-12T10:00:00.000Z';
   return {
     id: 'session-1',
     tableId: 'table-1',
     status: 'ACTIVE',
-    startedAt: '2026-07-12T10:00:00.000Z',
+    openedAt: now,
+    closedAt: null,
+    createdAt: now,
+    updatedAt: now,
     orders: [],
     ...overrides,
   };

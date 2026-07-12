@@ -5,12 +5,14 @@ import { kitchenEvent, makeOrder } from '@/test/kitchen-fixtures';
 
 describe('applyKitchenEvent', () => {
   test('creates pending orders and moves completed orders to the completed queue', () => {
-    const created = makeOrder({ id: 'order-1', orderNo: 1 });
+    const recent = new Date().toISOString();
+    const created = makeOrder({ id: 'order-1', orderNo: 1, createdAt: recent });
     const completed = makeOrder({
       id: 'order-1',
       orderNo: 1,
       status: 'COMPLETED',
-      updatedAt: '2026-07-10T12:05:00.000Z',
+      createdAt: recent,
+      updatedAt: recent,
     });
 
     const afterCreate = applyKitchenEvent(
@@ -58,7 +60,8 @@ describe('applyKitchenEvent', () => {
           id: orderId,
           orderNo,
           status: 'COMPLETED',
-          updatedAt: new Date(Date.parse('2026-07-10T12:00:00.000Z') + i * 1_000).toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date(Date.now() + i * 1_000).toISOString(),
         });
         state = applyKitchenEvent(state, kitchenEvent('ORDER_MARKED_COMPLETED', completed));
         active.delete(orderId);
