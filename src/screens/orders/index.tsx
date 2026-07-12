@@ -1,4 +1,3 @@
-import { useAuth } from '@clerk/expo';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -6,8 +5,9 @@ import { ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { apiUrl } from '@/utils/api';
+import { unwrapList, type ApiClient } from '@/utils/api';
 
 import { OrderCard } from './order-card';
 import { computeOrderStats, searchOrders } from './order-stats';
@@ -15,24 +15,13 @@ import { OrderStatsRow } from './order-stats-row';
 import { OrderSearch } from './order-search';
 import type { Order, OrderRange } from './types';
 
-const ORDERS_API_URL = apiUrl('/api/orders');
-
-async function fetchOrders(token: string, range: OrderRange): Promise<Order[]> {
-  const url = `${ORDERS_API_URL}?range=${range}`;
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Unable to load orders (${response.status})`);
-  }
-
-  const payload = await response.json();
-  return Array.isArray(payload) ? payload : (payload.orders ?? payload.data ?? []);
+async function fetchOrders(api: ApiClient, range: OrderRange): Promise<Order[]> {
+  const payload = await api<unknown>(`/api/orders?range=${range}`);
+  return unwrapList<Order>(payload, ['orders', 'data']);
 }
 
 export default function OrdersScreen() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { api, isLoaded, isSignedIn, isReady } = useApi();
   const router = useRouter();
   const { isTablet } = useResponsiveLayout();
   const [range, setRange] = useState<OrderRange>('day');
@@ -46,12 +35,8 @@ export default function OrdersScreen() {
     refetch,
   } = useQuery({
     queryKey: ['orders', range],
-    enabled: isLoaded && isSignedIn,
-    queryFn: async () => {
-      const token = await getToken();
-      if (!token) throw new Error('Sign in again to load orders.');
-      return fetchOrders(token, range);
-    },
+    enabled: isReady,
+    queryFn: () => fetchOrders(api, range),
   });
 
   const stats = computeOrderStats(orders);

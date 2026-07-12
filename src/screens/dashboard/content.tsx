@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@clerk/expo';
 import { useQuery } from '@tanstack/react-query';
 import { Text, useColorScheme, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ScreenScroll } from '@/components/screen-scroll';
+import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { apiUrl } from '@/utils/api';
+import type { ApiClient } from '@/utils/api';
 import { formatDate } from '@/utils/format-date';
 import { formatMoney } from '@/utils/format-money';
 
@@ -47,16 +47,8 @@ const emptyKpi: WeeklyKpi = {
   endOfWeek: '',
 };
 
-async function fetchJson<T>(token: string, path: string): Promise<T> {
-  const response = await fetch(apiUrl(path), {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Unable to load dashboard stats (${response.status})`);
-  }
-
-  return response.json();
+async function fetchJson<T>(api: ApiClient, path: string): Promise<T> {
+  return api<T>(path);
 }
 
 function unwrapArray<T>(payload: unknown, keys: string[] = []): T[] {
@@ -106,15 +98,15 @@ function normalizeRevenueTrend(payload: unknown): RevenuePoint[] {
   );
 }
 
-async function fetchDashboardStats(token: string): Promise<DashboardStats> {
+async function fetchDashboardStats(api: ApiClient): Promise<DashboardStats> {
   const [popularItems, recentOrders, revenueTrend, rosterOverview, soldByCategory, weeklyKpi] =
     await Promise.all([
-      fetchJson<unknown>(token, DASHBOARD_ENDPOINTS.popularItems),
-      fetchJson<unknown>(token, DASHBOARD_ENDPOINTS.recentOrders),
-      fetchJson<unknown>(token, DASHBOARD_ENDPOINTS.revenueTrend),
-      fetchJson<unknown>(token, DASHBOARD_ENDPOINTS.rosterOverview),
-      fetchJson<unknown>(token, DASHBOARD_ENDPOINTS.soldByCategory),
-      fetchJson<unknown>(token, DASHBOARD_ENDPOINTS.weeklyKpi),
+      fetchJson<unknown>(api, DASHBOARD_ENDPOINTS.popularItems),
+      fetchJson<unknown>(api, DASHBOARD_ENDPOINTS.recentOrders),
+      fetchJson<unknown>(api, DASHBOARD_ENDPOINTS.revenueTrend),
+      fetchJson<unknown>(api, DASHBOARD_ENDPOINTS.rosterOverview),
+      fetchJson<unknown>(api, DASHBOARD_ENDPOINTS.soldByCategory),
+      fetchJson<unknown>(api, DASHBOARD_ENDPOINTS.weeklyKpi),
     ]);
 
   return {
@@ -437,18 +429,14 @@ function RosterCard({ roster }: { roster: RosterOverview }) {
 }
 
 export function DashboardContent() {
-  const { getToken } = useAuth();
+  const { api } = useApi();
   const { isTablet, isLargeTablet, contentWidth, horizontalPadding, gridGap } = useResponsiveLayout();
   const metricColumns = isLargeTablet ? 4 : 2;
   const metricCardWidth =
     (contentWidth - horizontalPadding * 2 - gridGap * (metricColumns - 1)) / metricColumns;
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: async () => {
-      const token = await getToken();
-      if (!token) throw new Error('Sign in again to load the dashboard.');
-      return fetchDashboardStats(token);
-    },
+    queryFn: () => fetchDashboardStats(api),
   });
 
   const stats: DashboardStats = data ?? {

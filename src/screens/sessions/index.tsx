@@ -1,14 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@clerk/expo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, TextInput, useColorScheme, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import type { Order, PaymentMethod } from '@/screens/orders/types';
-import { apiUrl } from '@/utils/api';
 
 import { SessionCard } from './session-card';
 import { SessionCreateModal } from './session-create-modal';
@@ -19,29 +18,6 @@ import type {
   TableOption,
   TableSession,
 } from './types';
-
-async function apiRequest<T>(token: string, path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(apiUrl(path), {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
-      ...init?.headers,
-    },
-  });
-  if (!response.ok) {
-    let message = `Request failed (${response.status})`;
-    try {
-      const errorBody = (await response.json()) as { statusMessage?: string; message?: string };
-      const detail = errorBody.statusMessage ?? errorBody.message;
-      if (detail) message = detail;
-    } catch {
-      // Keep generic message when the body is not JSON.
-    }
-    throw new Error(message);
-  }
-  return response.json();
-}
 
 function normalizeTable(raw: Record<string, unknown>) {
   const id = typeof raw.id === 'string' ? raw.id : null;
@@ -185,7 +161,7 @@ function filterSessionsLocally(sessions: TableSession[], query: string) {
 }
 
 export default function SessionsScreen() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { api, isLoaded, isSignedIn, isReady } = useApi();
   const queryClient = useQueryClient();
   const isDark = useColorScheme() === 'dark';
   const { isTablet, fabStyle } = useResponsiveLayout();
@@ -195,12 +171,6 @@ export default function SessionsScreen() {
   const [isDetailVisible, setDetailVisible] = useState(false);
   const [selectedSession, setSelectedSession] = useState<TableSession | null>(null);
 
-  const withToken = async () => {
-    const token = await getToken();
-    if (!token) throw new Error('Sign in again to manage sessions.');
-    return token;
-  };
-
   const {
     data: sessions = [],
     isLoading,
@@ -209,21 +179,18 @@ export default function SessionsScreen() {
     refetch,
   } = useQuery({
     queryKey: ['sessions', statusFilter],
-    enabled: isLoaded && isSignedIn,
+    enabled: isReady,
     queryFn: async () => {
-      const payload = await apiRequest<unknown>(
-        await withToken(),
-        buildSessionsPath(statusFilter, '')
-      );
+      const payload = await api<unknown>(buildSessionsPath(statusFilter, ''));
       return normalizeSessionsResponse(payload);
     },
   });
 
   const { data: tables = [], isLoading: isLoadingTables } = useQuery({
     queryKey: ['tables'],
-    enabled: isLoaded && isSignedIn && isCreateVisible,
+    enabled: isReady && isCreateVisible,
     queryFn: async () => {
-      const payload = await apiRequest<unknown>(await withToken(), '/api/tables');
+      const payload = await api<unknown>('/api/tables');
       return normalizeTablesForPicker(payload);
     },
   });
@@ -233,12 +200,9 @@ export default function SessionsScreen() {
     isLoading: isLoadingCheckout,
   } = useQuery({
     queryKey: ['session-checkout', selectedSession?.id],
-    enabled: isLoaded && isSignedIn && isDetailVisible && !!selectedSession?.id,
+    enabled: isReady && isDetailVisible && !!selectedSession?.id,
     queryFn: async () => {
-      const payload = await apiRequest<unknown>(
-        await withToken(),
-        `/api/orders/checkout/table/${selectedSession!.id}`
-      );
+      const payload = await api<unknown>(`/api/orders/checkout/table/${selectedSession!.id}`);
       return normalizeCheckout(payload as Record<string, unknown>);
     },
   });
@@ -250,7 +214,7 @@ export default function SessionsScreen() {
 
   const createMutation = useMutation({
     mutationFn: async (tableId: string) =>
-      apiRequest<TableSession>(await withToken(), '/api/table-sessions/create', {
+      api<TableSession>('/api/table-sessions/create', {
         method: 'POST',
         body: JSON.stringify({ tableId }),
       }),
@@ -272,7 +236,7 @@ export default function SessionsScreen() {
       orderIds: string[];
       paymentMethod: PaymentMethod;
     }) =>
-      apiRequest(await withToken(), '/api/orders/checkout/table/mark-paid', {
+      api('/api/orders/checkout/table/mark-paid', {
         method: 'POST',
         body: JSON.stringify({ tableSessionId: sessionId, orderIds, paymentMethod }),
       }),

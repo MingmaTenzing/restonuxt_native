@@ -1,12 +1,12 @@
-import { useAuth } from '@clerk/expo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { apiUrl } from '@/utils/api';
+import { unwrapList, type ApiClient } from '@/utils/api';
 
 import { AddBookingModal } from './add-booking-modal';
 import { BookingCard } from './booking-card';
@@ -14,40 +14,20 @@ import { computeBookingStats, filterBookings, type BookingFilter } from './booki
 import { BookingFilterToggle, BookingStatsRow } from './booking-stats-row';
 import type { Booking, NewBooking } from './types';
 
-const BOOKINGS_API_URL = apiUrl('/api/bookings');
-
-async function fetchBookings(token: string): Promise<Booking[]> {
-  const response = await fetch(BOOKINGS_API_URL, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Unable to load bookings (${response.status})`);
-  }
-
-  const payload = await response.json();
-  return Array.isArray(payload) ? payload : (payload.bookings ?? payload.data ?? []);
+async function fetchBookings(api: ApiClient): Promise<Booking[]> {
+  const payload = await api<unknown>('/api/bookings');
+  return unwrapList<Booking>(payload, ['bookings', 'data']);
 }
 
-async function createBooking(token: string, booking: NewBooking): Promise<Booking> {
-  const response = await fetch(BOOKINGS_API_URL, {
+async function createBooking(api: ApiClient, booking: NewBooking): Promise<Booking> {
+  return api<Booking>('/api/bookings', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify({ booking }),
   });
-
-  if (!response.ok) {
-    throw new Error(`Unable to create booking (${response.status})`);
-  }
-
-  return response.json();
 }
 
 export default function BookingsScreen() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { api, isLoaded, isSignedIn, isReady } = useApi();
   const queryClient = useQueryClient();
   const [isModalVisible, setModalVisible] = useState(false);
   const [filter, setFilter] = useState<BookingFilter>('today');
@@ -61,20 +41,12 @@ export default function BookingsScreen() {
     refetch,
   } = useQuery({
     queryKey: ['bookings'],
-    enabled: isLoaded && isSignedIn,
-    queryFn: async () => {
-      const token = await getToken();
-      if (!token) throw new Error('Sign in again to load bookings.');
-      return fetchBookings(token);
-    },
+    enabled: isReady,
+    queryFn: () => fetchBookings(api),
   });
 
   const mutation = useMutation({
-    mutationFn: async (booking: NewBooking) => {
-      const token = await getToken();
-      if (!token) throw new Error('Sign in again to create a booking.');
-      return createBooking(token, booking);
-    },
+    mutationFn: (booking: NewBooking) => createBooking(api, booking),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
       setModalVisible(false);

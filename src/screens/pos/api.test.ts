@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 
 import { apiUrl } from '@/utils/api';
 import { jsonResponse, withMockFetch } from '@/test/mock-fetch';
+import { testApiClient } from '@/test/test-api-client';
 
 import {
   createTableSession,
@@ -28,7 +29,7 @@ describe('pos api', () => {
       ]);
     });
 
-    const menu = await fetchPosMenu('pos-token');
+    const menu = await fetchPosMenu(testApiClient('pos-token'));
 
     expect(menu).toHaveLength(1);
     expect(menu[0]?.id).toBe('m1');
@@ -53,7 +54,7 @@ describe('pos api', () => {
       ]);
     });
 
-    const tables = await fetchPosTables('pos-token');
+    const tables = await fetchPosTables(testApiClient('pos-token'));
 
     expect(tables.map((table) => table.number)).toEqual(['2', '10']);
     expect(tables[0]?.activeSessionId).toBe('s1');
@@ -68,7 +69,7 @@ describe('pos api', () => {
       return jsonResponse({ id: 'session-new', tableId: 'table-3', status: 'ACTIVE' });
     });
 
-    const session = await createTableSession('token', 'table-3');
+    const session = await createTableSession(testApiClient('token'), 'table-3');
 
     expect(session.id).toBe('session-new');
     expect(JSON.parse(String(capturedInit?.body))).toEqual({ tableId: 'table-3' });
@@ -83,7 +84,7 @@ describe('pos api', () => {
       return jsonResponse({ id: 'order-1', orderNo: 5 });
     });
 
-    await submitDiningOrder('token', {
+    await submitDiningOrder(testApiClient('token'), {
       tableId: 'table-1',
       customerName: 'Alex',
       items: [{ menuItemId: 'm1', quantity: 2, unitPriceCents: 1200 }],
@@ -110,7 +111,7 @@ describe('pos api', () => {
       return jsonResponse({ id: 'order-2', orderNo: 6 });
     });
 
-    await submitTakeawayOrder('token', {
+    await submitTakeawayOrder(testApiClient('token'), {
       customerName: 'Sam',
       items: [{ menuItemId: 'm2', quantity: 1, unitPriceCents: 900 }],
     });

@@ -1,14 +1,13 @@
-import { useAuth } from '@clerk/expo';
 import { useQuery } from '@tanstack/react-query';
 import { Image, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { apiUrl } from '@/utils/api';
+import type { ApiClient } from '@/utils/api';
+import { unwrapList } from '@/utils/api';
 import { formatDate } from '@/utils/format-date';
-
-const STAFF_API_URL = apiUrl('/api/staff');
 
 // Types mirror the RestoQuick API contract (see RESTOQUICK_DOC.md → Staff / Enums).
 type Role = 'Chef' | 'Waiter' | 'Bartender' | 'Manager' | 'Cook' | 'Kitchen_Hand';
@@ -38,17 +37,9 @@ function getInitials(first: string, last: string) {
   return `${first?.[0] ?? ''}${last?.[0] ?? ''}`.toUpperCase() || '?';
 }
 
-async function fetchStaff(token: string): Promise<StaffMember[]> {
-  const response = await fetch(STAFF_API_URL, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Unable to load staff (${response.status})`);
-  }
-
-  const payload = await response.json();
-  return Array.isArray(payload) ? payload : (payload.staff ?? payload.data ?? []);
+async function fetchStaff(api: ApiClient): Promise<StaffMember[]> {
+  const payload = await api<unknown>('/api/staff');
+  return unwrapList<StaffMember>(payload, ['staff', 'data']);
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
@@ -133,7 +124,7 @@ function StaffCard({ member }: { member: StaffMember }) {
 }
 
 export default function StaffScreen() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { api, isLoaded, isSignedIn, isReady } = useApi();
   const { isTablet } = useResponsiveLayout();
 
   const {
@@ -144,12 +135,8 @@ export default function StaffScreen() {
     refetch,
   } = useQuery({
     queryKey: ['staff'],
-    enabled: isLoaded && isSignedIn,
-    queryFn: async () => {
-      const token = await getToken();
-      if (!token) throw new Error('Sign in again to load staff.');
-      return fetchStaff(token);
-    },
+    enabled: isReady,
+    queryFn: () => fetchStaff(api),
   });
 
   if (!isLoaded) {

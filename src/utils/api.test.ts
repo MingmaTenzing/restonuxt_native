@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 
-import { API_BASE_URL, apiRequest, apiUrl, unwrapList } from '@/utils/api';
+import { API_BASE_URL, apiRequest, apiUrl, createApiClient, unwrapList } from '@/utils/api';
 import { jsonResponse, withMockFetch } from '@/test/mock-fetch';
 
 describe('apiUrl', () => {
@@ -85,5 +85,29 @@ describe('apiRequest', () => {
     expect(capturedInit?.headers).toMatchObject({
       'Content-Type': 'application/json',
     });
+  });
+});
+
+describe('createApiClient', () => {
+  let restore: (() => void) | undefined;
+
+  afterEach(() => {
+    restore?.();
+    restore = undefined;
+  });
+
+  test('fetches token and delegates to apiRequest', async () => {
+    restore = withMockFetch(() => jsonResponse({ ok: true }));
+
+    const api = createApiClient(async () => 'session-jwt');
+    const result = await api<{ ok: boolean }>('/api/test');
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  test('throws when getToken returns null', async () => {
+    const api = createApiClient(async () => null);
+
+    await expect(api('/api/test')).rejects.toThrow('Sign in again to continue.');
   });
 });

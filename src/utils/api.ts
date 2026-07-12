@@ -12,6 +12,21 @@ export function apiUrl(path: string) {
   return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
+/** Authenticated request function — use via `useApi()` in screens or `createApiClient()` in tests. */
+export type ApiClient = <T>(path: string, init?: RequestInit) => Promise<T>;
+
+/** Build an ApiClient from Clerk's `getToken()` (see `useApi`). */
+export function createApiClient(
+  getToken: () => Promise<string | null>,
+  missingTokenMessage = 'Sign in again to continue.'
+): ApiClient {
+  return async <T>(path: string, init?: RequestInit): Promise<T> => {
+    const token = await getToken();
+    if (!token) throw new Error(missingTokenMessage);
+    return apiRequest<T>(token, path, init);
+  };
+}
+
 /** Authenticated fetch with Nitro error messages. API responses use camelCase per RESTOQUICK_DOC.md. */
 export async function apiRequest<T>(token: string, path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(apiUrl(path), {

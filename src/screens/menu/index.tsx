@@ -1,41 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@clerk/expo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, TextInput, useColorScheme, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { apiUrl } from '@/utils/api';
 
 import { MenuItemCard } from './menu-item-card';
 import { buildCreateMenuItemBody } from './menu-form-utils';
 import { MenuItemFormModal } from './menu-item-form-modal';
 import type { MenuItem, MenuItemInput, MenuOption, MenuOptionInput } from './types';
-
-async function apiRequest<T>(token: string, path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(apiUrl(path), {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
-      ...init?.headers,
-    },
-  });
-  if (!response.ok) {
-    let message = `Request failed (${response.status})`;
-    try {
-      const errorBody = (await response.json()) as { statusMessage?: string; message?: string };
-      const detail = errorBody.statusMessage ?? errorBody.message;
-      if (detail) message = detail;
-    } catch {
-      // Keep generic message when the body is not JSON.
-    }
-    throw new Error(message);
-  }
-  return response.json();
-}
 
 function normalizeMenuOption(raw: Record<string, unknown>): MenuOption | null {
   const id = typeof raw.id === 'string' ? raw.id : null;
@@ -109,7 +85,7 @@ function searchItems(items: MenuItem[], query: string) {
 }
 
 export default function MenuScreen() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { api, isLoaded, isSignedIn, isReady } = useApi();
   const queryClient = useQueryClient();
   const isDark = useColorScheme() === 'dark';
   const { isTablet, fabStyle } = useResponsiveLayout();
@@ -117,12 +93,6 @@ export default function MenuScreen() {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-
-  const withToken = async () => {
-    const token = await getToken();
-    if (!token) throw new Error('Sign in again to manage the menu.');
-    return token;
-  };
 
   const {
     data: items = [],
@@ -132,9 +102,9 @@ export default function MenuScreen() {
     refetch,
   } = useQuery({
     queryKey: ['menu'],
-    enabled: isLoaded && isSignedIn,
+    enabled: isReady,
     queryFn: async () => {
-      const payload = await apiRequest<unknown>(await withToken(), '/api/menu');
+      const payload = await api<unknown>('/api/menu');
       return normalizeMenuResponse(payload);
     },
   });
@@ -142,18 +112,16 @@ export default function MenuScreen() {
   const invalidateMenu = () => queryClient.invalidateQueries({ queryKey: ['menu'] });
 
   const saveMutation = useMutation({
-    mutationFn: async (input: MenuItemInput) => {
-      const token = await withToken();
-      return editingItem
-        ? apiRequest(token, `/api/menu/${editingItem.id}`, {
+    mutationFn: async (input: MenuItemInput) =>
+      editingItem
+        ? api(`/api/menu/${editingItem.id}`, {
             method: 'PUT',
             body: JSON.stringify(input),
           })
-        : apiRequest(token, '/api/menu', {
+        : api('/api/menu', {
             method: 'POST',
             body: JSON.stringify(buildCreateMenuItemBody(input)),
-          });
-    },
+          }),
     onSuccess: () => {
       invalidateMenu();
       setModalVisible(false);
@@ -162,8 +130,7 @@ export default function MenuScreen() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (item: MenuItem) =>
-      apiRequest(await withToken(), `/api/menu/${item.id}`, { method: 'DELETE' }),
+    mutationFn: async (item: MenuItem) => api(`/api/menu/${item.id}`, { method: 'DELETE' }),
     onSuccess: () => {
       invalidateMenu();
       setModalVisible(false);
@@ -173,7 +140,7 @@ export default function MenuScreen() {
 
   const availabilityMutation = useMutation({
     mutationFn: async ({ item, isAvailable }: { item: MenuItem; isAvailable: boolean }) =>
-      apiRequest(await withToken(), `/api/menu/update_availability/${item.id}`, {
+      api(`/api/menu/update_availability/${item.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ isAvailable }),
       }),
@@ -199,7 +166,7 @@ export default function MenuScreen() {
       menuItemId: string;
       input: MenuOptionInput;
     }) =>
-      apiRequest<MenuOption>(await withToken(), '/api/menu/menu_item_options', {
+      api<MenuOption>('/api/menu/menu_item_options', {
         method: 'POST',
         body: JSON.stringify({
           create_menu_option: {
@@ -220,7 +187,7 @@ export default function MenuScreen() {
       optionId: string;
       input: MenuOptionInput;
     }) =>
-      apiRequest<MenuOption>(await withToken(), `/api/menu/menu_item_options/${optionId}`, {
+      api<MenuOption>(`/api/menu/menu_item_options/${optionId}`, {
         method: 'PUT',
         body: JSON.stringify({
           update_menu_option: {

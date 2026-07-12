@@ -1,40 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@clerk/expo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, TextInput, useColorScheme, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { apiUrl } from '@/utils/api';
 
 import { TableCard } from './table-card';
 import { TableFormModal } from './table-form-modal';
 import type { Table, TableInput, TableUpdateInput } from './types';
-
-async function apiRequest<T>(token: string, path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(apiUrl(path), {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
-      ...init?.headers,
-    },
-  });
-  if (!response.ok) {
-    let message = `Request failed (${response.status})`;
-    try {
-      const errorBody = (await response.json()) as { statusMessage?: string; message?: string };
-      const detail = errorBody.statusMessage ?? errorBody.message;
-      if (detail) message = detail;
-    } catch {
-      // Keep generic message when the body is not JSON.
-    }
-    throw new Error(message);
-  }
-  return response.json();
-}
 
 function normalizeSession(raw: Record<string, unknown>) {
   const id = typeof raw.id === 'string' ? raw.id : null;
@@ -113,19 +89,13 @@ function groupByLetter(tables: Table[]) {
 }
 
 export default function TablesScreen() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { api, isLoaded, isSignedIn, isReady } = useApi();
   const queryClient = useQueryClient();
   const isDark = useColorScheme() === 'dark';
   const { isTablet, fabStyle } = useResponsiveLayout();
   const [query, setQuery] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
   const [editingTable, setEditingTable] = useState<Table | null>(null);
-
-  const withToken = async () => {
-    const token = await getToken();
-    if (!token) throw new Error('Sign in again to manage tables.');
-    return token;
-  };
 
   const {
     data: tables = [],
@@ -135,9 +105,9 @@ export default function TablesScreen() {
     refetch,
   } = useQuery({
     queryKey: ['tables'],
-    enabled: isLoaded && isSignedIn,
+    enabled: isReady,
     queryFn: async () => {
-      const payload = await apiRequest<unknown>(await withToken(), '/api/tables');
+      const payload = await api<unknown>('/api/tables');
       return normalizeTablesResponse(payload);
     },
   });
@@ -146,9 +116,8 @@ export default function TablesScreen() {
 
   const saveMutation = useMutation({
     mutationFn: async (input: TableInput | TableUpdateInput) => {
-      const token = await withToken();
       if (editingTable) {
-        return apiRequest<Table>(token, '/api/tables', {
+        return api<Table>('/api/tables', {
           method: 'PUT',
           body: JSON.stringify({
             table_id: editingTable.id,
@@ -157,7 +126,7 @@ export default function TablesScreen() {
         });
       }
       const createInput = input as TableInput;
-      return apiRequest<Table>(token, '/api/tables', {
+      return api<Table>('/api/tables', {
         method: 'POST',
         body: JSON.stringify({
           table_number: createInput.number,
@@ -173,8 +142,7 @@ export default function TablesScreen() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (table: Table) =>
-      apiRequest(await withToken(), `/api/tables/${table.id}`, { method: 'DELETE' }),
+    mutationFn: async (table: Table) => api(`/api/tables/${table.id}`, { method: 'DELETE' }),
     onSuccess: () => {
       invalidateTables();
       setModalVisible(false);

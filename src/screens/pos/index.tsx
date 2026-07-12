@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@clerk/expo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { formatMoney } from '@/utils/format-money';
 import {
@@ -54,7 +54,7 @@ function searchItems(items: PosMenuItem[], query: string) {
 }
 
 export default function PosScreen() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { api, isLoaded, isSignedIn, isReady } = useApi();
   const queryClient = useQueryClient();
   const {
     isTablet,
@@ -73,12 +73,6 @@ export default function PosScreen() {
   const [isCartVisible, setCartVisible] = useState(false);
   const [customizingItem, setCustomizingItem] = useState<PosMenuItem | null>(null);
 
-  const withToken = async () => {
-    const token = await getToken();
-    if (!token) throw new Error('Sign in again to use POS.');
-    return token;
-  };
-
   const {
     data: menuItems = [],
     isLoading: isLoadingMenu,
@@ -87,18 +81,18 @@ export default function PosScreen() {
     refetch: refetchMenu,
   } = useQuery({
     queryKey: ['pos-menu'],
-    enabled: isLoaded && isSignedIn,
-    queryFn: async () => fetchPosMenu(await withToken()),
+    enabled: isReady,
+    queryFn: () => fetchPosMenu(api),
   });
 
   const { data: tables = [], isLoading: isLoadingTables } = useQuery({
     queryKey: ['pos-tables'],
-    enabled: isLoaded && isSignedIn && mode === 'DINING',
-    queryFn: async () => fetchPosTables(await withToken()),
+    enabled: isReady && mode === 'DINING',
+    queryFn: () => fetchPosTables(api),
   });
 
   const openSessionMutation = useMutation({
-    mutationFn: async (tableId: string) => createTableSession(await withToken(), tableId),
+    mutationFn: async (tableId: string) => createTableSession(api, tableId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pos-tables'] });
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
@@ -107,7 +101,6 @@ export default function PosScreen() {
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const token = await withToken();
       const items = buildOrderItemCreates(cartLines);
       const name = customerName.trim() || 'Guest';
 
@@ -117,14 +110,14 @@ export default function PosScreen() {
         if (!table?.activeSessionId) {
           throw new Error('Open a table session before submitting a dining order.');
         }
-        return submitDiningOrder(token, {
+        return submitDiningOrder(api, {
           tableId: selectedTableId,
           customerName: name,
           items,
         });
       }
 
-      return submitTakeawayOrder(token, { customerName: name, items });
+      return submitTakeawayOrder(api, { customerName: name, items });
     },
     onSuccess: (order) => {
       setCartLines([]);

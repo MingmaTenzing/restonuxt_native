@@ -1,4 +1,3 @@
-import { useAuth } from '@clerk/expo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -10,6 +9,7 @@ import {
 } from 'react-native';
 
 import { Button } from '@/components/button';
+import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { useKitchenWebSocket } from '@/hooks/use-kitchen-websocket';
 import {
@@ -112,19 +112,13 @@ function QueueTabs({
 }
 
 export default function KitchenScreen() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { api, getToken, isLoaded, isSignedIn, isReady } = useApi();
   const queryClient = useQueryClient();
   const { cardWidth, gridGap, isTablet, scrollContentStyle } = useResponsiveLayout();
   const [activeTab, setActiveTab] = useState<KitchenQueueTab>('active');
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(() => new Set());
   const [pendingActionOrderId, setPendingActionOrderId] = useState<string | null>(null);
   const newOrderTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
-
-  const withToken = useCallback(async () => {
-    const token = await getToken();
-    if (!token) throw new Error('Sign in again to load kitchen orders.');
-    return token;
-  }, [getToken]);
 
   const {
     data: pendingOrders = [],
@@ -135,8 +129,8 @@ export default function KitchenScreen() {
     isRefetching: isPendingRefetching,
   } = useQuery({
     queryKey: ['kitchen', 'pending-orders'],
-    enabled: isLoaded && isSignedIn,
-    queryFn: async () => sortKitchenOrders(await fetchPendingOrders(await withToken())),
+    enabled: isReady,
+    queryFn: async () => sortKitchenOrders(await fetchPendingOrders(api)),
     refetchOnReconnect: true,
     staleTime: 30_000,
   });
@@ -150,8 +144,8 @@ export default function KitchenScreen() {
     isRefetching: isCompletedRefetching,
   } = useQuery({
     queryKey: ['kitchen', 'completed-orders'],
-    enabled: isLoaded && isSignedIn,
-    queryFn: async () => sortCompletedOrders(await fetchCompletedOrders(await withToken())),
+    enabled: isReady,
+    queryFn: async () => sortCompletedOrders(await fetchCompletedOrders(api)),
     refetchOnReconnect: true,
     staleTime: 30_000,
   });
@@ -208,7 +202,7 @@ export default function KitchenScreen() {
   }, [refetchCompleted, refetchPending]);
 
   const { connectionState, reconnect } = useKitchenWebSocket({
-    enabled: isLoaded && isSignedIn,
+    enabled: isReady,
     getToken,
     onMessage: handleKitchenEvent,
     onReconnect: syncAfterReconnect,
@@ -221,7 +215,7 @@ export default function KitchenScreen() {
     }: {
       orderId: string;
       status: 'COMPLETED' | 'PENDING';
-    }) => updateOrderStatus(await withToken(), orderId, status),
+    }) => updateOrderStatus(api, orderId, status),
     onMutate: ({ orderId }) => {
       setPendingActionOrderId(orderId);
     },

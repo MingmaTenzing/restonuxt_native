@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@clerk/expo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import type { PaymentMethod } from '@/screens/orders/types';
 import { formatMoney } from '@/utils/format-money';
@@ -30,7 +30,7 @@ const MODES: { value: CashierMode; label: string }[] = [
 ];
 
 export default function CashierScreen() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { api, isLoaded, isSignedIn, isReady } = useApi();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<CashierMode>('TABLES');
   const [isSheetVisible, setSheetVisible] = useState(false);
@@ -38,12 +38,6 @@ export default function CashierScreen() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   const { isTablet } = useResponsiveLayout();
-
-  const withToken = async () => {
-    const token = await getToken();
-    if (!token) throw new Error('Sign in again to use the cashier.');
-    return token;
-  };
 
   const {
     data: sessions = [],
@@ -53,8 +47,8 @@ export default function CashierScreen() {
     refetch: refetchSessions,
   } = useQuery({
     queryKey: ['cashier-sessions'],
-    enabled: isLoaded && isSignedIn && mode === 'TABLES',
-    queryFn: async () => fetchActiveSessions(await withToken()),
+    enabled: isReady && mode === 'TABLES',
+    queryFn: () => fetchActiveSessions(api),
   });
 
   const {
@@ -65,8 +59,8 @@ export default function CashierScreen() {
     refetch: refetchTakeaway,
   } = useQuery({
     queryKey: ['cashier-takeaway'],
-    enabled: isLoaded && isSignedIn && mode === 'TAKEAWAY',
-    queryFn: async () => fetchUnpaidTakeawayOrders(await withToken()),
+    enabled: isReady && mode === 'TAKEAWAY',
+    queryFn: () => fetchUnpaidTakeawayOrders(api),
   });
 
   const {
@@ -74,8 +68,8 @@ export default function CashierScreen() {
     isLoading: isLoadingCheckout,
   } = useQuery({
     queryKey: ['cashier-checkout', selectedSession?.id],
-    enabled: isLoaded && isSignedIn && isSheetVisible && !!selectedSession?.id,
-    queryFn: async () => fetchSessionCheckout(await withToken(), selectedSession!.id),
+    enabled: isReady && isSheetVisible && !!selectedSession?.id,
+    queryFn: () => fetchSessionCheckout(api, selectedSession!.id),
   });
 
   const checkoutTarget = useMemo<CashierTarget | null>(() => {
@@ -96,18 +90,17 @@ export default function CashierScreen() {
 
   const settleMutation = useMutation({
     mutationFn: async (paymentMethod: PaymentMethod) => {
-      const token = await withToken();
       if (!checkoutTarget) throw new Error('No checkout selected.');
 
       if (checkoutTarget.mode === 'TABLE') {
-        return markTablePaid(token, {
+        return markTablePaid(api, {
           tableSessionId: checkoutTarget.session.id,
           orderIds: checkoutTarget.checkout.summary.payableOrderIds,
           paymentMethod,
         });
       }
 
-      return closeTakeawaySale(token, {
+      return closeTakeawaySale(api, {
         orderId: checkoutTarget.order.id,
         paymentMethod,
       });

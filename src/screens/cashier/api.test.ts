@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 
 import { apiUrl } from '@/utils/api';
 import { jsonResponse, withMockFetch } from '@/test/mock-fetch';
+import { testApiClient } from '@/test/test-api-client';
 
 import {
   closeTakeawaySale,
@@ -46,7 +47,7 @@ describe('cashier api', () => {
       ]);
     });
 
-    const sessions = await fetchActiveSessions('cashier-token');
+    const sessions = await fetchActiveSessions(testApiClient('cashier-token'));
 
     expect(sessions).toHaveLength(1);
     expect(sessions[0]?.outstandingCents).toBe(1200);
@@ -78,7 +79,7 @@ describe('cashier api', () => {
       });
     });
 
-    const checkout = await fetchSessionCheckout('token', 'session-9');
+    const checkout = await fetchSessionCheckout(testApiClient('token'), 'session-9');
 
     expect(checkout.id).toBe('session-9');
   });
@@ -89,7 +90,7 @@ describe('cashier api', () => {
       return jsonResponse([{ id: 'order-1', orderNo: 42 }]);
     });
 
-    const orders = await fetchUnpaidTakeawayOrders('token');
+    const orders = await fetchUnpaidTakeawayOrders(testApiClient('token'));
 
     expect(orders).toHaveLength(1);
     expect(orders[0]?.id).toBe('order-1');
@@ -104,7 +105,7 @@ describe('cashier api', () => {
       return jsonResponse({ ok: true });
     });
 
-    await markTablePaid('token', {
+    await markTablePaid(testApiClient('token'), {
       tableSessionId: 'session-1',
       orderIds: ['o1', 'o2'],
       paymentMethod: 'CASH',
@@ -127,7 +128,7 @@ describe('cashier api', () => {
       return jsonResponse({ id: 'order-7', paymentStatus: 'PAID' });
     });
 
-    const order = await closeTakeawaySale('token', {
+    const order = await closeTakeawaySale(testApiClient('token'), {
       orderId: 'order-7',
       paymentMethod: 'CARD',
     });

@@ -1,29 +1,27 @@
-import { useAuth } from '@clerk/expo';
 import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ScreenScroll } from '@/components/screen-scroll';
+import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { apiUrl } from '@/utils/api';
 import { formatMoney } from '@/utils/format-money';
 
 import { PaymentBadge, StatusBadge, TypeBadge } from '@/screens/orders/order-badges';
 import type { Order, OrderItem } from '@/screens/orders/types';
+import type { ApiClient } from '@/utils/api';
 
-const ORDERS_API_URL = apiUrl('/api/orders');
-
-async function fetchOrder(token: string, id: string): Promise<Order> {
-  const response = await fetch(`${ORDERS_API_URL}/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (response.status === 404) throw new Error('This order no longer exists.');
-  if (!response.ok) throw new Error(`Unable to load order (${response.status})`);
-
-  const payload = await response.json();
-  return payload.order ?? payload.data ?? payload;
+async function fetchOrder(api: ApiClient, id: string): Promise<Order> {
+  try {
+    const payload = await api<Record<string, unknown>>(`/api/orders/${id}`);
+    return (payload.order ?? payload.data ?? payload) as Order;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('404')) {
+      throw new Error('This order no longer exists.');
+    }
+    throw error;
+  }
 }
 
 function itemLineTotalCents(item: OrderItem) {
@@ -130,7 +128,7 @@ function ItemRow({ item }: { item: OrderItem }) {
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { api, isReady } = useApi();
   const { isTablet } = useResponsiveLayout();
 
   const {
@@ -141,12 +139,8 @@ export default function OrderDetailScreen() {
     refetch,
   } = useQuery({
     queryKey: ['order', id],
-    enabled: isLoaded && isSignedIn && !!id,
-    queryFn: async () => {
-      const token = await getToken();
-      if (!token) throw new Error('Sign in again to load this order.');
-      return fetchOrder(token, id!);
-    },
+    enabled: isReady && !!id,
+    queryFn: () => fetchOrder(api, id!),
   });
 
   const headerTitle = order ? `Order #${order.orderNo}` : 'Order';
