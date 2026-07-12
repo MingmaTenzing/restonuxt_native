@@ -1,4 +1,4 @@
-// Types mirror the RestoQuick API contract (see API_REFERENCE.md → Orders / Enums).
+// Types mirror the RestoQuick API contract (see RESTOQUICK_DOC.md → Orders / Enums).
 export type OrderStatus = 'PENDING' | 'COMPLETED' | 'CANCELLED';
 export type OrderType = 'TAKEAWAY' | 'DINING' | 'UBER';
 export type PaymentStatus = 'UNPAID' | 'PAID';

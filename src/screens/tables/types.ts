@@ -1,4 +1,4 @@
-// Types mirror the RestoQuick API contract (see API_REFERENCE.md → Tables).
+// Types mirror the RestoQuick API contract (see RESTOQUICK_DOC.md → Tables).
 export interface TableSession {
   id: string;
   openedAt: string;

@@ -1,4 +1,4 @@
-// Types mirror the RestoQuick API contract (see API_REFERENCE.md → Table sessions).
+// Types mirror the RestoQuick API contract (see RESTOQUICK_DOC.md → Table sessions).
 import type { Order, PaymentMethod } from '@/screens/orders/types';
 
 export type TableSessionStatus = 'ACTIVE' | 'CHECKOUT_PENDING' | 'CLOSED';

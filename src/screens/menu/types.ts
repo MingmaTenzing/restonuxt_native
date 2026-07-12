@@ -1,4 +1,4 @@
-// Menu contracts — mirrors API_REFERENCE.md exactly.
+// Menu contracts — mirrors RESTOQUICK_DOC.md exactly.
 
 export interface MenuOption {
   id: string;

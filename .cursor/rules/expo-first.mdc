@@ -1,36 +1,25 @@
 ---
-description: Consult Expo MCP, Expo skills, and API_REFERENCE.md before taking action
+description: Consult Expo MCP, Expo skills, and RESTOQUICK_DOC.md before taking action
 alwaysApply: true
 ---
 
 # Expo-First Workflow
 
+Read **`AGENTS.md`** for project commands, structure, and boundaries. Use **`.agents/skills/README.md`** for the full skill catalog.
+
 Before implementing, debugging, or advising on anything in this Expo project:
 
-1. **Check Expo skills** in `.agents/skills/` — read the relevant `SKILL.md` when the task touches that area (UI, deployment, data fetching, Clerk, EAS, etc.).
-2. **Check Expo MCP** (`user-expo`) — use `GetMcpTools` to discover tools, then `CallMcpTool` for docs, library installs, builds, workflows, and deployment tasks.
-3. **Prefer official patterns** from skills and MCP over improvising from general knowledge.
-4. **Check `API_REFERENCE.md`** when the task involves backend APIs — endpoints, request/response shapes, auth, WebSockets, enums, or error codes. Treat it as the source of truth for the Nuxt/Nitro backend contract.
+1. **Check Expo skills** — read the relevant `SKILL.md` from `.agents/skills/`.
+2. **Check Expo MCP** (`user-expo`) — `GetMcpTools` then `CallMcpTool` for docs, installs, builds.
+3. **Prefer official patterns** from skills and MCP over improvising.
+4. **Check `RESTOQUICK_DOC.md`** for architecture, data flows, APIs, WebSockets, enums, and auth.
 
-## Skill quick map
+## Quick skill map
 
 - UI/navigation: `building-native-ui`, `expo-ui`, `frontend-design`
 - Data/network: `native-data-fetching`
 - Auth: `clerk`, `clerk-setup`, `clerk-custom-ui`, `clerk-cli`
 - Build/deploy: `expo-deployment`, `expo-dev-client`, `expo-cicd-workflows`, `eas-simulator`
-- Docs/libraries: use MCP `read_documentation`, `add_library`
 - Upgrades: `upgrading-expo`
-
-## MCP quick map
-
-- `read_documentation` — Expo docs lookup
-- `add_library` — install Expo-compatible packages
-- `build_*`, `workflow_*` — EAS builds and CI workflows
-- `learn` — discover APIs and patterns
-
-## Backend quick map
-
-- `API_REFERENCE.md` — full HTTP API contract (auth, routes, enums, WebSockets, errors)
-- Pair with `native-data-fetching` skill for client-side fetch patterns
 
 Do not skip this step even for small changes.

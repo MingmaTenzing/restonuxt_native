@@ -1,4 +1,4 @@
-// Types mirror the RestoQuick API contract (see API_REFERENCE.md → Bookings / Enums).
+// Types mirror the RestoQuick API contract (see RESTOQUICK_DOC.md → Bookings / Enums).
 export type BookingStatus =
   'PENDING' | 'CONFIRMED' | 'SEATED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
 

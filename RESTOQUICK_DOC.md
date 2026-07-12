@@ -1,15 +1,44 @@
-# RestoQuick API Reference
+# RestoQuick — Platform Documentation
 
-This document describes every HTTP API route exposed by the Nuxt/Nitro backend under `server/api/`. It is intended as a contract for building a **native mobile client** (or any external client). Enum values below are taken from the authoritative Prisma schema (`prisma/schema.prisma`).
+**Single source of truth** for building native mobile clients, integrations, and understanding how RestoQuick works end-to-end.
 
-- Base URL: `<host>`
-- Hosted (production) base URL: `https://restoquicknuxt-production.up.railway.app`
-- Content type: `application/json` unless noted
-- All routes are protected by Clerk auth middleware unless explicitly marked public (see [Authentication](#authentication)).
+| | |
+| --- | --- |
+| **Production base URL** | `https://restoquicknuxt-production.up.railway.app` |
+| **Content type** | `application/json` unless noted |
+| **Auth** | Clerk session on all `/api/*` routes (see [Authentication](#authentication)) |
+| **Money** | Always integer **cents** |
+| **Realtime** | WebSocket at `wss://<host>/api/websocket` (kitchen orders only) |
 
 ---
 
 ## Table of contents
+
+### Part 1 — Architecture & data flows
+
+- [What RestoQuick is](#what-restoquick-is)
+- [System architecture](#system-architecture)
+- [Client surfaces](#client-surfaces)
+- [Authentication flow](#authentication-flow)
+- [Data model & relationships](#data-model--relationships)
+- [Order lifecycle (state machine)](#order-lifecycle-state-machine)
+- [Flow: POS dining order](#flow-pos-dining-order)
+- [Flow: POS takeaway order](#flow-pos-takeaway-order)
+- [Flow: Customer QR / Stripe self-order](#flow-customer-qr--stripe-self-order)
+- [Flow: Kitchen display (REST + WebSocket)](#flow-kitchen-display-rest--websocket)
+- [Flow: Cashier table checkout](#flow-cashier-table-checkout)
+- [Flow: Cashier takeaway checkout](#flow-cashier-takeaway-checkout)
+- [Flow: Bookings (manual + Vapi voice)](#flow-bookings-manual--vapi-voice)
+- [Flow: Table sessions](#flow-table-sessions)
+- [Flow: Staff, roster & leave](#flow-staff-roster--leave)
+- [Flow: Menu management](#flow-menu-management)
+- [Flow: Stock management](#flow-stock-management)
+- [Flow: Dashboard analytics](#flow-dashboard-analytics)
+- [Flow: AI agents](#flow-ai-agents)
+- [Native app implementation guide](#native-app-implementation-guide)
+- [Feature → API quick map](#feature--api-quick-map)
+
+### Part 2 — API reference
 
 - [Authentication](#authentication)
 - [Conventions & data types](#conventions--data-types)
@@ -32,8 +61,631 @@ This document describes every HTTP API route exposed by the Nuxt/Nitro backend u
 - [Table sessions](#table-sessions)
 - [Tables](#tables)
 - [Vapi booking tool](#vapi-booking-tool)
-- [AI agents](#ai-agents)
+- [AI agents](#ai-agents-1)
 - [Error codes](#error-codes)
+
+---
+
+# Part 1 — Architecture & data flows
+
+## What RestoQuick is
+
+RestoQuick is a **full-stack restaurant operations platform**. One Nuxt 4 backend (Nitro + PostgreSQL/Prisma) powers:
+
+- **Staff dashboard** — POS, cashier, kitchen display, orders, menu, tables, bookings, roster, stock, analytics, AI assistants
+- **Customer-facing QR ordering** — scan table QR → browse menu → Stripe checkout → order hits kitchen
+- **Native mobile clients** — consume the same REST + WebSocket APIs documented in Part 2
+
+Every feature follows the same pattern:
+
+```
+UI (web or native)  →  HTTP / WebSocket  →  server/api/*  →  Prisma  →  PostgreSQL
+                                              ↓
+                                    kitchenSocket.broadCast()  (orders only)
+                                              ↓
+                                    all connected kitchen clients
+```
+
+---
+
+## System architecture
+
+```mermaid
+flowchart TB
+  subgraph clients [Clients]
+    WEB[Web Dashboard<br/>Nuxt pages]
+    NATIVE[Native App<br/>iOS / Android]
+    QR[Customer QR Browser<br/>order-table pages]
+    VAPI[Vapi Voice Assistant]
+  end
+
+  subgraph nuxt [Nuxt / Nitro Server]
+    MW[Clerk Auth Middleware<br/>server/middleware/auth.ts]
+    API[REST Handlers<br/>server/api/**]
+    WS[WebSocket Handler<br/>server/api/websocket.ts]
+    KS[kitchenSocket.ts<br/>in-memory peer broadcast]
+  end
+
+  subgraph external [External Services]
+    CLERK[Clerk Auth]
+    STRIPE[Stripe Checkout]
+    PG[(PostgreSQL)]
+    CLOUDINARY[Cloudinary Uploads]
+    OPENAI[OpenAI Agents]
+  end
+
+  WEB --> MW
+  NATIVE --> MW
+  QR --> API
+  VAPI --> API
+  MW --> API
+  WEB --> WS
+  NATIVE --> WS
+  API --> PG
+  API --> KS
+  KS --> WS
+  WS --> WEB
+  WS --> NATIVE
+  API --> STRIPE
+  MW --> CLERK
+  WEB --> CLOUDINARY
+  API --> OPENAI
+```
+
+### Key server directories
+
+| Path | Purpose |
+| ---- | ------- |
+| `server/api/` | One file per route — Nitro file-based routing |
+| `server/middleware/auth.ts` | Clerk auth guard on `/api/*` |
+| `server/utils/kitchenSocket.ts` | In-memory WebSocket peer registry + `broadCast()` |
+| `server/utils/prisma.ts` | Shared Prisma client |
+| `prisma/schema.prisma` | Authoritative database schema |
+| `types/` | Shared TypeScript types (orders, websocket payload) |
+| `app/pages/` | Web UI pages (dashboard, POS, kitchen, QR ordering) |
+| `app/composables/` | Shared client logic (WebSocket, cart, modals) |
+
+---
+
+## Client surfaces
+
+| Surface | Who uses it | Auth | Primary APIs |
+| ------- | ----------- | ---- | ------------ |
+| **Dashboard** (`/dashboard/*`) | Staff (Chef, Waiter, Manager…) | Clerk required | All `/api/*` routes |
+| **Kitchen display** (`/dashboard/kitchen`) | Kitchen staff | Clerk + WebSocket | `GET /api/orders/pending`, `WS /api/websocket`, `PATCH /api/orders/{id}/status` |
+| **POS** (`/dashboard/pos`) | Waiters | Clerk | `POST /api/orders/pos/*`, `GET /api/menu`, table sessions |
+| **Cashier** (`/dashboard/cashier`) | Front desk | Clerk | Checkout routes, `mark-paid`, `closesales` |
+| **Customer QR** (`/order-table/{table_id}`) | Diners | Public pages; Stripe for payment | `POST /api/stripe-checkout`, session-status |
+| **Native app** | Staff mobile | Clerk mobile SDK | Same REST + WebSocket as dashboard |
+| **Vapi voice** | Phone callers | M2M to booking tool | `GET/POST /api/vapi-booking-tool` |
+
+---
+
+## Authentication flow
+
+```mermaid
+sequenceDiagram
+  participant App as Client (Web / Native)
+  participant Clerk as Clerk
+  participant MW as server/middleware/auth.ts
+  participant API as server/api/*
+
+  App->>Clerk: Sign in (email/OAuth)
+  Clerk-->>App: Session token
+  App->>MW: HTTP request + Clerk session<br/>(Authorization header / cookies)
+  MW->>Clerk: Validate session
+  alt Authenticated
+    MW->>API: Forward request
+    API-->>App: 200 + JSON body
+  else Not authenticated
+    MW-->>App: 401 Unauthorized
+  end
+```
+
+**Native app rules:**
+
+1. Integrate Clerk mobile SDK (same app as web dashboard).
+2. Attach session token to every `/api/*` request.
+3. Attach same token to WebSocket upgrade (`wss://<host>/api/websocket`).
+4. On 401, refresh session and retry.
+
+Optional org restriction: if `NUXT_CLERK_ORG_ID` is set, only members of that Clerk organization can access the dashboard.
+
+---
+
+## Data model & relationships
+
+```mermaid
+erDiagram
+  Table ||--o{ TableSession : has
+  Table ||--o{ Order : receives
+  Table ||--o{ Booking : assigned
+  TableSession ||--o{ Order : contains
+
+  MenuCategory ||--o{ MenuItem : categorizes
+  MenuItem ||--o{ MenuOption : has
+  MenuItem ||--o{ OrderItem : referenced_by
+
+  Order ||--o{ OrderItem : contains
+  OrderItem ||--o{ OrderItemOption : has
+  MenuOption ||--o{ OrderItemOption : snapshot
+
+  Staff ||--o{ Shift : works
+  Staff ||--o{ LeaveRequest : submits
+
+  Table {
+    uuid id
+    string number
+    int capacity
+  }
+  TableSession {
+    uuid id
+    enum status ACTIVE|CHECKOUT_PENDING|CLOSED
+    datetime openedAt
+    datetime closedAt
+  }
+  Order {
+    uuid id
+    int orderNo
+    enum status PENDING|COMPLETED|CANCELLED
+    enum orderType TAKEAWAY|DINING|UBER
+    enum paymentStatus UNPAID|PAID
+    int totalAmountCents
+    string checkoutSessionId
+  }
+  Booking {
+    uuid id
+    enum status PENDING|CONFIRMED|SEATED|COMPLETED|CANCELLED|NO_SHOW
+    datetime bookingTime
+    int guestCount
+  }
+  MenuItem {
+    uuid id
+    int priceCents
+    bool isAvailable
+  }
+  Staff {
+    uuid id
+    enum role
+    decimal perHourRate
+  }
+```
+
+### Important conventions
+
+| Rule | Detail |
+| ---- | ------ |
+| Money | `priceCents`, `unitPriceCents`, `totalAmountCents` — always integers, never floats |
+| Price snapshots | Order items store price at order time; menu price changes do not retroactively affect orders |
+| `orderNo` | Auto-increment human-readable number (not UUID) |
+| `checkoutSessionId` | Unique per order source — prevents duplicate Stripe orders |
+| Nullable `tableId` | Takeaway orders have no table; bookings can exist without table assignment |
+
+---
+
+## Order lifecycle (state machine)
+
+Orders have **two independent axes**: kitchen status (`OrderStatus`) and payment (`PaymentStatus`).
+
+```mermaid
+stateDiagram-v2
+  [*] --> PENDING: Order created<br/>(POS / Stripe / QR)
+
+  PENDING --> COMPLETED: Kitchen marks done<br/>PATCH status COMPLETED
+  PENDING --> COMPLETED: Cashier checkout<br/>mark-paid / closesales
+  PENDING --> CANCELLED: Staff cancels<br/>PATCH status CANCELLED
+
+  COMPLETED --> PENDING: Kitchen recall<br/>PATCH status PENDING<br/>(was COMPLETED only)
+
+  COMPLETED --> CANCELLED: Staff cancels
+
+  note right of PENDING
+    paymentStatus may be UNPAID (POS dining)
+    or PAID (Stripe QR, after cashier)
+  end note
+```
+
+| Field | Values | Meaning |
+| ----- | ------ | ------- |
+| `status` | `PENDING` | Active in kitchen queue |
+| `status` | `COMPLETED` | Food ready / order closed |
+| `status` | `CANCELLED` | Voided |
+| `paymentStatus` | `UNPAID` | Not yet settled at cashier |
+| `paymentStatus` | `PAID` | Payment recorded |
+| `paymentMethod` | `CASH`, `CARD_TERMINAL`, `STRIPE_QR` | Set when paid |
+
+**Kitchen queue rule:** `GET /api/orders/pending` returns orders where `status = "PENDING"` regardless of payment.
+
+---
+
+## Flow: POS dining order
+
+Waiter takes order at table via dashboard POS.
+
+```mermaid
+sequenceDiagram
+  participant W as Waiter (POS UI)
+  participant API as Nitro API
+  participant DB as PostgreSQL
+  participant WS as WebSocket
+  participant K as Kitchen Display
+
+  W->>API: POST /api/table-sessions/create<br/>{ tableId }
+  API->>DB: Get or create ACTIVE session
+  API-->>W: { id, tableId, status: ACTIVE }
+
+  W->>API: GET /api/menu
+  API-->>W: MenuItem[] with options
+
+  W->>API: POST /api/orders/pos/dining<br/>{ data: { tableId, customerName, items } }
+  API->>DB: Validate ACTIVE table session
+  API->>DB: Create Order (PENDING, UNPAID, DINING)
+  API->>WS: broadCast ORDER_CREATED
+  API-->>W: Order (full detail)
+  WS-->>K: { type: ORDER_CREATED, payload: order }
+  K->>K: Add to active queue
+```
+
+| Step | API | Result |
+| ---- | --- | ------ |
+| 1. Open table session | `POST /api/table-sessions/create` | ACTIVE session for table |
+| 2. Load menu | `GET /api/menu` | Available items + options |
+| 3. Submit order | `POST /api/orders/pos/dining` | Order in DB + kitchen broadcast |
+| 4. Kitchen sees it | WebSocket `ORDER_CREATED` | Appears on kitchen screen |
+
+---
+
+## Flow: POS takeaway order
+
+Same as dining but no table session required.
+
+```mermaid
+sequenceDiagram
+  participant W as Waiter (POS UI)
+  participant API as Nitro API
+  participant DB as PostgreSQL
+  participant WS as WebSocket
+  participant K as Kitchen Display
+
+  W->>API: GET /api/menu
+  W->>API: POST /api/orders/pos/takeaway<br/>{ data: { customerName, items } }
+  API->>DB: Create Order (PENDING, UNPAID, TAKEAWAY, tableId=null)
+  API->>WS: broadCast ORDER_CREATED
+  API-->>W: Order
+  WS-->>K: ORDER_CREATED
+```
+
+---
+
+## Flow: Customer QR / Stripe self-order
+
+Customer scans QR code on table → orders from phone → pays via Stripe.
+
+```mermaid
+sequenceDiagram
+  participant C as Customer Browser
+  participant API as Nitro API
+  participant Stripe as Stripe
+  participant DB as PostgreSQL
+  participant WS as WebSocket
+  participant K as Kitchen Display
+
+  C->>API: GET /api/menu
+  C->>API: POST /api/stripe-checkout<br/>{ cart_items, table_id }
+  API->>Stripe: Create Checkout Session
+  API-->>C: { clientSecret }
+  C->>Stripe: Customer pays (embedded checkout)
+  Stripe-->>C: Redirect to return URL<br/>?session_id=...
+
+  C->>API: GET /api/stripe-checkout/session-status<br/>?session_id=...
+  alt Session complete & order not yet created
+    API->>Stripe: Retrieve session + line items
+    API->>DB: Create Order (PENDING, PAID, STRIPE_QR)
+    API->>WS: broadCast ORDER_CREATED
+    API-->>C: { order, customerDetails }
+  else Session still open
+    API-->>C: { status, checkoutUrl }
+  else Order already exists
+    API-->>C: 409 Conflict
+  end
+  WS-->>K: ORDER_CREATED
+```
+
+| Step | Detail |
+| ---- | ------ |
+| QR URL | `{BASE_URL}/order-table/{table_id}` |
+| Return URL | `{BASE_URL}/order-table/checkout/return?session_id={CHECKOUT_SESSION_ID}` |
+| Dedup | `checkoutSessionId` unique — prevents double order on refresh |
+| Payment | Customer pays **before** kitchen sees order (`paymentStatus=PAID` at creation) |
+
+---
+
+## Flow: Kitchen display (REST + WebSocket)
+
+The kitchen screen uses **hybrid sync** — REST for bootstrap, WebSocket for live updates.
+
+```mermaid
+flowchart LR
+  subgraph bootstrap [On screen open]
+    A[GET /api/orders/pending] --> B[activeQueue in memory]
+  end
+
+  subgraph live [While screen open]
+    C[WS /api/websocket] --> D{Event type}
+    D -->|ORDER_CREATED| E[Add to queue]
+    D -->|ORDER_MARKED_COMPLETED| F[Remove from queue]
+    D -->|ORDER_RECALL| G[Add back to queue]
+    D -->|ORDER_CANCELLED| H[Remove from queue]
+  end
+
+  subgraph actions [Staff actions]
+    I[Mark as Completed] --> J[PATCH /api/orders/id/status<br/>COMPLETED]
+    K[Recall to Kitchen] --> L[PATCH /api/orders/id/status<br/>PENDING]
+    J --> M[broadCast to all clients]
+    L --> M
+  end
+```
+
+**Critical rule for native apps:** WebSocket URL must use the **same host** as REST API calls. See [WebSocket (real-time kitchen)](#websocket-real-time-kitchen) for full implementation guide.
+
+---
+
+## Flow: Cashier table checkout
+
+Settle all unpaid orders for a table session and close the session.
+
+```mermaid
+sequenceDiagram
+  participant C as Cashier UI
+  participant API as Nitro API
+  participant DB as PostgreSQL
+  participant WS as WebSocket
+  participant K as Kitchen Display
+
+  C->>API: GET /api/table-sessions<br/>?status=ACTIVE
+  C->>API: GET /api/orders/checkout/table/{session_id}
+  API-->>C: Session + orders + summary totals
+
+  C->>API: POST /api/orders/checkout/table/mark-paid<br/>{ tableSessionId, orderIds, paymentMethod }
+  API->>DB: Set orders PAID + COMPLETED
+  API->>DB: Close table session (CLOSED)
+  loop Each settled order
+    API->>WS: broadCast ORDER_MARKED_COMPLETED
+  end
+  API-->>C: { updatedCount, paidAt, orderIds }
+  WS-->>K: Remove completed orders from queue
+```
+
+Optional: `POST /api/print-receipt/{session_id}` sends ESC/POS receipt to thermal printer.
+
+---
+
+## Flow: Cashier takeaway checkout
+
+```mermaid
+sequenceDiagram
+  participant C as Cashier UI
+  participant API as Nitro API
+  participant DB as PostgreSQL
+  participant WS as WebSocket
+
+  C->>API: GET /api/orders/takeaway-unpaid
+  API-->>C: Unpaid TAKEAWAY orders
+
+  C->>API: POST /api/orders/checkout/takeaway/closesales<br/>{ orderId, paymentMethod }
+  API->>DB: Set PAID + COMPLETED
+  API->>WS: broadCast ORDER_MARKED_COMPLETED
+  API-->>C: Updated order
+```
+
+---
+
+## Flow: Bookings (manual + Vapi voice)
+
+```mermaid
+flowchart TB
+  subgraph manual [Dashboard Bookings]
+    M1[GET /api/bookings] --> M2[List all bookings]
+    M3[POST /api/bookings] --> M4[Create booking PENDING]
+    M5[PUT /api/bookings/id] --> M6[Update status<br/>CONFIRMED / SEATED / COMPLETED / CANCELLED / NO_SHOW]
+  end
+
+  subgraph voice [Vapi Voice Assistant]
+    V1[Customer calls] --> V2[Vapi assistant]
+    V2 --> V3[GET /api/vapi-booking-tool<br/>load context]
+    V2 --> V4[POST /api/vapi-booking-tool<br/>create booking via tool call]
+    V4 --> V5[Booking in DB]
+  end
+```
+
+Booking status progression (typical): `PENDING` → `CONFIRMED` → `SEATED` → `COMPLETED`. Can jump to `CANCELLED` or `NO_SHOW` at any point.
+
+---
+
+## Flow: Table sessions
+
+A **table session** groups all orders during one seating period.
+
+```mermaid
+stateDiagram-v2
+  [*] --> ACTIVE: POST /api/table-sessions/create<br/>or first POS order
+  ACTIVE --> CLOSED: Cashier mark-paid<br/>closes session
+  ACTIVE --> CHECKOUT_PENDING: optional intermediate
+```
+
+| API | Purpose |
+| --- | ------- |
+| `POST /api/table-sessions/create` | Get-or-create ACTIVE session for a table |
+| `GET /api/table-sessions/active/{table_id}` | Current active session with orders |
+| `GET /api/table-sessions/{session_id}` | Full session detail |
+| `GET /api/table-sessions?status=ACTIVE` | List active sessions (cashier) |
+
+---
+
+## Flow: Staff, roster & leave
+
+```mermaid
+flowchart LR
+  subgraph staff [Staff CRUD]
+    S1[GET/POST /api/staff] --> S2[Staff profiles]
+    S3[PATCH /api/staff/id] --> S4[Update role, rate, availability]
+  end
+
+  subgraph roster [Weekly Roster]
+    R1[GET /api/shift?startDate&endDate] --> R2[Shifts for week]
+    R3[POST /api/shift] --> R4[Add shift]
+    R5[POST /api/shift/createmany] --> R6[Bulk from AI agent]
+    R7[POST /api/roster-agent] --> R5
+  end
+
+  subgraph leave [Leave Requests]
+    L1[GET/POST /api/leave-requests] --> L2[Submit leave]
+    L3[PUT /api/leave-requests/id] --> L4[Approve / reject]
+  end
+```
+
+Staff images: upload to Cloudinary from client → save URL via `PATCH /api/staff/{id}` (`profile_photo_url`).
+
+---
+
+## Flow: Menu management
+
+```mermaid
+flowchart TB
+  GET[GET /api/menu] --> DISPLAY[POS / QR / Kitchen read menu]
+  POST[POST /api/menu] --> CREATE[Create item + upsert category]
+  PUT[PUT /api/menu/id] --> UPDATE[Update item]
+  PATCH[PATCH /api/menu/update_availability/id] --> AVAIL[Toggle isAvailable]
+  OPT[POST/PUT menu_item_options] --> OPTIONS[Manage add-ons]
+  CAT[GET/POST /api/menu/category] --> CATEGORIES[Category list]
+```
+
+POS and QR ordering both read the same `GET /api/menu`. Setting `isAvailable=false` hides item from new orders.
+
+---
+
+## Flow: Stock management
+
+REST-only (no WebSocket). CRUD on `StockItem` records.
+
+| API | Action |
+| --- | ------ |
+| `GET /api/stock` | List all stock |
+| `POST /api/stock` | Add item |
+| `PUT /api/stock/{id}` | Update `currentStock` |
+| `DELETE /api/stock/{id}` | Remove item |
+
+QR label pages use `BASE_URL` to generate links to stock update pages.
+
+---
+
+## Flow: Dashboard analytics
+
+All read-only aggregations under `GET /api/dashboard/stats/*`:
+
+| Endpoint | Data |
+| -------- | ---- |
+| `weekly-kpi` | Revenue, order count, bookings, shift cost |
+| `revenue-trend` | Chart series |
+| `popular-items` | Top sellers |
+| `soldbycategory` | Category breakdown |
+| `recent-order` | Latest orders summary |
+| `roster-overview` | Staff/shift/leave counts |
+
+---
+
+## Flow: AI agents
+
+```mermaid
+sequenceDiagram
+  participant U as Dashboard User
+  participant API as Nitro API
+  participant AI as OpenAI Agents
+
+  U->>API: POST /api/roster-agent { message }
+  API->>AI: Generate shift plan
+  AI-->>API: shifts[] + assistantMessage
+  API-->>U: Structured shifts
+  U->>API: POST /api/shift/createmany { data: shifts }
+
+  U->>API: POST /api/restoquick-agent { messages }
+  API->>AI: Streaming chat + tools
+  API-->>U: text/plain stream
+```
+
+Requires `OPENAI_API_KEY`. Main assistant optionally uses `COMPOSIO_API_KEY` for MCP tools.
+
+---
+
+## Native app implementation guide
+
+### Recommended screen → API mapping
+
+| Native screen | Bootstrap APIs | Realtime | Mutation APIs |
+| ------------- | -------------- | -------- | ------------- |
+| **Kitchen display** | `GET /api/orders/pending`, `GET /api/orders/completed` | `WS /api/websocket` | `PATCH /api/orders/{id}/status` |
+| **POS** | `GET /api/menu`, `GET /api/tables`, `POST /api/table-sessions/create` | — | `POST /api/orders/pos/dining`, `POST /api/orders/pos/takeaway` |
+| **Cashier — tables** | `GET /api/table-sessions?status=ACTIVE`, checkout GET | — | `POST /api/orders/checkout/table/mark-paid` |
+| **Cashier — takeaway** | `GET /api/orders/takeaway-unpaid` | — | `POST /api/orders/checkout/takeaway/closesales` |
+| **Orders list** | `GET /api/orders?range=day` | — | `PATCH /api/orders/{id}/status`, order item mutations |
+| **Bookings** | `GET /api/bookings` | — | `POST /api/bookings`, `PUT /api/bookings/{id}` |
+| **Menu admin** | `GET /api/menu`, `GET /api/menu/category` | — | menu CRUD routes |
+| **Staff / roster** | `GET /api/staff`, `GET /api/shift` | — | staff/shift/leave routes |
+| **Dashboard home** | `GET /api/dashboard/stats/*` | — | — |
+
+### Native client checklist
+
+1. **Clerk auth** — sign in, attach token to all requests
+2. **Same-origin WebSocket** — derive WS URL from REST base URL (see WebSocket section)
+3. **Bootstrap then subscribe** — always REST-fetch before relying on WebSocket
+4. **Optimistic UI** — update local state after successful PATCH; WebSocket confirms for other devices
+5. **Reconnect strategy** — on WS disconnect, retry 3× then re-fetch pending orders
+6. **Cents everywhere** — divide by 100 only for display
+7. **Idempotent event handling** — check order `id` before add; filter before remove
+
+### WebSocket URL helper
+
+```ts
+function kitchenWebSocketUrl(apiBaseUrl: string): string {
+  const url = new URL(apiBaseUrl);
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  url.pathname = "/api/websocket";
+  url.search = "";
+  return url.toString();
+}
+```
+
+---
+
+## Feature → API quick map
+
+| Feature | Key endpoints |
+| ------- | ------------- |
+| Create dining order | `POST /api/orders/pos/dining` |
+| Create takeaway order | `POST /api/orders/pos/takeaway` |
+| Customer QR pay | `POST /api/stripe-checkout` → `GET /api/stripe-checkout/session-status` |
+| Kitchen queue | `GET /api/orders/pending` + `WS /api/websocket` |
+| Mark food ready | `PATCH /api/orders/{id}/status` `{ "status": "COMPLETED" }` |
+| Recall order | `PATCH /api/orders/{id}/status` `{ "status": "PENDING" }` |
+| Pay table bill | `POST /api/orders/checkout/table/mark-paid` |
+| Pay takeaway | `POST /api/orders/checkout/takeaway/closesales` |
+| Open table | `POST /api/table-sessions/create` |
+| Manage menu | `/api/menu/*` |
+| Manage bookings | `/api/bookings/*` |
+| Staff roster | `/api/staff/*`, `/api/shift/*`, `/api/leave-requests/*` |
+| Stock | `/api/stock/*` |
+| Analytics | `/api/dashboard/stats/*` |
+
+---
+
+# Part 2 — API reference
+
+This section describes every HTTP API route exposed by the Nuxt/Nitro backend under `server/api/`. Enum values are taken from the authoritative Prisma schema (`prisma/schema.prisma`).
+
+- Base URL: `<host>`
+- Hosted (production) base URL: `https://restoquicknuxt-production.up.railway.app`
+- Content type: `application/json` unless noted
+- All routes are protected by Clerk auth middleware unless explicitly marked public (see [Authentication](#authentication)).
 
 ---
 
@@ -274,12 +926,12 @@ The WebSocket channel is **kitchen-specific**. It broadcasts order lifecycle eve
 
 ### Connection
 
-| Item | Value |
-| ---- | ----- |
-| **Endpoint** | `WS /api/websocket` |
-| **Production URL** | `wss://restoquicknuxt-production.up.railway.app/api/websocket` |
-| **Local dev URL** | `ws://localhost:3000/api/websocket` |
-| **URL rule** | Derive from the same **host** used for REST. Convert `https://` → `wss://`, `http://` → `ws://`, then append `/api/websocket`. Do **not** use a separate websocket host unless it is guaranteed to be the same server process that handles your REST calls. |
+| Item               | Value                                                                                                                                                                                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Endpoint**       | `WS /api/websocket`                                                                                                                                                                                                                                         |
+| **Production URL** | `wss://restoquicknuxt-production.up.railway.app/api/websocket`                                                                                                                                                                                              |
+| **Local dev URL**  | `ws://localhost:3000/api/websocket`                                                                                                                                                                                                                         |
+| **URL rule**       | Derive from the same **host** used for REST. Convert `https://` → `wss://`, `http://` → `ws://`, then append `/api/websocket`. Do **not** use a separate websocket host unless it is guaranteed to be the same server process that handles your REST calls. |
 
 **Why same-host matters:** broadcasts are stored in an **in-memory peer set** on the server instance that handled the HTTP request. If the native app calls REST on `localhost:3000` but connects WebSocket to production, it will never receive local broadcasts.
 
@@ -308,11 +960,11 @@ function kitchenWebSocketUrl(apiBaseUrl: string): string {
 
 These files implement the channel on the backend. A native client does not need to replicate them, but understanding them explains message timing and payload shape.
 
-| File | Role |
-| ---- | ---- |
-| `server/api/websocket.ts` | WebSocket handler (Nitro experimental + `crossws`). Registers each client as a peer and subscribes it to room `"KITCHEN"`. Handles heartbeat. |
-| `server/utils/kitchenSocket.ts` | In-memory `Set` of connected peers. `broadCast(data)` iterates all peers and `send(JSON.stringify(data))`. |
-| `nuxt.config.ts` | `nitro.experimental.websocket: true` enables the handler. |
+| File                            | Role                                                                                                                                          |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server/api/websocket.ts`       | WebSocket handler (Nitro experimental + `crossws`). Registers each client as a peer and subscribes it to room `"KITCHEN"`. Handles heartbeat. |
+| `server/utils/kitchenSocket.ts` | In-memory `Set` of connected peers. `broadCast(data)` iterates all peers and `send(JSON.stringify(data))`.                                    |
+| `nuxt.config.ts`                | `nitro.experimental.websocket: true` enables the handler.                                                                                     |
 
 **Heartbeat (client → server):**
 
@@ -388,7 +1040,9 @@ Money fields remain in **cents**. Dates are ISO 8601 strings.
         "quantity": 2,
         "unitPriceCents": 1500,
         "specialInstructions": "Extra basil",
-        "menuItem": { /* ... */ },
+        "menuItem": {
+          /* ... */
+        },
         "orderItemOptions": []
       }
     ]
@@ -398,16 +1052,16 @@ Money fields remain in **cents**. Dates are ISO 8601 strings.
 
 ### Event catalogue — when each event is broadcast
 
-| Event | Triggered by (HTTP route) | DB change | Typical source |
-| ----- | ------------------------- | --------- | -------------- |
-| `ORDER_CREATED` | `POST /api/orders/pos/dining` | New order, `status = "PENDING"` | POS dining order |
-| `ORDER_CREATED` | `POST /api/orders/pos/takeaway` | New order, `status = "PENDING"` | POS takeaway order |
-| `ORDER_CREATED` | `GET /api/stripe-checkout/session-status?session_id=...` (on first successful completion) | New order, `status = "PENDING"`, `paymentStatus = "PAID"` | Customer QR/Stripe self-order |
-| `ORDER_MARKED_COMPLETED` | `POST /api/orders/checkout/table/mark-paid` | `status = "COMPLETED"`, `paymentStatus = "PAID"` | Cashier table checkout |
-| `ORDER_MARKED_COMPLETED` | `POST /api/orders/checkout/takeaway/closesales` | `status = "COMPLETED"`, `paymentStatus = "PAID"` | Cashier takeaway checkout |
-| `ORDER_MARKED_COMPLETED` | `PATCH /api/orders/{order_id}/status` with `{ "status": "COMPLETED" }` | `status = "COMPLETED"` | Kitchen "Mark as Completed", orders dashboard |
-| `ORDER_RECALL` | `PATCH /api/orders/{order_id}/status` with `{ "status": "PENDING" }` **only when previous status was `COMPLETED`** | `status = "PENDING"` | Kitchen "Recall to Kitchen" |
-| `ORDER_CANCELLED` | `PATCH /api/orders/{order_id}/status` with `{ "status": "CANCELLED" }` | `status = "CANCELLED"` | Orders dashboard cancel |
+| Event                    | Triggered by (HTTP route)                                                                                          | DB change                                                 | Typical source                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- | --------------------------------------------- |
+| `ORDER_CREATED`          | `POST /api/orders/pos/dining`                                                                                      | New order, `status = "PENDING"`                           | POS dining order                              |
+| `ORDER_CREATED`          | `POST /api/orders/pos/takeaway`                                                                                    | New order, `status = "PENDING"`                           | POS takeaway order                            |
+| `ORDER_CREATED`          | `GET /api/stripe-checkout/session-status?session_id=...` (on first successful completion)                          | New order, `status = "PENDING"`, `paymentStatus = "PAID"` | Customer QR/Stripe self-order                 |
+| `ORDER_MARKED_COMPLETED` | `POST /api/orders/checkout/table/mark-paid`                                                                        | `status = "COMPLETED"`, `paymentStatus = "PAID"`          | Cashier table checkout                        |
+| `ORDER_MARKED_COMPLETED` | `POST /api/orders/checkout/takeaway/closesales`                                                                    | `status = "COMPLETED"`, `paymentStatus = "PAID"`          | Cashier takeaway checkout                     |
+| `ORDER_MARKED_COMPLETED` | `PATCH /api/orders/{order_id}/status` with `{ "status": "COMPLETED" }`                                             | `status = "COMPLETED"`                                    | Kitchen "Mark as Completed", orders dashboard |
+| `ORDER_RECALL`           | `PATCH /api/orders/{order_id}/status` with `{ "status": "PENDING" }` **only when previous status was `COMPLETED`** | `status = "PENDING"`                                      | Kitchen "Recall to Kitchen"                   |
+| `ORDER_CANCELLED`        | `PATCH /api/orders/{order_id}/status` with `{ "status": "CANCELLED" }`                                             | `status = "CANCELLED"`                                    | Orders dashboard cancel                       |
 
 **Important:** changing status to `PENDING` from a non-`COMPLETED` state does **not** broadcast. Only the completed → pending transition emits `ORDER_RECALL`.
 
@@ -417,13 +1071,13 @@ Broadcasts are **best-effort** — failures are logged server-side but do not ro
 
 These REST calls bootstrap and mutate state; WebSocket keeps all connected clients in sync.
 
-| Purpose | Method | Endpoint | Notes |
-| ------- | ------ | -------- | ----- |
-| Load active kitchen queue | `GET` | `/api/orders/pending` | All orders where `status = "PENDING"`. Call on screen open and on pull-to-refresh. |
-| Load completed orders (last 24h) | `GET` | `/api/orders/completed` | All orders where `status = "COMPLETED"` and `createdAt` within 24 hours. |
-| Mark order complete (kitchen) | `PATCH` | `/api/orders/{order_id}/status` | Body: `{ "status": "COMPLETED" }`. Returns updated order. Broadcasts `ORDER_MARKED_COMPLETED`. |
-| Recall order to kitchen | `PATCH` | `/api/orders/{order_id}/status` | Body: `{ "status": "PENDING" }`. Only broadcasts `ORDER_RECALL` if order was `COMPLETED`. |
-| Cancel order | `PATCH` | `/api/orders/{order_id}/status` | Body: `{ "status": "CANCELLED" }`. Broadcasts `ORDER_CANCELLED`. |
+| Purpose                          | Method  | Endpoint                        | Notes                                                                                          |
+| -------------------------------- | ------- | ------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Load active kitchen queue        | `GET`   | `/api/orders/pending`           | All orders where `status = "PENDING"`. Call on screen open and on pull-to-refresh.             |
+| Load completed orders (last 24h) | `GET`   | `/api/orders/completed`         | All orders where `status = "COMPLETED"` and `createdAt` within 24 hours.                       |
+| Mark order complete (kitchen)    | `PATCH` | `/api/orders/{order_id}/status` | Body: `{ "status": "COMPLETED" }`. Returns updated order. Broadcasts `ORDER_MARKED_COMPLETED`. |
+| Recall order to kitchen          | `PATCH` | `/api/orders/{order_id}/status` | Body: `{ "status": "PENDING" }`. Only broadcasts `ORDER_RECALL` if order was `COMPLETED`.      |
+| Cancel order                     | `PATCH` | `/api/orders/{order_id}/status` | Body: `{ "status": "CANCELLED" }`. Broadcasts `ORDER_CANCELLED`.                               |
 
 ### Native client implementation guide
 
@@ -453,12 +1107,12 @@ on message:
 
 This mirrors the web reference implementation (`app/composables/useKitchenOrderEvents.ts`).
 
-| Event | Active queue (`pending`) | Completed list (24h) |
-| ----- | ------------------------ | -------------------- |
-| `ORDER_CREATED` | **Add** `payload` to end (skip if `id` already exists) | No change |
-| `ORDER_MARKED_COMPLETED` | **Remove** order where `id === payload.id` | **Prepend** `payload` if within last 24h and not already present |
-| `ORDER_RECALL` | **Add** `payload` (skip duplicates) | **Remove** order where `id === payload.id` |
-| `ORDER_CANCELLED` | **Remove** order where `id === payload.id` | **Remove** order where `id === payload.id` |
+| Event                    | Active queue (`pending`)                               | Completed list (24h)                                             |
+| ------------------------ | ------------------------------------------------------ | ---------------------------------------------------------------- |
+| `ORDER_CREATED`          | **Add** `payload` to end (skip if `id` already exists) | No change                                                        |
+| `ORDER_MARKED_COMPLETED` | **Remove** order where `id === payload.id`             | **Prepend** `payload` if within last 24h and not already present |
+| `ORDER_RECALL`           | **Add** `payload` (skip duplicates)                    | **Remove** order where `id === payload.id`                       |
+| `ORDER_CANCELLED`        | **Remove** order where `id === payload.id`             | **Remove** order where `id === payload.id`                       |
 
 **24-hour filter for completed list (client-side):**
 
@@ -534,11 +1188,11 @@ Kitchen client   Server                    Other kitchen clients
 
 The web client exposes three states derived from the WebSocket library:
 
-| State | Meaning | Suggested native UI |
-| ----- | ------- | ------------------- |
-| `CONNECTING` | Handshake in progress | Gray indicator, "Connecting…" |
-| `OPEN` | Connected, heartbeat active | Green indicator, "Connected" |
-| `CLOSED` | Disconnected | Red indicator, "Not Connected" |
+| State        | Meaning                     | Suggested native UI            |
+| ------------ | --------------------------- | ------------------------------ |
+| `CONNECTING` | Handshake in progress       | Gray indicator, "Connecting…"  |
+| `OPEN`       | Connected, heartbeat active | Green indicator, "Connected"   |
+| `CLOSED`     | Disconnected                | Red indicator, "Not Connected" |
 
 ### Limitations and production notes
 
@@ -550,13 +1204,13 @@ The web client exposes three states derived from the WebSocket library:
 
 ### Reference: web client files
 
-| File | Purpose |
-| ---- | ------- |
-| `app/composables/useKitchenWebSocket.ts` | WebSocket URL (same-origin), heartbeat, `onMessage` parsing |
-| `app/composables/useKitchenOrderEvents.ts` | Event → state mutation mapping |
-| `app/pages/Dashboard/kitchen/index.vue` | Active queue screen |
-| `app/components/kitchenDisplay_components/Completed_Orders/Complete_Order_Popup.vue` | Completed orders modal |
-| `types/websocket_payload.ts` | Event type definitions |
+| File                                                                                 | Purpose                                                     |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| `app/composables/useKitchenWebSocket.ts`                                             | WebSocket URL (same-origin), heartbeat, `onMessage` parsing |
+| `app/composables/useKitchenOrderEvents.ts`                                           | Event → state mutation mapping                              |
+| `app/pages/Dashboard/kitchen/index.vue`                                              | Active queue screen                                         |
+| `app/components/kitchenDisplay_components/Completed_Orders/Complete_Order_Popup.vue` | Completed orders modal                                      |
+| `types/websocket_payload.ts`                                                         | Event type definitions                                      |
 
 ### Minimal native pseudocode (complete kitchen screen)
 
@@ -581,15 +1235,17 @@ class KitchenScreen {
     const event = JSON.parse(raw) as WebSocketPayload;
     switch (event.type) {
       case "ORDER_CREATED":
-        if (!this.activeQueue.find(o => o.id === event.payload.id))
+        if (!this.activeQueue.find((o) => o.id === event.payload.id))
           this.activeQueue.push(event.payload);
         break;
       case "ORDER_MARKED_COMPLETED":
       case "ORDER_CANCELLED":
-        this.activeQueue = this.activeQueue.filter(o => o.id !== event.payload.id);
+        this.activeQueue = this.activeQueue.filter(
+          (o) => o.id !== event.payload.id,
+        );
         break;
       case "ORDER_RECALL":
-        if (!this.activeQueue.find(o => o.id === event.payload.id))
+        if (!this.activeQueue.find((o) => o.id === event.payload.id))
           this.activeQueue.push(event.payload);
         break;
     }
@@ -598,7 +1254,7 @@ class KitchenScreen {
 
   async markComplete(orderId: string) {
     await api.patch(`/api/orders/${orderId}/status`, { status: "COMPLETED" });
-    this.activeQueue = this.activeQueue.filter(o => o.id !== orderId);
+    this.activeQueue = this.activeQueue.filter((o) => o.id !== orderId);
     this.render();
   }
 }
@@ -1174,7 +1830,7 @@ Machine-to-machine endpoints used by the Vapi voice assistant.
 
 ---
 
-## AI agents
+## AI agents {#ai-agents-1}
 
 ### `POST /api/restoquick-agent`
 

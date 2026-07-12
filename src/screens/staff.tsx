@@ -8,7 +8,7 @@ import { formatDate } from '@/utils/format-date';
 
 const STAFF_API_URL = apiUrl('/api/staff');
 
-// Types mirror the RestoQuick API contract (see API_REFERENCE.md → Staff / Enums).
+// Types mirror the RestoQuick API contract (see RESTOQUICK_DOC.md → Staff / Enums).
 type Role = 'Chef' | 'Waiter' | 'Bartender' | 'Manager' | 'Cook' | 'Kitchen_Hand';
 type EmploymentType = 'PartTime' | 'FullTime' | 'Casual';
 type WeekDay = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
