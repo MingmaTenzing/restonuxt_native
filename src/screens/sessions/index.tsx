@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, TextInput, useColorScheme, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import type { Order, PaymentMethod } from '@/screens/orders/types';
 import { apiUrl } from '@/utils/api';
 
@@ -186,6 +188,7 @@ export default function SessionsScreen() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const queryClient = useQueryClient();
   const isDark = useColorScheme() === 'dark';
+  const { isTablet, fabStyle } = useResponsiveLayout();
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<SessionStatusFilter>('ACTIVE');
   const [isCreateVisible, setCreateVisible] = useState(false);
@@ -353,13 +356,12 @@ export default function SessionsScreen() {
 
   return (
     <>
-      <ScrollView
-        className="flex-1 bg-background dark:bg-background-dark"
-        contentContainerClassName="gap-6 px-5 py-7"
-        contentInsetAdjustmentBehavior="automatic"
-        keyboardDismissMode="on-drag">
+      <ScreenScroll bottomInset={72}>
         <View className="gap-2">
-          <Text className="text-4xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+          <Text
+            className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+              isTablet ? 'text-3xl' : 'text-4xl'
+            }`}>
             Sessions
           </Text>
           <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
@@ -456,18 +458,21 @@ export default function SessionsScreen() {
           </View>
         ) : null}
 
-        {filteredSessions.map((session) => (
-          <SessionCard key={session.id} session={session} onPress={() => openDetail(session)} />
-        ))}
-      </ScrollView>
+        <ResponsiveCardGrid>
+          {filteredSessions.map((session) => (
+            <SessionCard key={session.id} session={session} onPress={() => openDetail(session)} />
+          ))}
+        </ResponsiveCardGrid>
+      </ScreenScroll>
 
       <Pressable
         onPress={openCreate}
         accessibilityRole="button"
         accessibilityLabel="Open session"
         hitSlop={8}
-        className="absolute bottom-24 right-6 h-14 w-14 items-center justify-center rounded-full bg-primary active:opacity-80 dark:bg-primary-dark"
+        className="absolute h-14 w-14 items-center justify-center rounded-full bg-primary active:opacity-80 dark:bg-primary-dark"
         style={{
+          ...fabStyle,
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.25)',
         }}>
         <Ionicons name="add" size={30} color={isDark ? '#18181B' : '#FAFAFA'} />

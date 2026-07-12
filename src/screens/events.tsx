@@ -1,7 +1,9 @@
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { BarChart } from '@/components/bar-chart';
+import { ScreenScroll } from '@/components/screen-scroll';
 import { Table, TableCell, TableRow } from '@/components/table';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { formatDate } from '@/utils/format-date';
 import { pluralize } from '@/utils/pluralize';
 
@@ -12,13 +14,15 @@ const events = [
 ];
 
 export default function EventsScreen() {
+  const { isTablet } = useResponsiveLayout();
+
   return (
-    <ScrollView
-      className="flex-1 bg-background dark:bg-background-dark"
-      contentContainerClassName="gap-6 px-5 py-7"
-      contentInsetAdjustmentBehavior="automatic">
+    <ScreenScroll>
       <View className="gap-2">
-        <Text className="text-4xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+        <Text
+          className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+            isTablet ? 'text-3xl' : 'text-4xl'
+          }`}>
           Events
         </Text>
         <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
@@ -36,6 +40,6 @@ export default function EventsScreen() {
           </TableRow>
         ))}
       </Table>
-    </ScrollView>
+    </ScreenScroll>
   );
 }

@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, Text, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { Pressable, Text, useColorScheme, View } from 'react-native';
+
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 
 import type { BookingFilter, BookingStats } from './booking-stats';
 
@@ -53,9 +55,8 @@ const STAT_ITEMS: {
   { key: 'guests', label: 'Total guests', valueKey: 'totalGuests' },
 ];
 
-const HORIZONTAL_PADDING = 40; // matches px-5 on the bookings screen
+const HORIZONTAL_PADDING = 40;
 const CARD_GAP = 12;
-const WIDE_LAYOUT_MIN_WIDTH = 640;
 
 function StatCard({
   label,
@@ -109,12 +110,9 @@ function StatCard({
 }
 
 export function BookingStatsRow({ stats }: { stats: BookingStats }) {
-  const { width: screenWidth } = useWindowDimensions();
-  const isWide = screenWidth >= WIDE_LAYOUT_MIN_WIDTH;
-  const columns = isWide ? 4 : 2;
-  const cardWidth = Math.floor(
-    (screenWidth - HORIZONTAL_PADDING - CARD_GAP * (columns - 1)) / columns
-  );
+  const { isTablet, contentWidth } = useResponsiveLayout();
+  const columns = isTablet ? 4 : 2;
+  const cardWidth = Math.floor((contentWidth - HORIZONTAL_PADDING - CARD_GAP * (columns - 1)) / columns);
 
   return (
     <View className="flex-row flex-wrap" style={{ gap: CARD_GAP }}>

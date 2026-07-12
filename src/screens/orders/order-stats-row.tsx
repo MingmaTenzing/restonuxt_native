@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Text, useColorScheme, View } from 'react-native';
 
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
+
 import { formatMoney } from '@/utils/format-money';
 
 import type { OrderStats } from './order-stats';
@@ -41,6 +43,9 @@ function MetricCard({
 
 export function OrderStatsRow({ stats }: { stats: OrderStats }) {
   const isDark = useColorScheme() === 'dark';
+  const { isTablet, contentWidth, horizontalPadding, gridGap } = useResponsiveLayout();
+  const metricWidth = (contentWidth - horizontalPadding * 2 - gridGap) / 2;
+
   return (
     <View className="gap-3">
       {/* Revenue is the signature metric — given its own full-width, high-contrast card. */}
@@ -50,7 +55,7 @@ export function OrderStatsRow({ stats }: { stats: OrderStats }) {
         <Text className="text-xs font-medium uppercase tracking-wider text-neutral-300">
           Revenue today
         </Text>
-        <Text className="text-4xl font-semibold tracking-tight text-white">
+        <Text className={`font-semibold tracking-tight text-white ${isTablet ? 'text-5xl' : 'text-4xl'}`}>
           {formatMoney(stats.todayRevenueCents)}
         </Text>
         <Text className="text-sm text-neutral-400">
@@ -58,21 +63,25 @@ export function OrderStatsRow({ stats }: { stats: OrderStats }) {
         </Text>
       </View>
 
-      <View className="flex-row gap-3">
-        <MetricCard
-          label="Pending"
-          value={stats.pendingCount}
-          iconName="time-outline"
-          iconColor={isDark ? '#FBBF24' : '#B45309'}
-          accentWrap="bg-amber-100 dark:bg-amber-500/15"
-        />
-        <MetricCard
-          label="Unpaid"
-          value={stats.unpaidCount}
-          iconName="card-outline"
-          iconColor={isDark ? '#F87171' : '#B91C1C'}
-          accentWrap="bg-red-100 dark:bg-red-500/15"
-        />
+      <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
+        <View style={{ width: metricWidth }}>
+          <MetricCard
+            label="Pending"
+            value={stats.pendingCount}
+            iconName="time-outline"
+            iconColor={isDark ? '#FBBF24' : '#B45309'}
+            accentWrap="bg-amber-100 dark:bg-amber-500/15"
+          />
+        </View>
+        <View style={{ width: metricWidth }}>
+          <MetricCard
+            label="Unpaid"
+            value={stats.unpaidCount}
+            iconName="card-outline"
+            iconColor={isDark ? '#F87171' : '#B91C1C'}
+            accentWrap="bg-red-100 dark:bg-red-500/15"
+          />
+        </View>
       </View>
     </View>
   );

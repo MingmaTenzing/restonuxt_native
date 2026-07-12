@@ -1,9 +1,11 @@
 import { useAuth } from '@clerk/expo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { apiUrl } from '@/utils/api';
 
 import { AddBookingModal } from './add-booking-modal';
@@ -49,6 +51,7 @@ export default function BookingsScreen() {
   const queryClient = useQueryClient();
   const [isModalVisible, setModalVisible] = useState(false);
   const [filter, setFilter] = useState<BookingFilter>('today');
+  const { isTablet, fabStyle } = useResponsiveLayout();
 
   const {
     data: bookings = [],
@@ -106,12 +109,12 @@ export default function BookingsScreen() {
 
   return (
     <>
-      <ScrollView
-        className="flex-1 bg-background dark:bg-background-dark"
-        contentContainerClassName="gap-6 px-5 py-7"
-        contentInsetAdjustmentBehavior="automatic">
+      <ScreenScroll bottomInset={72}>
         <View className="gap-2">
-          <Text className="text-4xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+          <Text
+            className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+              isTablet ? 'text-3xl' : 'text-4xl'
+            }`}>
             Bookings
           </Text>
           <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
@@ -161,20 +164,21 @@ export default function BookingsScreen() {
           </View>
         ) : null}
 
-        <View className="gap-3">
+        <ResponsiveCardGrid>
           {visibleBookings.map((booking) => (
             <BookingCard key={booking.id} booking={booking} />
           ))}
-        </View>
-      </ScrollView>
+        </ResponsiveCardGrid>
+      </ScreenScroll>
 
       <Pressable
         onPress={() => setModalVisible(true)}
         accessibilityRole="button"
         accessibilityLabel="Add booking"
         hitSlop={8}
-        className="absolute bottom-24 right-6 h-14 w-14 items-center justify-center rounded-full bg-primary active:opacity-80 dark:bg-primary-dark"
+        className="absolute h-14 w-14 items-center justify-center rounded-full bg-primary active:opacity-80 dark:bg-primary-dark"
         style={{
+          ...fabStyle,
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.25)',
         }}>
         <Text className="text-3xl font-light leading-none text-primary-foreground dark:text-primary-foreground-dark">

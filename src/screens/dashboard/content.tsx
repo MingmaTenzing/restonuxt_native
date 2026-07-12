@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@clerk/expo';
 import { useQuery } from '@tanstack/react-query';
-import { ScrollView, Text, useColorScheme, View } from 'react-native';
+import { Text, useColorScheme, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { ScreenScroll } from '@/components/screen-scroll';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { apiUrl } from '@/utils/api';
 import { formatDate } from '@/utils/format-date';
 import { formatMoney } from '@/utils/format-money';
@@ -188,18 +190,25 @@ function MetricCard({
   value,
   detail,
   iconName,
+  width,
 }: {
   label: string;
   value: string;
   detail: string;
   iconName: keyof typeof Ionicons.glyphMap;
+  width?: number;
 }) {
   const isDark = useColorScheme() === 'dark';
 
   return (
     <View
-      className="flex-1 gap-4 rounded-3xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
-      style={{ borderCurve: 'continuous', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}>
+      className="gap-4 rounded-3xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+      style={{
+        width,
+        flex: width ? undefined : 1,
+        borderCurve: 'continuous',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+      }}>
       <View className="flex-row items-center justify-between">
         <Text className="text-xs font-semibold uppercase tracking-wide text-muted-foreground dark:text-muted-foreground-dark">
           {label}
@@ -429,6 +438,10 @@ function RosterCard({ roster }: { roster: RosterOverview }) {
 
 export function DashboardContent() {
   const { getToken } = useAuth();
+  const { isTablet, isLargeTablet, contentWidth, horizontalPadding, gridGap } = useResponsiveLayout();
+  const metricColumns = isLargeTablet ? 4 : 2;
+  const metricCardWidth =
+    (contentWidth - horizontalPadding * 2 - gridGap * (metricColumns - 1)) / metricColumns;
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
@@ -448,14 +461,14 @@ export function DashboardContent() {
   };
 
   return (
-    <ScrollView
-      className="flex-1 bg-background dark:bg-background-dark"
-      contentContainerClassName="gap-6 px-5 py-7"
-      contentInsetAdjustmentBehavior="automatic">
+    <ScreenScroll>
       <View className="gap-3">
         <View className="flex-row items-start justify-between gap-4">
           <View className="flex-1 gap-2">
-            <Text className="text-4xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+            <Text
+              className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+                isTablet ? 'text-3xl' : 'text-4xl'
+              }`}>
               Dashboard
             </Text>
             <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
@@ -488,55 +501,88 @@ export function DashboardContent() {
         </View>
       ) : null}
 
-      <View className="flex-row flex-wrap gap-3">
+      <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
         <MetricCard
           label="Revenue"
           value={formatMoney(stats.weeklyKpi.revenueCents)}
           detail={isLoading ? 'Loading...' : 'This week'}
           iconName="cash-outline"
+          width={metricCardWidth}
         />
         <MetricCard
           label="Orders"
           value={compactNumber(stats.weeklyKpi.weeklyOrderCount)}
           detail="This week"
           iconName="receipt-outline"
+          width={metricCardWidth}
         />
-      </View>
-
-      <View className="flex-row flex-wrap gap-3">
         <MetricCard
           label="Bookings"
           value={compactNumber(stats.weeklyKpi.todayBookingsCount)}
           detail="Today"
           iconName="calendar-outline"
+          width={metricCardWidth}
         />
         <MetricCard
           label="Shift cost"
           value={formatMoney(stats.weeklyKpi.weeklyShiftCostCents)}
           detail="Scheduled week"
           iconName="people-outline"
+          width={metricCardWidth}
         />
       </View>
 
-      <Section title="Revenue trend" action={isFetching ? 'Refreshing' : 'Last 7 points'}>
-        <RevenueTrendCard points={stats.revenueTrend} />
-      </Section>
+      {isTablet ? (
+        <View className="flex-row gap-4">
+          <View className="flex-1">
+            <Section title="Revenue trend" action={isFetching ? 'Refreshing' : 'Last 7 points'}>
+              <RevenueTrendCard points={stats.revenueTrend} />
+            </Section>
+          </View>
+          <View className="flex-1">
+            <Section title="Sales by category">
+              <CategoryShare categories={stats.soldByCategory} />
+            </Section>
+          </View>
+        </View>
+      ) : (
+        <>
+          <Section title="Revenue trend" action={isFetching ? 'Refreshing' : 'Last 7 points'}>
+            <RevenueTrendCard points={stats.revenueTrend} />
+          </Section>
+          <Section title="Sales by category">
+            <CategoryShare categories={stats.soldByCategory} />
+          </Section>
+        </>
+      )}
 
       <Section title="Operations">
         <RosterCard roster={stats.rosterOverview} />
       </Section>
 
-      <Section title="Sales by category">
-        <CategoryShare categories={stats.soldByCategory} />
-      </Section>
-
-      <Section title="Popular items">
-        <PopularItems items={stats.popularItems} />
-      </Section>
-
-      <Section title="Recent orders">
-        <RecentOrders orders={stats.recentOrders} />
-      </Section>
-    </ScrollView>
+      {isTablet ? (
+        <View className="flex-row gap-4">
+          <View className="flex-1">
+            <Section title="Popular items">
+              <PopularItems items={stats.popularItems} />
+            </Section>
+          </View>
+          <View className="flex-1">
+            <Section title="Recent orders">
+              <RecentOrders orders={stats.recentOrders} />
+            </Section>
+          </View>
+        </View>
+      ) : (
+        <>
+          <Section title="Popular items">
+            <PopularItems items={stats.popularItems} />
+          </Section>
+          <Section title="Recent orders">
+            <RecentOrders orders={stats.recentOrders} />
+          </Section>
+        </>
+      )}
+    </ScreenScroll>
   );
 }

@@ -1,8 +1,10 @@
 import { useAuth } from '@clerk/expo';
 import { useQuery } from '@tanstack/react-query';
-import { Image, ScrollView, Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { apiUrl } from '@/utils/api';
 import { formatDate } from '@/utils/format-date';
 
@@ -132,6 +134,7 @@ function StaffCard({ member }: { member: StaffMember }) {
 
 export default function StaffScreen() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { isTablet } = useResponsiveLayout();
 
   const {
     data: staff = [],
@@ -173,12 +176,12 @@ export default function StaffScreen() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background dark:bg-background-dark"
-      contentContainerClassName="gap-6 px-5 py-7"
-      contentInsetAdjustmentBehavior="automatic">
+    <ScreenScroll>
       <View className="gap-2">
-        <Text className="text-4xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+        <Text
+          className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+            isTablet ? 'text-3xl' : 'text-4xl'
+          }`}>
           Staff
         </Text>
         <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
@@ -212,11 +215,11 @@ export default function StaffScreen() {
         </View>
       ) : null}
 
-      <View className="gap-3">
+      <ResponsiveCardGrid>
         {staff.map((member) => (
           <StaffCard key={member.id} member={member} />
         ))}
-      </View>
-    </ScrollView>
+      </ResponsiveCardGrid>
+    </ScreenScroll>
   );
 }

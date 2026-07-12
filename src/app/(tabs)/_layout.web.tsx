@@ -7,6 +7,8 @@ export default function TabLayout() {
       <Tabs.Screen name="events" options={{ title: 'Events' }} />
       <Tabs.Screen name="bookings" options={{ title: 'Bookings' }} />
       <Tabs.Screen name="orders" options={{ title: 'Orders' }} />
+      <Tabs.Screen name="pos" options={{ title: 'POS' }} />
+      <Tabs.Screen name="cashier" options={{ title: 'Cashier' }} />
       <Tabs.Screen name="kitchen" options={{ title: 'Kitchen' }} />
       <Tabs.Screen name="tables" options={{ title: 'Tables' }} />
       <Tabs.Screen name="sessions" options={{ title: 'Sessions' }} />

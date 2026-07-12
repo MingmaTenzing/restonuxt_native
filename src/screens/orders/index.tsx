@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { apiUrl } from '@/utils/api';
 
 import { OrderCard } from './order-card';
@@ -32,6 +34,7 @@ async function fetchOrders(token: string, range: OrderRange): Promise<Order[]> {
 export default function OrdersScreen() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
+  const { isTablet } = useResponsiveLayout();
   const [range, setRange] = useState<OrderRange>('day');
   const [query, setQuery] = useState('');
 
@@ -78,13 +81,12 @@ export default function OrdersScreen() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background dark:bg-background-dark"
-      contentContainerClassName="gap-6 px-5 py-7"
-      contentInsetAdjustmentBehavior="automatic"
-      keyboardDismissMode="on-drag">
+    <ScreenScroll>
       <View className="gap-2">
-        <Text className="text-4xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+        <Text
+          className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+            isTablet ? 'text-3xl' : 'text-4xl'
+          }`}>
           Orders
         </Text>
         <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
@@ -141,7 +143,7 @@ export default function OrdersScreen() {
         </View>
       ) : null}
 
-      <View className="gap-3">
+      <ResponsiveCardGrid>
         {visibleOrders.map((order) => (
           <OrderCard
             key={order.id}
@@ -149,7 +151,7 @@ export default function OrdersScreen() {
             onPress={() => router.push(`/order/${order.id}`)}
           />
         ))}
-      </View>
-    </ScrollView>
+      </ResponsiveCardGrid>
+    </ScreenScroll>
   );
 }

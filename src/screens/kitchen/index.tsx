@@ -6,11 +6,11 @@ import {
   RefreshControl,
   ScrollView,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 
 import { Button } from '@/components/button';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { useKitchenWebSocket } from '@/hooks/use-kitchen-websocket';
 import {
   fetchCompletedOrders,
@@ -29,9 +29,6 @@ import type { KitchenConnectionState, KitchenQueueTab } from '@/screens/kitchen/
 import type { Order } from '@/screens/orders/types';
 
 import { KitchenOrderCard } from './kitchen-order-card';
-
-const HORIZONTAL_PADDING = 20;
-const GRID_GAP = 16;
 
 function ConnectionBadge({ state }: { state: KitchenConnectionState }) {
   const styles: Record<KitchenConnectionState, { dot: string; label: string; text: string }> = {
@@ -117,17 +114,11 @@ function QueueTabs({
 export default function KitchenScreen() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const queryClient = useQueryClient();
-  const { width } = useWindowDimensions();
+  const { cardWidth, gridGap, isTablet, scrollContentStyle } = useResponsiveLayout();
   const [activeTab, setActiveTab] = useState<KitchenQueueTab>('active');
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(() => new Set());
   const [pendingActionOrderId, setPendingActionOrderId] = useState<string | null>(null);
   const newOrderTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
-
-  const numColumns = width >= 1100 ? 3 : width >= 720 ? 2 : 1;
-  const cardWidth =
-    numColumns === 1
-      ? width - HORIZONTAL_PADDING * 2
-      : (width - HORIZONTAL_PADDING * 2 - GRID_GAP * (numColumns - 1)) / numColumns;
 
   const withToken = useCallback(async () => {
     const token = await getToken();
@@ -310,7 +301,10 @@ export default function KitchenScreen() {
       <View className="gap-4 border-b border-neutral-200/80 px-5 pb-4 pt-7 dark:border-border-dark">
         <View className="flex-row items-start justify-between gap-4">
           <View className="flex-1 gap-1">
-            <Text className="text-4xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+            <Text
+              className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+                isTablet ? 'text-3xl' : 'text-4xl'
+              }`}>
               Kitchen
             </Text>
             <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
@@ -359,9 +353,8 @@ export default function KitchenScreen() {
       ) : (
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: HORIZONTAL_PADDING,
-            paddingVertical: 20,
-            gap: GRID_GAP,
+            ...scrollContentStyle,
+            paddingBottom: 20,
           }}
           contentInsetAdjustmentBehavior="automatic"
           refreshControl={
@@ -386,7 +379,7 @@ export default function KitchenScreen() {
               </Text>
             </View>
           ) : (
-            <View className="flex-row flex-wrap" style={{ gap: GRID_GAP }}>
+            <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
               {visibleOrders.map((order) => (
                 <View key={order.id} style={{ width: cardWidth }}>
                   <KitchenOrderCard

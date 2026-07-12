@@ -34,11 +34,13 @@ describe('order-queue', () => {
   });
 
   test('completed queue keeps unique recent orders', () => {
+    const recent = new Date().toISOString();
     const completed = makeOrder({
       id: 'done-1',
       orderNo: 9,
       status: 'COMPLETED',
-      updatedAt: '2026-07-10T12:30:00.000Z',
+      createdAt: recent,
+      updatedAt: recent,
     });
 
     const result = prependCompletedOrder(
@@ -47,7 +49,8 @@ describe('order-queue', () => {
         id: 'done-1',
         orderNo: 9,
         status: 'COMPLETED',
-        updatedAt: '2026-07-10T12:31:00.000Z',
+        createdAt: recent,
+        updatedAt: new Date(Date.now() + 60_000).toISOString(),
       }),
     );
 

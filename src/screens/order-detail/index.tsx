@@ -1,9 +1,11 @@
 import { useAuth } from '@clerk/expo';
 import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { ScreenScroll } from '@/components/screen-scroll';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { apiUrl } from '@/utils/api';
 import { formatMoney } from '@/utils/format-money';
 
@@ -129,6 +131,7 @@ function ItemRow({ item }: { item: OrderItem }) {
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { isTablet } = useResponsiveLayout();
 
   const {
     data: order,
@@ -157,10 +160,7 @@ export default function OrderDetailScreen() {
           headerBackTitle: 'Orders',
         }}
       />
-      <ScrollView
-        className="flex-1 bg-background dark:bg-background-dark"
-        contentContainerClassName="gap-6 px-5 py-7"
-        contentInsetAdjustmentBehavior="automatic">
+      <ScreenScroll>
         {isLoading ? (
           <View className="items-center justify-center py-16">
             <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
@@ -188,7 +188,10 @@ export default function OrderDetailScreen() {
             <View className="gap-3">
               <View className="flex-row items-start justify-between gap-4">
                 <View className="flex-1 gap-1">
-                  <Text className="text-4xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+                  <Text
+                    className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+                      isTablet ? 'text-3xl' : 'text-4xl'
+                    }`}>
                     {order.customerName || 'Guest'}
                   </Text>
                   <Text className="text-base text-muted-foreground dark:text-muted-foreground-dark">
@@ -246,7 +249,7 @@ export default function OrderDetailScreen() {
             </SectionCard>
           </>
         ) : null}
-      </ScrollView>
+      </ScreenScroll>
     </>
   );
 }

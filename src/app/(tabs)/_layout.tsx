@@ -31,6 +31,20 @@ export default function TabLayout() {
         />
         <NativeTabs.Trigger.Label>Orders</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="pos">
+        <NativeTabs.Trigger.Icon
+          md="point_of_sale"
+          sf={{ default: 'menucard', selected: 'menucard.fill' }}
+        />
+        <NativeTabs.Trigger.Label>POS</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="cashier">
+        <NativeTabs.Trigger.Icon
+          md="payments"
+          sf={{ default: 'banknote', selected: 'banknote.fill' }}
+        />
+        <NativeTabs.Trigger.Label>Cashier</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="kitchen">
         <NativeTabs.Trigger.Icon
           md="soup_kitchen"
