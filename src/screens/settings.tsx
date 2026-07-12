@@ -16,12 +16,12 @@ export default function SettingsScreen() {
     <ScreenScroll>
       <View className="gap-2">
         <Text
-          className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+          className={`font-bold tracking-tight text-foreground ${
             isTablet ? 'text-3xl' : 'text-4xl'
           }`}>
           Settings
         </Text>
-        <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-base leading-6 text-muted-foreground">
           App preferences and appearance.
         </Text>
       </View>

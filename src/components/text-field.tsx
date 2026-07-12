@@ -19,7 +19,7 @@ export function TextField({
 }: TextFieldProps) {
   return (
     <View className="gap-2">
-      <Text className="px-1 text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <Text className="px-1 text-sm font-medium text-muted-foreground">
         {label}
       </Text>
       <TextInput
@@ -29,7 +29,7 @@ export function TextField({
         placeholderTextColor="#8E8E93"
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
-        className="rounded-2xl border border-input bg-card px-4 py-3.5 text-base text-foreground dark:border-input-dark dark:bg-card-dark dark:text-foreground-dark"
+        className="rounded-2xl border border-input bg-card px-4 py-3.5 text-base text-foreground"
         style={{ borderCurve: 'continuous' }}
       />
     </View>

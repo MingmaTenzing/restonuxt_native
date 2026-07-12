@@ -62,12 +62,12 @@ export function formatBookingTime(iso: string) {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row items-center justify-between gap-4">
-      <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <Text className="text-sm font-medium text-muted-foreground">
         {label}
       </Text>
       <Text
         selectable
-        className="flex-1 text-right text-base text-foreground dark:text-foreground-dark">
+        className="flex-1 text-right text-base text-foreground">
         {value}
       </Text>
     </View>
@@ -90,14 +90,14 @@ export function BookingCard({ booking }: { booking: Booking }) {
       accessibilityRole="button"
       accessibilityState={{ expanded }}
       accessibilityLabel={`Booking for ${booking.customerName}`}
-      className="gap-4 rounded-3xl border border-border bg-card p-5 active:opacity-90 dark:border-border-dark dark:bg-card-dark"
+      className="gap-4 rounded-3xl border border-border bg-card p-5 active:opacity-90"
       style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
       <View className="flex-row items-center justify-between gap-4">
         <View className="flex-1 gap-1.5">
-          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+          <Text className="text-lg font-semibold text-foreground">
             {booking.customerName}
           </Text>
-          <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-sm text-muted-foreground">
             {formatBookingTime(booking.bookingTime)}
           </Text>
         </View>
@@ -115,7 +115,7 @@ export function BookingCard({ booking }: { booking: Booking }) {
 
       {expanded ? (
         <>
-          <View className="h-px bg-muted dark:bg-muted-dark" />
+          <View className="h-px bg-muted" />
 
           <View className="gap-3">
             <DetailRow label="Phone" value={booking.customerPhone} />

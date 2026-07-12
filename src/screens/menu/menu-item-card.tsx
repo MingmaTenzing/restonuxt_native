@@ -25,7 +25,7 @@ export function MenuItemCard({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Edit ${item.name}`}
-      className="flex-row items-center gap-4 rounded-3xl border border-border bg-card p-4 active:opacity-70 dark:border-border-dark dark:bg-card-dark"
+      className="flex-row items-center gap-4 rounded-3xl border border-border bg-card p-4 active:opacity-70"
       style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
       {item.imageUrl ? (
         <Image
@@ -34,9 +34,9 @@ export function MenuItemCard({
         />
       ) : (
         <View
-          className="h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary-dark/15"
+          className="h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
           style={{ borderCurve: 'continuous' }}>
-          <Text className="text-xl font-bold text-primary dark:text-primary-dark">
+          <Text className="text-xl font-bold text-primary">
             {item.name.slice(0, 1).toUpperCase()}
           </Text>
         </View>
@@ -47,24 +47,24 @@ export function MenuItemCard({
           numberOfLines={1}
           className={`text-base font-semibold ${
             item.isAvailable
-              ? 'text-foreground dark:text-foreground-dark'
-              : 'text-muted-foreground dark:text-muted-foreground-dark'
+              ? 'text-foreground'
+              : 'text-muted-foreground'
           }`}>
           {item.name}
         </Text>
         {item.description ? (
           <Text
             numberOfLines={1}
-            className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+            className="text-sm text-muted-foreground">
             {item.description}
           </Text>
         ) : null}
         <View className="flex-row items-center gap-2">
-          <Text className="text-base font-semibold tracking-tight text-primary dark:text-primary-dark">
+          <Text className="text-base font-semibold tracking-tight text-primary">
             {formatMoney(item.priceCents)}
           </Text>
           {optionCount > 0 ? (
-            <Text className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-xs font-medium text-muted-foreground">
               {optionCount} {optionCount === 1 ? 'option' : 'options'}
             </Text>
           ) : null}

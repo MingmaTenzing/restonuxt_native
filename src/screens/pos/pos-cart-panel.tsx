@@ -1,4 +1,5 @@
-import { ScrollView, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { TextField } from '@/components/text-field';
@@ -13,6 +14,7 @@ interface PosCartPanelProps {
   customerName: string;
   onCustomerNameChange: (value: string) => void;
   onUpdateLines: (lines: CartLine[]) => void;
+  onClearCart: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
   errorMessage: string | null;
@@ -29,6 +31,7 @@ export function PosCartPanel({
   customerName,
   onCustomerNameChange,
   onUpdateLines,
+  onClearCart,
   onSubmit,
   isSubmitting,
   errorMessage,
@@ -42,22 +45,29 @@ export function PosCartPanel({
   const totalCents = cartTotalCents(lines);
   const isSidebar = variant === 'sidebar';
 
+  const handleClearCart = () => {
+    Alert.alert('Empty cart', 'Remove all items from this ticket?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Clear', style: 'destructive', onPress: onClearCart },
+    ]);
+  };
+
   const content = (
     <>
       {destinationLabel ? (
         <View
-          className="flex-row items-center gap-3 rounded-3xl border-2 border-primary bg-primary/5 px-4 py-3.5 dark:border-primary-dark dark:bg-primary-dark/10"
+          className="flex-row items-center gap-3 rounded-3xl border-2 border-primary bg-primary/5 px-4 py-3.5"
           style={{ borderCurve: 'continuous' }}>
-          <View className="h-12 min-w-12 items-center justify-center rounded-2xl bg-primary px-3 dark:bg-primary-dark">
-            <Text className="text-xl font-bold text-primary-foreground dark:text-primary-foreground-dark">
+          <View className="h-12 min-w-12 items-center justify-center rounded-2xl bg-primary px-3">
+            <Text className="text-xl font-bold text-primary-foreground">
               {destinationLabel}
             </Text>
           </View>
           <View className="flex-1 gap-0.5">
-            <Text className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Destination
             </Text>
-            <Text className="text-xl font-bold text-foreground dark:text-foreground-dark">
+            <Text className="text-xl font-bold text-foreground">
               Table {destinationLabel}
             </Text>
           </View>
@@ -65,18 +75,18 @@ export function PosCartPanel({
       ) : null}
 
       <View
-        className="gap-1 rounded-3xl border border-dashed border-border bg-muted/50 px-5 py-4 dark:border-border-dark dark:bg-muted-dark/40"
+        className="gap-1 rounded-3xl border border-dashed border-border bg-muted/50 px-5 py-4"
         style={{ borderCurve: 'continuous' }}>
-        <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           Kitchen ticket
         </Text>
         <Text
-          className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+          className={`font-bold tracking-tight text-foreground ${
             isSidebar ? 'text-2xl' : 'text-3xl'
           }`}>
           {formatMoney(totalCents)}
         </Text>
-        <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-sm text-muted-foreground">
           {lines.length} {lines.length === 1 ? 'line' : 'lines'} on this ticket
           {destinationLabel ? ` · Table ${destinationLabel}` : ''}
         </Text>
@@ -91,14 +101,40 @@ export function PosCartPanel({
       />
 
       <View className="gap-3">
-        <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
-          Items
-        </Text>
+        <View className="flex-row items-center justify-between gap-3">
+          <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Items
+          </Text>
+          {lines.length > 0 ? (
+            <Pressable
+              onPress={isSubmitting ? undefined : handleClearCart}
+              accessibilityRole="button"
+              accessibilityLabel="Empty cart"
+              hitSlop={8}
+              className={`flex-row items-center gap-1.5 rounded-full border px-3 py-1.5 ${
+                isSubmitting
+                  ? 'border-border bg-muted/40'
+                  : 'border-red-200/90 bg-red-50/60 active:opacity-80 dark:border-red-900/50 dark:bg-red-950/25'
+              }`}
+              style={{ borderCurve: 'continuous' }}>
+              <Ionicons
+                name="cart-outline"
+                size={16}
+                color={isSubmitting ? '#A1A1AA' : '#DC2626'}
+              />
+              <Ionicons
+                name="close-circle"
+                size={14}
+                color={isSubmitting ? '#A1A1AA' : '#DC2626'}
+              />
+            </Pressable>
+          ) : null}
+        </View>
         {lines.length === 0 ? (
           <View
-            className="rounded-2xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+            className="rounded-2xl border border-border bg-card p-4"
             style={{ borderCurve: 'continuous' }}>
-            <Text className="text-base text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-base text-muted-foreground">
               Your ticket is empty. Add dishes from the menu.
             </Text>
           </View>
@@ -133,14 +169,14 @@ export function PosCartPanel({
 
   if (isSidebar) {
     return (
-      <View className="min-h-0 flex-1 border-l border-border bg-background dark:border-border-dark dark:bg-background-dark">
+      <View className="min-h-0 flex-1 border-l border-border bg-background">
         <View
-          className="border-b border-border px-5 pb-4 dark:border-border-dark"
+          className="border-b border-border px-5 pb-4"
           style={{ paddingTop: topInset + 16 }}>
-          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+          <Text className="text-lg font-semibold text-foreground">
             Order ticket
           </Text>
-          <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-sm text-muted-foreground">
             {destinationLabel
               ? `Sending to Table ${destinationLabel}`
               : 'Live cart — always visible on tablet'}

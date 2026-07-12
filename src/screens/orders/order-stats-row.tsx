@@ -22,9 +22,9 @@ function MetricCard({
 }) {
   return (
     <View
-      className="flex-1 gap-3 rounded-3xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+      className="flex-1 gap-3 rounded-3xl border border-border bg-card p-4"
       style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
-      <Text className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <Text className="text-xs font-medium text-muted-foreground">
         {label}
       </Text>
       <View className="flex-row items-center gap-2">
@@ -33,7 +33,7 @@ function MetricCard({
           style={{ borderCurve: 'continuous' }}>
           <Ionicons name={iconName} size={18} color={iconColor} />
         </View>
-        <Text className="text-3xl font-semibold tracking-tight text-foreground dark:text-foreground-dark">
+        <Text className="text-3xl font-semibold tracking-tight text-foreground">
           {value}
         </Text>
       </View>
@@ -56,7 +56,7 @@ export function OrderStatsRow({
     <View className="gap-3" style={{ opacity: isRefreshing ? 0.65 : 1 }}>
       {/* Revenue is the signature metric — given its own full-width, high-contrast card. */}
       <View
-        className="gap-1.5 rounded-3xl bg-neutral-950 p-5 dark:bg-card-dark"
+        className="gap-1.5 rounded-3xl bg-neutral-950 p-5"
         style={{ borderCurve: 'continuous', boxShadow: '0 14px 30px rgba(0, 0, 0, 0.16)' }}>
         <Text className="text-xs font-medium uppercase tracking-wider text-neutral-300">
           Revenue today

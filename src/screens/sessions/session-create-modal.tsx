@@ -54,14 +54,14 @@ export function SessionCreateModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}>
-      <View className="flex-1 bg-background dark:bg-background-dark">
-        <View className="flex-row items-center justify-between border-b border-neutral-200/70 px-5 pb-4 pt-6 dark:border-border-dark">
+      <View className="flex-1 bg-background">
+        <View className="flex-row items-center justify-between border-b border-border/70 px-5 pb-4 pt-6">
           <Pressable onPress={onClose} hitSlop={12} disabled={isSubmitting}>
-            <Text className="text-base font-medium text-primary dark:text-primary-dark">
+            <Text className="text-base font-medium text-primary">
               Cancel
             </Text>
           </Pressable>
-          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+          <Text className="text-lg font-semibold text-foreground">
             Open session
           </Text>
           <View className="w-14" />
@@ -71,19 +71,19 @@ export function SessionCreateModal({
           className="flex-1"
           contentContainerClassName="gap-4 px-5 py-5"
           keyboardShouldPersistTaps="handled">
-          <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base leading-6 text-muted-foreground">
             Start a dining session for a table. Tables with an active session are shown separately.
           </Text>
 
           {isLoadingTables ? (
-            <Text className="text-base text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-base text-muted-foreground">
               Loading tables...
             </Text>
           ) : tables.length === 0 ? (
             <View
-              className="rounded-2xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+              className="rounded-2xl border border-border bg-card p-4"
               style={{ borderCurve: 'continuous' }}>
-              <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="text-base leading-6 text-muted-foreground">
                 No tables found. Add tables first from the Tables tab.
               </Text>
             </View>
@@ -91,7 +91,7 @@ export function SessionCreateModal({
             <>
               {availableTables.length > 0 ? (
                 <View className="gap-2">
-                  <Text className="px-1 text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+                  <Text className="px-1 text-sm font-medium text-muted-foreground">
                     Available tables
                   </Text>
                   {availableTables.map((table) => {
@@ -104,20 +104,20 @@ export function SessionCreateModal({
                         accessibilityState={{ selected: isSelected }}
                         className={`flex-row items-center justify-between rounded-2xl border px-4 py-3.5 ${
                           isSelected
-                            ? 'border-primary bg-primary/5 dark:border-primary-dark dark:bg-primary-dark/10'
-                            : 'border-border bg-card dark:border-border-dark dark:bg-card-dark'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border bg-card'
                         }`}
                         style={{ borderCurve: 'continuous' }}>
                         <View>
-                          <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+                          <Text className="text-base font-semibold text-foreground">
                             Table {table.number}
                           </Text>
-                          <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+                          <Text className="text-sm text-muted-foreground">
                             Seats {table.capacity}
                           </Text>
                         </View>
                         {isSelected ? (
-                          <Text className="text-sm font-semibold text-primary dark:text-primary-dark">
+                          <Text className="text-sm font-semibold text-primary">
                             Selected
                           </Text>
                         ) : null}
@@ -129,7 +129,7 @@ export function SessionCreateModal({
 
               {occupiedTables.length > 0 ? (
                 <View className="gap-2">
-                  <Text className="px-1 text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+                  <Text className="px-1 text-sm font-medium text-muted-foreground">
                     Already active
                   </Text>
                   {occupiedTables.map((table) => (
@@ -141,11 +141,11 @@ export function SessionCreateModal({
                       className={`flex-row items-center justify-between rounded-2xl border px-4 py-3.5 ${
                         selectedTableId === table.id
                           ? 'border-amber-500 bg-amber-500/5 dark:border-amber-400 dark:bg-amber-400/10'
-                          : 'border-border bg-muted dark:border-border-dark dark:bg-muted-dark'
+                          : 'border-border bg-muted'
                       }`}
                       style={{ borderCurve: 'continuous' }}>
                       <View>
-                        <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+                        <Text className="text-base font-semibold text-foreground">
                           Table {table.number}
                         </Text>
                         <Text className="text-sm text-amber-700 dark:text-amber-300">

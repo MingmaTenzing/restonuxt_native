@@ -54,12 +54,12 @@ function formatLabel(value: string) {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row items-center justify-between gap-4">
-      <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <Text className="text-sm font-medium text-muted-foreground">
         {label}
       </Text>
       <Text
         selectable
-        className="flex-1 text-right text-base text-foreground dark:text-foreground-dark">
+        className="flex-1 text-right text-base text-foreground">
         {value}
       </Text>
     </View>
@@ -69,11 +69,11 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View className="gap-3">
-      <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
+      <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {title}
       </Text>
       <View
-        className="gap-3 rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+        className="gap-3 rounded-3xl border border-border bg-card p-5"
         style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
         {children}
       </View>
@@ -87,14 +87,14 @@ function ItemRow({ item }: { item: OrderItem }) {
     <View className="gap-1.5">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 flex-row gap-2">
-          <Text className="text-base font-semibold text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base font-semibold text-muted-foreground">
             {item.quantity}×
           </Text>
-          <Text className="flex-1 text-base font-medium text-foreground dark:text-foreground-dark">
+          <Text className="flex-1 text-base font-medium text-foreground">
             {item.itemName}
           </Text>
         </View>
-        <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+        <Text className="text-base font-semibold text-foreground">
           {formatMoney(itemLineTotalCents(item))}
         </Text>
       </View>
@@ -103,12 +103,12 @@ function ItemRow({ item }: { item: OrderItem }) {
         <View className="gap-0.5 pl-7">
           {options.map((option) => (
             <View key={option.id} className="flex-row items-center justify-between gap-3">
-              <Text className="flex-1 text-sm text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="flex-1 text-sm text-muted-foreground">
                 + {option.name}
                 {option.quantity > 1 ? ` ×${option.quantity}` : ''}
               </Text>
               {option.priceCents > 0 ? (
-                <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+                <Text className="text-sm text-muted-foreground">
                   {formatMoney(option.priceCents * (option.quantity ?? 1))}
                 </Text>
               ) : null}
@@ -118,7 +118,7 @@ function ItemRow({ item }: { item: OrderItem }) {
       ) : null}
 
       {item.specialInstructions ? (
-        <Text className="pl-7 text-sm italic text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="pl-7 text-sm italic text-muted-foreground">
           “{item.specialInstructions}”
         </Text>
       ) : null}
@@ -158,7 +158,7 @@ export default function OrderDetailScreen() {
       <ScreenScroll refreshing={isFetching} onRefresh={() => refetch()}>
         {isLoading ? (
           <View className="items-center justify-center py-16">
-            <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-base font-medium text-muted-foreground">
               Loading order...
             </Text>
           </View>
@@ -184,12 +184,12 @@ export default function OrderDetailScreen() {
               <View className="flex-row items-start justify-between gap-4">
                 <View className="flex-1 gap-1">
                   <Text
-                    className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+                    className={`font-bold tracking-tight text-foreground ${
                       isTablet ? 'text-3xl' : 'text-4xl'
                     }`}>
                     {order.customerName || 'Guest'}
                   </Text>
-                  <Text className="text-base text-muted-foreground dark:text-muted-foreground-dark">
+                  <Text className="text-base text-muted-foreground">
                     Order #{order.orderNo}
                   </Text>
                 </View>
@@ -203,23 +203,23 @@ export default function OrderDetailScreen() {
 
             <SectionCard title={`Items (${(order.items ?? []).length})`}>
               {(order.items ?? []).length === 0 ? (
-                <Text className="text-base text-muted-foreground dark:text-muted-foreground-dark">
+                <Text className="text-base text-muted-foreground">
                   No items on this order.
                 </Text>
               ) : (
                 (order.items ?? []).map((item, index) => (
                   <View key={item.id} className="gap-3">
-                    {index > 0 ? <View className="h-px bg-muted dark:bg-muted-dark" /> : null}
+                    {index > 0 ? <View className="h-px bg-muted" /> : null}
                     <ItemRow item={item} />
                   </View>
                 ))
               )}
-              <View className="h-px bg-muted dark:bg-muted-dark" />
+              <View className="h-px bg-muted" />
               <View className="flex-row items-center justify-between">
-                <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+                <Text className="text-base font-semibold text-foreground">
                   Total
                 </Text>
-                <Text className="text-xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+                <Text className="text-xl font-bold tracking-tight text-foreground">
                   {formatMoney(order.totalAmountCents)}
                 </Text>
               </View>

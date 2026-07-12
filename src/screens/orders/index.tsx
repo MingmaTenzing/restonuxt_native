@@ -46,8 +46,8 @@ export default function OrdersScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-base font-medium text-muted-foreground">
           Loading...
         </Text>
       </View>
@@ -56,11 +56,11 @@ export default function OrdersScreen() {
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-center text-xl font-semibold text-foreground dark:text-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-center text-xl font-semibold text-foreground">
           Sign in required
         </Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
           Sign in from the Home tab to view orders.
         </Text>
       </View>
@@ -71,12 +71,12 @@ export default function OrdersScreen() {
     <ScreenScroll refreshing={isFetching} onRefresh={() => refetch()}>
       <View className="gap-2">
         <Text
-          className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+          className={`font-bold tracking-tight text-foreground ${
             isTablet ? 'text-3xl' : 'text-4xl'
           }`}>
           Orders
         </Text>
-        <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-base leading-6 text-muted-foreground">
           {isLoading
             ? 'Loading orders...'
             : `${orders.length} ${orders.length === 1 ? 'order' : 'orders'}`}
@@ -114,9 +114,9 @@ export default function OrdersScreen() {
 
       {!isLoading && !isError && orders.length === 0 ? (
         <View
-          className="rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+          className="rounded-3xl border border-border bg-card p-5"
           style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
-          <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base leading-6 text-muted-foreground">
             No orders in this range yet.
           </Text>
         </View>
@@ -124,9 +124,9 @@ export default function OrdersScreen() {
 
       {!isLoading && !isError && orders.length > 0 && visibleOrders.length === 0 ? (
         <View
-          className="rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+          className="rounded-3xl border border-border bg-card p-5"
           style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
-          <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base leading-6 text-muted-foreground">
             No orders match “{query}”.
           </Text>
         </View>

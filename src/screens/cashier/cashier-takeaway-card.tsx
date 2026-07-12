@@ -26,37 +26,37 @@ export function CashierTakeawayCard({ order, onPress }: CashierTakeawayCardProps
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Checkout takeaway order ${order.orderNo}`}
-      className="gap-4 rounded-3xl border border-border bg-card p-5 active:opacity-70 dark:border-border-dark dark:bg-card-dark"
+      className="gap-4 rounded-3xl border border-border bg-card p-5 active:opacity-70"
       style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
       <View className="flex-row items-start justify-between gap-4">
         <View className="flex-1 flex-row items-start gap-3">
           <View
-            className="h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary-dark/15"
+            className="h-11 w-11 items-center justify-center rounded-2xl bg-primary/10"
             style={{ borderCurve: 'continuous' }}>
             <Ionicons name="bag-handle-outline" size={20} color={isDark ? '#E4E4E7' : '#18181B'} />
           </View>
           <View className="min-w-0 flex-1 gap-1">
-            <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+            <Text className="text-lg font-semibold text-foreground">
               #{order.orderNo} · {order.customerName || 'Guest'}
             </Text>
-            <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-sm text-muted-foreground">
               {itemCount} {itemCount === 1 ? 'item' : 'items'}
               {formatTime(order.createdAt) ? ` · ${formatTime(order.createdAt)}` : ''}
             </Text>
           </View>
         </View>
-        <Text className="text-xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+        <Text className="text-xl font-bold tracking-tight text-foreground">
           {formatMoney(order.totalAmountCents)}
         </Text>
       </View>
 
-      <View className="flex-row flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-4 dark:border-border-dark/60">
+      <View className="flex-row flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-4">
         <View className="flex-row flex-wrap gap-2">
           <StatusBadge status={order.status} />
           <PaymentBadge status={order.paymentStatus} />
         </View>
         <View className="flex-row items-center gap-1">
-          <Text className="text-sm font-semibold text-primary dark:text-primary-dark">
+          <Text className="text-sm font-semibold text-primary">
             Checkout
           </Text>
           <Ionicons name="chevron-forward" size={14} color={isDark ? '#E4E4E7' : '#18181B'} />

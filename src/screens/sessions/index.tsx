@@ -175,8 +175,8 @@ export default function SessionsScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-base font-medium text-muted-foreground">
           Loading...
         </Text>
       </View>
@@ -185,11 +185,11 @@ export default function SessionsScreen() {
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-center text-xl font-semibold text-foreground dark:text-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-center text-xl font-semibold text-foreground">
           Sign in required
         </Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
           Sign in from the Home tab to manage sessions.
         </Text>
       </View>
@@ -201,12 +201,12 @@ export default function SessionsScreen() {
       <ScreenScroll bottomInset={72} refreshing={isFetching} onRefresh={() => refetch()}>
         <View className="gap-2">
           <Text
-            className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+            className={`font-bold tracking-tight text-foreground ${
               isTablet ? 'text-3xl' : 'text-4xl'
             }`}>
             Sessions
           </Text>
-          <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base leading-6 text-muted-foreground">
             {isLoading
               ? 'Loading sessions...'
               : `${sessions.length} ${sessions.length === 1 ? 'session' : 'sessions'} · ${activeCount} active · ${closedCount} closed`}
@@ -216,7 +216,7 @@ export default function SessionsScreen() {
         {!isError ? (
           <View className="gap-3">
             <View
-              className="flex-row items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3 dark:border-border-dark dark:bg-card-dark"
+              className="flex-row items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3"
               style={{ borderCurve: 'continuous' }}>
               <Ionicons name="search" size={18} color="#8E8E93" />
               <TextInput
@@ -228,7 +228,7 @@ export default function SessionsScreen() {
                 autoCorrect={false}
                 clearButtonMode="while-editing"
                 returnKeyType="search"
-                className="flex-1 text-base text-foreground dark:text-foreground-dark"
+                className="flex-1 text-base text-foreground"
               />
             </View>
 
@@ -246,13 +246,13 @@ export default function SessionsScreen() {
                     accessibilityState={{ selected: isActive }}
                     className={`rounded-full px-4 py-2 ${
                       isActive
-                        ? 'bg-primary dark:bg-primary-dark'
-                        : 'border border-border bg-card dark:border-border-dark dark:bg-card-dark'
+                        ? 'bg-primary'
+                        : 'border border-border bg-card'
                     }`}>
                     <Text
                       className={`text-sm font-semibold ${
                         isActive
-                          ? 'text-primary-foreground dark:text-primary-foreground-dark'
+                          ? 'text-primary-foreground'
                           : 'text-neutral-600 dark:text-neutral-300'
                       }`}>
                       {option.label}
@@ -282,9 +282,9 @@ export default function SessionsScreen() {
 
         {!isLoading && !isError && sessions.length === 0 ? (
           <View
-            className="rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+            className="rounded-3xl border border-border bg-card p-5"
             style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
-            <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-base leading-6 text-muted-foreground">
               No sessions yet. Tap the + button to open a session for a table.
             </Text>
           </View>
@@ -292,9 +292,9 @@ export default function SessionsScreen() {
 
         {!isLoading && !isError && sessions.length > 0 && filteredSessions.length === 0 ? (
           <View
-            className="rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+            className="rounded-3xl border border-border bg-card p-5"
             style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
-            <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-base leading-6 text-muted-foreground">
               No sessions match your search.
             </Text>
           </View>
@@ -312,7 +312,7 @@ export default function SessionsScreen() {
         accessibilityRole="button"
         accessibilityLabel="Open session"
         hitSlop={8}
-        className="absolute h-14 w-14 items-center justify-center rounded-full bg-primary active:opacity-80 dark:bg-primary-dark"
+        className="absolute h-14 w-14 items-center justify-center rounded-full bg-primary active:opacity-80"
         style={{
           ...fabStyle,
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.25)',

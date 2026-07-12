@@ -19,7 +19,7 @@ function ItemLine({ item }: { item: OrderItem }) {
         <Text className="min-w-8 text-lg font-bold text-amber-600 dark:text-amber-400">
           {item.quantity}×
         </Text>
-        <Text className="flex-1 text-lg font-semibold text-foreground dark:text-foreground-dark">
+        <Text className="flex-1 text-lg font-semibold text-foreground">
           {item.itemName}
         </Text>
       </View>
@@ -29,7 +29,7 @@ function ItemLine({ item }: { item: OrderItem }) {
           {options.map((option) => (
             <Text
               key={option.id}
-              className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+              className="text-sm font-medium text-muted-foreground">
               + {option.quantity > 1 ? `${option.quantity}× ` : ''}
               {option.name}
             </Text>
@@ -71,19 +71,19 @@ export function KitchenOrderCard({
       className={`gap-4 rounded-3xl border p-5 ${
         isNew
           ? 'border-amber-400 bg-amber-50 dark:border-amber-500/60 dark:bg-amber-950/30'
-          : 'border-border bg-card dark:border-border-dark dark:bg-card-dark'
+          : 'border-border bg-card'
       }`}
       style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06)' }}>
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 gap-1">
-          <Text className="text-3xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+          <Text className="text-3xl font-bold tracking-tight text-foreground">
             #{order.orderNo}
           </Text>
-          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+          <Text className="text-lg font-semibold text-foreground">
             {order.customerName || 'Guest'}
           </Text>
           {tableLabel ? (
-            <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-base font-medium text-muted-foreground">
               {tableLabel}
             </Text>
           ) : null}
@@ -91,7 +91,7 @@ export function KitchenOrderCard({
 
         <View className="items-end gap-2">
           <TypeBadge type={order.orderType} />
-          <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-sm font-medium text-muted-foreground">
             {formatTime(order.createdAt)}
           </Text>
           <RelativeTime
@@ -101,11 +101,11 @@ export function KitchenOrderCard({
         </View>
       </View>
 
-      <View className="h-px bg-neutral-200 dark:bg-border-dark" />
+      <View className="h-px bg-neutral-200" />
 
       <View className="gap-3">
         {items.length === 0 ? (
-          <Text className="text-base text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base text-muted-foreground">
             No items listed.
           </Text>
         ) : (

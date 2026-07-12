@@ -119,11 +119,11 @@ function Section({
   return (
     <View className="gap-3">
       <View className="flex-row items-center justify-between gap-3">
-        <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+        <Text className="text-lg font-semibold text-foreground">
           {title}
         </Text>
         {action ? (
-          <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-sm font-medium text-muted-foreground">
             {action}
           </Text>
         ) : null}
@@ -150,7 +150,7 @@ function MetricCard({
 
   return (
     <View
-      className="gap-4 rounded-3xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+      className="gap-4 rounded-3xl border border-border bg-card p-4"
       style={{
         width,
         flex: width ? undefined : 1,
@@ -158,18 +158,18 @@ function MetricCard({
         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
       }}>
       <View className="flex-row items-center justify-between">
-        <Text className="text-xs font-semibold uppercase tracking-wide text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {label}
         </Text>
-        <View className="h-9 w-9 items-center justify-center rounded-full bg-muted dark:bg-muted-dark">
+        <View className="h-9 w-9 items-center justify-center rounded-full bg-muted">
           <Ionicons name={iconName} size={18} color={isDark ? '#FAFAFA' : '#18181B'} />
         </View>
       </View>
       <View className="gap-1">
-        <Text className="text-3xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+        <Text className="text-3xl font-bold tracking-tight text-foreground">
           {value}
         </Text>
-        <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-sm text-muted-foreground">
           {detail}
         </Text>
       </View>
@@ -184,7 +184,7 @@ function RevenueTrendCard({ points }: { points: RevenuePoint[] }) {
 
   return (
     <View
-      className="gap-4 overflow-hidden rounded-3xl bg-muted/40 p-5 dark:bg-muted-dark/20"
+      className="gap-4 overflow-hidden rounded-3xl bg-muted/40 p-5"
       style={{ borderCurve: 'continuous' }}>
       {visiblePoints.length > 0 ? (
         <>
@@ -195,7 +195,7 @@ function RevenueTrendCard({ points }: { points: RevenuePoint[] }) {
               return (
                 <View key={`${point.label}-${index}`} className="h-full flex-1 justify-end px-0.5">
                   <View
-                    className="w-full rounded-t-xl bg-chart-2 dark:bg-chart-2-dark"
+                    className="w-full rounded-t-xl bg-chart-2"
                     style={{ height: barHeight }}
                   />
                 </View>
@@ -208,24 +208,24 @@ function RevenueTrendCard({ points }: { points: RevenuePoint[] }) {
               <View key={`${point.label}-label-${index}`} className="flex-1 items-center">
                 <Text
                   numberOfLines={1}
-                  className="text-center text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
+                  className="text-center text-xs font-medium text-muted-foreground">
                   {formatTrendLabel(point.label)}
                 </Text>
               </View>
             ))}
           </View>
 
-          <View className="flex-row items-center justify-between border-t border-border/60 pt-3 dark:border-border-dark/60">
-            <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+          <View className="flex-row items-center justify-between border-t border-border/60 pt-3">
+            <Text className="text-sm text-muted-foreground">
               Peak
             </Text>
-            <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+            <Text className="text-base font-semibold text-foreground">
               {formatMoney(maxRevenue)}
             </Text>
           </View>
         </>
       ) : (
-        <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-base leading-6 text-muted-foreground">
           Revenue trend data will appear once orders are recorded.
         </Text>
       )}
@@ -238,7 +238,7 @@ function CategoryShare({ categories }: { categories: SoldByCategory[] }) {
 
   return (
     <View
-      className="gap-4 rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+      className="gap-4 rounded-3xl border border-border bg-card p-5"
       style={{ borderCurve: 'continuous', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}>
       {visibleCategories.length > 0 ? (
         visibleCategories.map((category) => (
@@ -246,23 +246,23 @@ function CategoryShare({ categories }: { categories: SoldByCategory[] }) {
             <View className="flex-row items-center justify-between gap-3">
               <Text
                 numberOfLines={1}
-                className="flex-1 text-base font-medium text-foreground dark:text-foreground-dark">
+                className="flex-1 text-base font-medium text-foreground">
                 {category.category}
               </Text>
-              <Text className="text-sm font-semibold text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="text-sm font-semibold text-muted-foreground">
                 {Math.round(category.percentage)}%
               </Text>
             </View>
-            <View className="h-2 overflow-hidden rounded-full bg-muted dark:bg-muted-dark">
+            <View className="h-2 overflow-hidden rounded-full bg-muted">
               <View
-                className="h-full rounded-full bg-primary dark:bg-primary-dark"
+                className="h-full rounded-full bg-primary"
                 style={{ width: `${Math.min(Math.max(category.percentage, 0), 100)}%` }}
               />
             </View>
           </View>
         ))
       ) : (
-        <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-base leading-6 text-muted-foreground">
           Category sales will appear once menu items have been sold.
         </Text>
       )}
@@ -275,30 +275,30 @@ function PopularItems({ items }: { items: PopularItem[] }) {
 
   return (
     <View
-      className="overflow-hidden rounded-3xl border border-border bg-card dark:border-border-dark dark:bg-card-dark"
+      className="overflow-hidden rounded-3xl border border-border bg-card"
       style={{ borderCurve: 'continuous', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}>
       {visibleItems.length > 0 ? (
         visibleItems.map((item, index) => (
           <View
             key={`${item.name}-${index}`}
-            className="flex-row items-center gap-3 border-b border-border px-5 py-4 last:border-b-0 dark:border-border-dark">
-            <View className="h-9 w-9 items-center justify-center rounded-full bg-muted dark:bg-muted-dark">
-              <Text className="text-sm font-bold text-foreground dark:text-foreground-dark">
+            className="flex-row items-center gap-3 border-b border-border px-5 py-4 last:border-b-0">
+            <View className="h-9 w-9 items-center justify-center rounded-full bg-muted">
+              <Text className="text-sm font-bold text-foreground">
                 {index + 1}
               </Text>
             </View>
             <Text
               numberOfLines={1}
-              className="flex-1 text-base font-medium text-foreground dark:text-foreground-dark">
+              className="flex-1 text-base font-medium text-foreground">
               {item.name}
             </Text>
-            <Text className="text-sm font-semibold text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-sm font-semibold text-muted-foreground">
               {compactNumber(item.sold_quantity)} sold
             </Text>
           </View>
         ))
       ) : (
-        <Text className="p-5 text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="p-5 text-base leading-6 text-muted-foreground">
           Popular items will appear once customers start ordering.
         </Text>
       )}
@@ -311,44 +311,44 @@ function RecentOrders({ orders }: { orders: RecentOrder[] }) {
 
   return (
     <View
-      className="overflow-hidden rounded-3xl border border-border bg-card dark:border-border-dark dark:bg-card-dark"
+      className="overflow-hidden rounded-3xl border border-border bg-card"
       style={{ borderCurve: 'continuous', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}>
       {visibleOrders.length > 0 ? (
         visibleOrders.map((order) => (
           <View
             key={order.id}
-            className="gap-3 border-b border-border px-5 py-4 last:border-b-0 dark:border-border-dark">
+            className="gap-3 border-b border-border px-5 py-4 last:border-b-0">
             <View className="flex-row items-start justify-between gap-3">
               <View className="flex-1 gap-1">
                 <Text
                   numberOfLines={1}
-                  className="text-base font-semibold text-foreground dark:text-foreground-dark">
+                  className="text-base font-semibold text-foreground">
                   {order.customerName || 'Guest'}
                 </Text>
-                <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+                <Text className="text-sm text-muted-foreground">
                   #{order.orderNo ?? 'New'} · {order.itemCount} item
                   {order.itemCount === 1 ? '' : 's'}
                   {order.tableNumber ? ` · Table ${order.tableNumber}` : ''}
                 </Text>
               </View>
-              <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+              <Text className="text-base font-semibold text-foreground">
                 {formatMoney(order.totalAmountCents)}
               </Text>
             </View>
             <View className="flex-row items-center justify-between gap-3">
-              <View className="rounded-full bg-muted px-3 py-1 dark:bg-muted-dark">
-                <Text className="text-xs font-semibold text-muted-foreground dark:text-muted-foreground-dark">
+              <View className="rounded-full bg-muted px-3 py-1">
+                <Text className="text-xs font-semibold text-muted-foreground">
                   {order.status.toLowerCase()}
                 </Text>
               </View>
-              <Text className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="text-xs font-medium text-muted-foreground">
                 {formatShortDate(order.createdAt)}
               </Text>
             </View>
           </View>
         ))
       ) : (
-        <Text className="p-5 text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="p-5 text-base leading-6 text-muted-foreground">
           Recent orders will appear here as they come in.
         </Text>
       )}
@@ -359,36 +359,36 @@ function RecentOrders({ orders }: { orders: RecentOrder[] }) {
 function RosterCard({ roster }: { roster: RosterOverview }) {
   return (
     <View
-      className="gap-4 rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+      className="gap-4 rounded-3xl border border-border bg-card p-5"
       style={{ borderCurve: 'continuous', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}>
       <View className="flex-row gap-3">
         <View className="flex-1 gap-1">
-          <Text className="text-3xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+          <Text className="text-3xl font-bold tracking-tight text-foreground">
             {roster.totalStaff}
           </Text>
-          <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-sm text-muted-foreground">
             Staff
           </Text>
         </View>
         <View className="flex-1 gap-1">
-          <Text className="text-3xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+          <Text className="text-3xl font-bold tracking-tight text-foreground">
             {roster.weeklyShiftCount}
           </Text>
-          <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-sm text-muted-foreground">
             Shifts
           </Text>
         </View>
         <View className="flex-1 gap-1">
-          <Text className="text-3xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+          <Text className="text-3xl font-bold tracking-tight text-foreground">
             {roster.pendingLeaveRequests}
           </Text>
-          <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-sm text-muted-foreground">
             Leave
           </Text>
         </View>
       </View>
-      <View className="h-px bg-border dark:bg-border-dark" />
-      <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+      <View className="h-px bg-border" />
+      <Text className="text-sm text-muted-foreground">
         Roster window {formatShortDate(roster.startDate)} to {formatShortDate(roster.endDate)}
       </Text>
     </View>
@@ -421,12 +421,12 @@ export function DashboardContent() {
         <View className="flex-row items-start justify-between gap-4">
           <View className="flex-1 gap-2">
             <Text
-              className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+              className={`font-bold tracking-tight text-foreground ${
                 isTablet ? 'text-3xl' : 'text-4xl'
               }`}>
               Dashboard
             </Text>
-            <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-base leading-6 text-muted-foreground">
               Live restaurant performance, orders, menu movement, and roster coverage.
             </Text>
           </View>
@@ -436,7 +436,7 @@ export function DashboardContent() {
           </View>
         </View>
         {stats.weeklyKpi.startofWeek || stats.weeklyKpi.endOfWeek ? (
-          <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-sm font-medium text-muted-foreground">
             Week of {formatShortDate(stats.weeklyKpi.startofWeek)} to{' '}
             {formatShortDate(stats.weeklyKpi.endOfWeek)}
           </Text>

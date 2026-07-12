@@ -69,8 +69,8 @@ export default function CashierScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-base font-medium text-muted-foreground">
           Loading...
         </Text>
       </View>
@@ -79,11 +79,11 @@ export default function CashierScreen() {
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-center text-xl font-semibold text-foreground dark:text-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-center text-xl font-semibold text-foreground">
           Sign in required
         </Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
           Sign in from the Home tab to collect payments.
         </Text>
       </View>
@@ -107,12 +107,12 @@ export default function CashierScreen() {
       <View className={`gap-2 ${isTablet ? 'flex-row items-end justify-between' : ''}`}>
         <View className="flex-1 gap-2">
           <Text
-            className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+            className={`font-bold tracking-tight text-foreground ${
               isTablet ? 'text-3xl' : 'text-4xl'
             }`}>
             Cashier
           </Text>
-          <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base leading-6 text-muted-foreground">
             {isLoading
               ? 'Loading queue...'
               : `${queueCount} in queue · ${formatMoney(outstanding)} outstanding`}
@@ -121,17 +121,17 @@ export default function CashierScreen() {
       </View>
 
       <View
-        className="flex-row items-center justify-between rounded-3xl border border-border bg-card px-5 py-4 dark:border-border-dark dark:bg-card-dark"
+        className="flex-row items-center justify-between rounded-3xl border border-border bg-card px-5 py-4"
         style={{ borderCurve: 'continuous' }}>
         <View className="gap-1">
-          <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Register total
           </Text>
-          <Text className="text-3xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+          <Text className="text-3xl font-bold tracking-tight text-foreground">
             {formatMoney(outstanding)}
           </Text>
         </View>
-        <View className="h-12 w-12 items-center justify-center rounded-2xl bg-primary dark:bg-primary-dark">
+        <View className="h-12 w-12 items-center justify-center rounded-2xl bg-primary">
           <Ionicons name="cash-outline" size={24} color="#FAFAFA" />
         </View>
       </View>
@@ -147,13 +147,13 @@ export default function CashierScreen() {
               accessibilityState={{ selected: isActive }}
               className={`rounded-full px-4 py-2 ${
                 isActive
-                  ? 'bg-primary dark:bg-primary-dark'
-                  : 'border border-border bg-card dark:border-border-dark dark:bg-card-dark'
+                  ? 'bg-primary'
+                  : 'border border-border bg-card'
               }`}>
               <Text
                 className={`text-sm font-semibold ${
                   isActive
-                    ? 'text-primary-foreground dark:text-primary-foreground-dark'
+                    ? 'text-primary-foreground'
                     : 'text-neutral-600 dark:text-neutral-300'
                 }`}>
                 {option.label}
@@ -183,9 +183,9 @@ export default function CashierScreen() {
 
       {!isLoading && !isError && mode === 'TABLES' && sessions.length === 0 ? (
         <View
-          className="rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+          className="rounded-3xl border border-border bg-card p-5"
           style={{ borderCurve: 'continuous' }}>
-          <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base leading-6 text-muted-foreground">
             No active table sessions. New dining orders will appear here when guests are seated.
           </Text>
         </View>
@@ -193,9 +193,9 @@ export default function CashierScreen() {
 
       {!isLoading && !isError && mode === 'TAKEAWAY' && takeawayOrders.length === 0 ? (
         <View
-          className="rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+          className="rounded-3xl border border-border bg-card p-5"
           style={{ borderCurve: 'continuous' }}>
-          <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base leading-6 text-muted-foreground">
             No unpaid takeaway orders. New pickup orders from POS will show up here.
           </Text>
         </View>

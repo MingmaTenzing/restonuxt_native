@@ -68,14 +68,14 @@ export function TableFormModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}>
-      <View className="flex-1 bg-background dark:bg-background-dark">
-        <View className="flex-row items-center justify-between border-b border-neutral-200/70 px-5 pb-4 pt-6 dark:border-border-dark">
+      <View className="flex-1 bg-background">
+        <View className="flex-row items-center justify-between border-b border-border/70 px-5 pb-4 pt-6">
           <Pressable onPress={onClose} hitSlop={12} disabled={isBusy}>
-            <Text className="text-base font-medium text-primary dark:text-primary-dark">
+            <Text className="text-base font-medium text-primary">
               Cancel
             </Text>
           </Pressable>
-          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+          <Text className="text-lg font-semibold text-foreground">
             {table ? 'Table details' : 'New table'}
           </Text>
           <View className="w-14" />
@@ -87,17 +87,17 @@ export function TableFormModal({
           keyboardShouldPersistTaps="handled">
           {table ? (
             <View className="gap-2">
-              <Text className="px-1 text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="px-1 text-sm font-medium text-muted-foreground">
                 Table number
               </Text>
               <View
-                className="rounded-2xl border border-input bg-muted px-4 py-3.5 dark:border-input-dark dark:bg-muted-dark"
+                className="rounded-2xl border border-input bg-muted px-4 py-3.5"
                 style={{ borderCurve: 'continuous' }}>
-                <Text className="text-base text-muted-foreground dark:text-muted-foreground-dark">
+                <Text className="text-base text-muted-foreground">
                   {table.number}
                 </Text>
               </View>
-              <Text className="px-1 text-xs text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="px-1 text-xs text-muted-foreground">
                 Table numbers cannot be changed after creation.
               </Text>
             </View>

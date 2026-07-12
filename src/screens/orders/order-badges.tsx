@@ -55,7 +55,7 @@ export function PaymentBadge({ status }: { status: PaymentStatus }) {
 
 export function TypeBadge({ type }: { type: OrderType }) {
   return (
-    <View className="rounded-full bg-muted px-3 py-1 dark:bg-muted-dark">
+    <View className="rounded-full bg-muted px-3 py-1">
       <Text className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
         {formatLabel(type)}
       </Text>

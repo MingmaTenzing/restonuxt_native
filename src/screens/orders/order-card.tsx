@@ -20,26 +20,26 @@ export function OrderCard({ order, onPress }: { order: Order; onPress: () => voi
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Order number ${order.orderNo} for ${order.customerName}`}
-      className="gap-4 rounded-3xl border border-border bg-card p-5 active:opacity-70 dark:border-border-dark dark:bg-card-dark"
+      className="gap-4 rounded-3xl border border-border bg-card p-5 active:opacity-70"
       style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
       <View className="flex-row items-start justify-between gap-4">
         <View className="flex-1 gap-1">
           <View className="flex-row items-center gap-2">
-            <Text className="text-base font-semibold text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-base font-semibold text-muted-foreground">
               #{order.orderNo}
             </Text>
             <Text
               numberOfLines={1}
-              className="flex-1 text-lg font-semibold text-foreground dark:text-foreground-dark">
+              className="flex-1 text-lg font-semibold text-foreground">
               {order.customerName || 'Guest'}
             </Text>
           </View>
-          <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-sm text-muted-foreground">
             {itemCount} {itemCount === 1 ? 'item' : 'items'}
             {formatTime(order.createdAt) ? ` · ${formatTime(order.createdAt)}` : ''}
           </Text>
         </View>
-        <Text className="text-lg font-semibold tracking-tight text-foreground dark:text-foreground-dark">
+        <Text className="text-lg font-semibold tracking-tight text-foreground">
           {formatMoney(order.totalAmountCents)}
         </Text>
       </View>

@@ -17,8 +17,8 @@ const STATUS_STYLES = {
     label: 'Checkout',
   },
   CLOSED: {
-    badge: 'bg-muted dark:bg-muted-dark',
-    text: 'text-muted-foreground dark:text-muted-foreground-dark',
+    badge: 'bg-muted',
+    text: 'text-muted-foreground',
     label: 'Closed',
   },
 } as const;
@@ -54,25 +54,25 @@ export function SessionCard({ session, onPress }: SessionCardProps) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Session for table ${tableNumber}`}
-      className="gap-4 rounded-3xl border border-border bg-card p-5 active:opacity-70 dark:border-border-dark dark:bg-card-dark"
+      className="gap-4 rounded-3xl border border-border bg-card p-5 active:opacity-70"
       style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
       <View className="flex-row items-start justify-between gap-4">
         <View className="flex-1 gap-1">
           <View className="flex-row items-center gap-2">
             <View
-              className="h-10 w-10 items-center justify-center rounded-xl bg-primary/10 dark:bg-primary-dark/15"
+              className="h-10 w-10 items-center justify-center rounded-xl bg-primary/10"
               style={{ borderCurve: 'continuous' }}>
-              <Text className="text-sm font-bold text-primary dark:text-primary-dark">
+              <Text className="text-sm font-bold text-primary">
                 {tableNumber}
               </Text>
             </View>
-            <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+            <Text className="text-lg font-semibold text-foreground">
               Table {tableNumber}
             </Text>
           </View>
           <Text
             selectable
-            className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+            className="text-sm text-muted-foreground">
             Opened {formatDateTime(session.openedAt)}
             {session.closedAt ? ` · Closed ${formatDateTime(session.closedAt)}` : ''}
           </Text>
@@ -88,10 +88,10 @@ export function SessionCard({ session, onPress }: SessionCardProps) {
       </View>
 
       <View className="flex-row items-center justify-between">
-        <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-sm text-muted-foreground">
           {orderCount} {orderCount === 1 ? 'order' : 'orders'}
         </Text>
-        <Text className="text-lg font-semibold tracking-tight text-foreground dark:text-foreground-dark">
+        <Text className="text-lg font-semibold tracking-tight text-foreground">
           {formatMoney(totalCents)}
         </Text>
       </View>

@@ -16,31 +16,31 @@ type Accent = {
 const ACCENTS: Record<'today' | 'month' | 'upcoming' | 'guests', Accent> = {
   today: {
     iconName: 'calendar-outline',
-    iconWrap: 'bg-primary/10 dark:bg-primary-dark/15',
+    iconWrap: 'bg-primary/10',
     iconLight: '#18181B',
     iconDark: '#E4E4E7',
-    value: 'text-foreground dark:text-foreground-dark',
+    value: 'text-foreground',
   },
   month: {
     iconName: 'trending-up-outline',
     iconWrap: 'bg-blue-100 dark:bg-blue-500/15',
     iconLight: '#1D4ED8',
     iconDark: '#60A5FA',
-    value: 'text-foreground dark:text-foreground-dark',
+    value: 'text-foreground',
   },
   upcoming: {
     iconName: 'time-outline',
     iconWrap: 'bg-amber-100 dark:bg-amber-500/15',
     iconLight: '#B45309',
     iconDark: '#FBBF24',
-    value: 'text-foreground dark:text-foreground-dark',
+    value: 'text-foreground',
   },
   guests: {
     iconName: 'people-outline',
-    iconWrap: 'bg-muted dark:bg-accent-dark',
+    iconWrap: 'bg-muted',
     iconLight: '#404040',
     iconDark: '#E5E5E5',
-    value: 'text-foreground dark:text-foreground-dark',
+    value: 'text-foreground',
   },
 };
 
@@ -74,15 +74,13 @@ function StatCard({
 
   return (
     <View
-      className="gap-3 rounded-3xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+      className="gap-3 rounded-3xl border border-border bg-card p-4"
       style={{
         width,
         borderCurve: 'continuous',
         boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)',
       }}>
-      <Text
-        numberOfLines={1}
-        className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <Text numberOfLines={1} className="text-xs font-medium text-muted-foreground">
         {label}
       </Text>
 
@@ -112,7 +110,9 @@ function StatCard({
 export function BookingStatsRow({ stats }: { stats: BookingStats }) {
   const { isTablet, contentWidth } = useResponsiveLayout();
   const columns = isTablet ? 4 : 2;
-  const cardWidth = Math.floor((contentWidth - HORIZONTAL_PADDING - CARD_GAP * (columns - 1)) / columns);
+  const cardWidth = Math.floor(
+    (contentWidth - HORIZONTAL_PADDING - CARD_GAP * (columns - 1)) / columns
+  );
 
   return (
     <View className="flex-row flex-wrap" style={{ gap: CARD_GAP }}>
@@ -143,7 +143,7 @@ export function BookingFilterToggle({
 }) {
   return (
     <View
-      className="flex-row gap-1 rounded-full bg-muted p-1 dark:bg-muted-dark"
+      className="flex-row gap-1 rounded-full bg-muted p-1"
       style={{ borderCurve: 'continuous' }}>
       {OPTIONS.map((option) => {
         const isActive = option.value === value;
@@ -153,18 +153,14 @@ export function BookingFilterToggle({
             onPress={() => onChange(option.value)}
             accessibilityRole="button"
             accessibilityState={{ selected: isActive }}
-            className={`flex-1 items-center rounded-full px-4 py-2 ${
-              isActive ? 'bg-card dark:bg-accent-dark' : ''
-            }`}
+            className={`flex-1 items-center rounded-full px-4 py-2 ${isActive ? 'bg-card' : ''}`}
             style={{
               borderCurve: 'continuous',
               boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.10)' : 'none',
             }}>
             <Text
               className={`text-sm font-semibold ${
-                isActive
-                  ? 'text-foreground dark:text-foreground-dark'
-                  : 'text-muted-foreground dark:text-muted-foreground-dark'
+                isActive ? 'text-foreground' : 'text-muted-foreground'
               }`}>
               {option.label}
             </Text>

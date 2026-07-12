@@ -20,7 +20,7 @@ export function PosMenuCard({ item, onPress, width, style }: PosMenuCardProps) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Add ${item.name}`}
-      className="gap-3 rounded-3xl border border-border bg-card p-4 active:opacity-75 dark:border-border-dark dark:bg-card-dark"
+      className="gap-3 rounded-3xl border border-border bg-card p-4 active:opacity-75"
       style={{
         width,
         borderCurve: 'continuous',
@@ -31,9 +31,9 @@ export function PosMenuCard({ item, onPress, width, style }: PosMenuCardProps) {
         <Image source={{ uri: item.imageUrl }} className="h-24 w-full rounded-2xl" />
       ) : (
         <View
-          className="h-24 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary-dark/15"
+          className="h-24 items-center justify-center rounded-2xl bg-primary/10"
           style={{ borderCurve: 'continuous' }}>
-          <Text className="text-3xl font-bold text-primary dark:text-primary-dark">
+          <Text className="text-3xl font-bold text-primary">
             {item.name.slice(0, 1).toUpperCase()}
           </Text>
         </View>
@@ -42,19 +42,19 @@ export function PosMenuCard({ item, onPress, width, style }: PosMenuCardProps) {
       <View className="gap-1">
         <Text
           numberOfLines={2}
-          className="min-h-[40px] text-base font-semibold leading-5 text-foreground dark:text-foreground-dark">
+          className="min-h-[40px] text-base font-semibold leading-5 text-foreground">
           {item.name}
         </Text>
         <View className="flex-row items-center justify-between gap-2">
-          <Text className="text-base font-bold tracking-tight text-foreground dark:text-foreground-dark">
+          <Text className="text-base font-bold tracking-tight text-foreground">
             {formatMoney(item.priceCents)}
           </Text>
-          <View className="h-8 w-8 items-center justify-center rounded-full bg-primary dark:bg-primary-dark">
+          <View className="h-8 w-8 items-center justify-center rounded-full bg-primary">
             <Ionicons name="add" size={18} color="#FAFAFA" />
           </View>
         </View>
         {optionCount > 0 ? (
-          <Text className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-xs font-medium text-muted-foreground">
             {optionCount} {optionCount === 1 ? 'option' : 'options'}
           </Text>
         ) : null}

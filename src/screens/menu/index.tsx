@@ -184,8 +184,8 @@ export default function MenuScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-base font-medium text-muted-foreground">
           Loading...
         </Text>
       </View>
@@ -194,11 +194,11 @@ export default function MenuScreen() {
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-center text-xl font-semibold text-foreground dark:text-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-center text-xl font-semibold text-foreground">
           Sign in required
         </Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
           Sign in from the Home tab to manage the menu.
         </Text>
       </View>
@@ -210,12 +210,12 @@ export default function MenuScreen() {
       <ScreenScroll bottomInset={72} refreshing={isFetching} onRefresh={() => refetch()}>
         <View className="gap-2">
           <Text
-            className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+            className={`font-bold tracking-tight text-foreground ${
               isTablet ? 'text-3xl' : 'text-4xl'
             }`}>
             Menu
           </Text>
-          <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base leading-6 text-muted-foreground">
             {isLoading
               ? 'Loading menu...'
               : `${items.length} ${items.length === 1 ? 'item' : 'items'} · ${availableCount} available`}
@@ -225,7 +225,7 @@ export default function MenuScreen() {
         {!isError ? (
           <View className="gap-3">
             <View
-              className="flex-row items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3 dark:border-border-dark dark:bg-card-dark"
+              className="flex-row items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3"
               style={{ borderCurve: 'continuous' }}>
               <Ionicons name="search" size={18} color="#8E8E93" />
               <TextInput
@@ -237,7 +237,7 @@ export default function MenuScreen() {
                 autoCorrect={false}
                 clearButtonMode="while-editing"
                 returnKeyType="search"
-                className="flex-1 text-base text-foreground dark:text-foreground-dark"
+                className="flex-1 text-base text-foreground"
               />
             </View>
 
@@ -256,13 +256,13 @@ export default function MenuScreen() {
                       accessibilityState={{ selected: isActive }}
                       className={`rounded-full px-4 py-2 ${
                         isActive
-                          ? 'bg-primary dark:bg-primary-dark'
-                          : 'border border-border bg-card dark:border-border-dark dark:bg-card-dark'
+                          ? 'bg-primary'
+                          : 'border border-border bg-card'
                       }`}>
                       <Text
                         className={`text-sm font-semibold ${
                           isActive
-                            ? 'text-primary-foreground dark:text-primary-foreground-dark'
+                            ? 'text-primary-foreground'
                             : 'text-neutral-600 dark:text-neutral-300'
                         }`}>
                         {option ?? 'All'}
@@ -293,9 +293,9 @@ export default function MenuScreen() {
 
         {!isLoading && !isError && items.length === 0 ? (
           <View
-            className="rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+            className="rounded-3xl border border-border bg-card p-5"
             style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
-            <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-base leading-6 text-muted-foreground">
               No menu items yet. Tap the + button to add your first dish.
             </Text>
           </View>
@@ -303,9 +303,9 @@ export default function MenuScreen() {
 
         {!isLoading && !isError && items.length > 0 && filteredItems.length === 0 ? (
           <View
-            className="rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+            className="rounded-3xl border border-border bg-card p-5"
             style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
-            <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-base leading-6 text-muted-foreground">
               No items match your search.
             </Text>
           </View>
@@ -314,10 +314,10 @@ export default function MenuScreen() {
         {sections.map(([category, categoryItems]) => (
           <View key={category} className="gap-3">
             <View className="flex-row items-baseline justify-between">
-              <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 {category}
               </Text>
-              <Text className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="text-xs font-medium text-muted-foreground">
                 {categoryItems.length}
               </Text>
             </View>
@@ -346,7 +346,7 @@ export default function MenuScreen() {
         accessibilityRole="button"
         accessibilityLabel="Add menu item"
         hitSlop={8}
-        className="absolute h-14 w-14 items-center justify-center rounded-full bg-primary active:opacity-80 dark:bg-primary-dark"
+        className="absolute h-14 w-14 items-center justify-center rounded-full bg-primary active:opacity-80"
         style={{
           ...fabStyle,
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.25)',

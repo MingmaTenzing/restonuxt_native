@@ -87,14 +87,14 @@ export function MenuOptionSheet({
       animationType="slide"
       presentationStyle="formSheet"
       onRequestClose={onClose}>
-      <View className="flex-1 bg-background dark:bg-background-dark">
-        <View className="flex-row items-center justify-between border-b border-neutral-200/70 px-5 pb-4 pt-6 dark:border-border-dark">
+      <View className="flex-1 bg-background">
+        <View className="flex-row items-center justify-between border-b border-border/70 px-5 pb-4 pt-6">
           <Pressable onPress={onClose} hitSlop={12} disabled={isSaving}>
-            <Text className="text-base font-medium text-primary dark:text-primary-dark">
+            <Text className="text-base font-medium text-primary">
               Cancel
             </Text>
           </Pressable>
-          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+          <Text className="text-lg font-semibold text-foreground">
             {mode?.type === 'edit' ? 'Edit option' : 'Add option'}
           </Text>
           <View className="w-14" />

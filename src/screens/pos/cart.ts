@@ -48,8 +48,31 @@ export function createCartLineId() {
   return `line_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+/** Stable key for matching cart lines that should combine into one ticket row. */
+export function cartLineMergeKey(
+  line: Pick<CartLine, 'menuItemId' | 'specialInstructions' | 'options'>
+) {
+  const normalizedOptions = [...line.options]
+    .sort((a, b) => a.menuOptionId.localeCompare(b.menuOptionId))
+    .map((option) => `${option.menuOptionId}:${option.quantity}`)
+    .join('|');
+  const instructions = line.specialInstructions ?? '';
+  return `${line.menuItemId}::${instructions}::${normalizedOptions}`;
+}
+
+export function areCartLinesMergeable(a: CartLine, b: CartLine) {
+  return cartLineMergeKey(a) === cartLineMergeKey(b);
+}
+
 export function addCartLine(lines: CartLine[], line: CartLine) {
-  return [...lines, line];
+  const matchIndex = lines.findIndex((existing) => areCartLinesMergeable(existing, line));
+  if (matchIndex === -1) return [...lines, line];
+
+  return lines.map((existing, index) =>
+    index === matchIndex
+      ? { ...existing, quantity: existing.quantity + line.quantity }
+      : existing
+  );
 }
 
 export function updateCartLineQuantity(lines: CartLine[], lineId: string, quantity: number) {
@@ -59,4 +82,8 @@ export function updateCartLineQuantity(lines: CartLine[], lineId: string, quanti
 
 export function removeCartLine(lines: CartLine[], lineId: string) {
   return lines.filter((line) => line.id !== lineId);
+}
+
+export function clearCart(): CartLine[] {
+  return [];
 }

@@ -10,6 +10,7 @@ interface PosCartSheetProps {
   onCustomerNameChange: (value: string) => void;
   onClose: () => void;
   onUpdateLines: (lines: CartLine[]) => void;
+  onClearCart: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
   errorMessage: string | null;
@@ -24,6 +25,7 @@ export function PosCartSheet({
   onCustomerNameChange,
   onClose,
   onUpdateLines,
+  onClearCart,
   onSubmit,
   isSubmitting,
   errorMessage,
@@ -36,12 +38,12 @@ export function PosCartSheet({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}>
-      <View className="flex-1 bg-background dark:bg-background-dark">
-        <View className="flex-row items-center justify-between border-b border-neutral-200/70 px-5 pb-4 pt-6 dark:border-border-dark">
+      <View className="flex-1 bg-background">
+        <View className="flex-row items-center justify-between border-b border-border/70 px-5 pb-4 pt-6">
           <Pressable onPress={onClose} hitSlop={12} disabled={isSubmitting}>
-            <Text className="text-base font-medium text-primary dark:text-primary-dark">Close</Text>
+            <Text className="text-base font-medium text-primary">Close</Text>
           </Pressable>
-          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+          <Text className="text-lg font-semibold text-foreground">
             Order ticket
           </Text>
           <View className="w-14" />
@@ -52,6 +54,7 @@ export function PosCartSheet({
           customerName={customerName}
           onCustomerNameChange={onCustomerNameChange}
           onUpdateLines={onUpdateLines}
+          onClearCart={onClearCart}
           onSubmit={onSubmit}
           isSubmitting={isSubmitting}
           errorMessage={errorMessage}

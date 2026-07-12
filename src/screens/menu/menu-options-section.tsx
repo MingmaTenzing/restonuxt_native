@@ -65,10 +65,10 @@ export function MenuOptionsSection({
     <View className="gap-3">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 gap-1">
-          <Text className="px-1 text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="px-1 text-sm font-medium text-muted-foreground">
             Options
           </Text>
-          <Text className="px-1 text-xs leading-5 text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="px-1 text-xs leading-5 text-muted-foreground">
             Add-ons like extra cheese or a side salad.
           </Text>
         </View>
@@ -76,9 +76,9 @@ export function MenuOptionsSection({
           onPress={() => setSheetMode({ type: 'create' })}
           accessibilityRole="button"
           accessibilityLabel="Add option"
-          className="flex-row items-center gap-1 rounded-full bg-primary px-3 py-2 active:opacity-80 dark:bg-primary-dark">
+          className="flex-row items-center gap-1 rounded-full bg-primary px-3 py-2 active:opacity-80">
           <Ionicons name="add" size={18} color="#FAFAFA" />
-          <Text className="text-sm font-semibold text-primary-foreground dark:text-primary-foreground-dark">
+          <Text className="text-sm font-semibold text-primary-foreground">
             Add
           </Text>
         </Pressable>
@@ -86,7 +86,7 @@ export function MenuOptionsSection({
 
       {options.length > 0 ? (
         <View
-          className="gap-2 rounded-2xl border border-border bg-card p-3 dark:border-border-dark dark:bg-card-dark"
+          className="gap-2 rounded-2xl border border-border bg-card p-3"
           style={{ borderCurve: 'continuous' }}>
           {menuItemId
             ? savedOptions.map((option) => (
@@ -100,12 +100,12 @@ export function MenuOptionsSection({
                     })
                   }
                   accessibilityRole="button"
-                  className="flex-row items-center justify-between gap-3 rounded-xl bg-muted/50 px-3 py-2.5 active:opacity-70 dark:bg-muted-dark/50">
+                  className="flex-row items-center justify-between gap-3 rounded-xl bg-muted/50 px-3 py-2.5 active:opacity-70">
                   <View className="flex-1 gap-0.5">
-                    <Text className="text-base font-medium text-foreground dark:text-foreground-dark">
+                    <Text className="text-base font-medium text-foreground">
                       {option.name}
                     </Text>
-                    <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+                    <Text className="text-sm text-muted-foreground">
                       {formatMoney(option.priceCents)}
                     </Text>
                   </View>
@@ -123,12 +123,12 @@ export function MenuOptionsSection({
                     })
                   }
                   accessibilityRole="button"
-                  className="flex-row items-center justify-between gap-3 rounded-xl bg-muted/50 px-3 py-2.5 active:opacity-70 dark:bg-muted-dark/50">
+                  className="flex-row items-center justify-between gap-3 rounded-xl bg-muted/50 px-3 py-2.5 active:opacity-70">
                   <View className="flex-1 gap-0.5">
-                    <Text className="text-base font-medium text-foreground dark:text-foreground-dark">
+                    <Text className="text-base font-medium text-foreground">
                       {option.name}
                     </Text>
-                    <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+                    <Text className="text-sm text-muted-foreground">
                       {formatMoney(option.priceCents)}
                     </Text>
                   </View>
@@ -140,9 +140,9 @@ export function MenuOptionsSection({
         <Pressable
           onPress={() => setSheetMode({ type: 'create' })}
           accessibilityRole="button"
-          className="rounded-2xl border border-dashed border-border bg-muted/30 px-4 py-5 active:opacity-70 dark:border-border-dark dark:bg-muted-dark/20"
+          className="rounded-2xl border border-dashed border-border bg-muted/30 px-4 py-5 active:opacity-70"
           style={{ borderCurve: 'continuous' }}>
-          <Text className="text-center text-sm text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-center text-sm text-muted-foreground">
             No options yet. Tap to add one.
           </Text>
         </Pressable>

@@ -64,12 +64,12 @@ export function PosItemSheet({ visible, item, onClose, onAdd }: PosItemSheetProp
       animationType="slide"
       presentationStyle="formSheet"
       onRequestClose={onClose}>
-      <View className="flex-1 bg-background dark:bg-background-dark">
-        <View className="flex-row items-center justify-between border-b border-neutral-200/70 px-5 pb-4 pt-6 dark:border-border-dark">
+      <View className="flex-1 bg-background">
+        <View className="flex-row items-center justify-between border-b border-border/70 px-5 pb-4 pt-6">
           <Pressable onPress={onClose} hitSlop={12}>
-            <Text className="text-base font-medium text-primary dark:text-primary-dark">Cancel</Text>
+            <Text className="text-base font-medium text-primary">Cancel</Text>
           </Pressable>
-          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+          <Text className="text-lg font-semibold text-foreground">
             Customize
           </Text>
           <View className="w-14" />
@@ -80,40 +80,40 @@ export function PosItemSheet({ visible, item, onClose, onAdd }: PosItemSheetProp
           contentContainerClassName="gap-5 px-5 py-5"
           keyboardShouldPersistTaps="handled">
           <View className="gap-1">
-            <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark">
+            <Text className="text-2xl font-bold text-foreground">
               {item.name}
             </Text>
-            <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+            <Text className="text-base font-semibold text-foreground">
               {formatMoney(item.priceCents)} base
             </Text>
             {item.description ? (
-              <Text className="text-sm leading-5 text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="text-sm leading-5 text-muted-foreground">
                 {item.description}
               </Text>
             ) : null}
           </View>
 
           <View className="gap-2">
-            <Text className="px-1 text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="px-1 text-sm font-medium text-muted-foreground">
               Quantity
             </Text>
             <View className="flex-row items-center gap-3">
               <Pressable
                 onPress={() => setQuantity((value) => Math.max(1, value - 1))}
                 accessibilityRole="button"
-                className="h-11 w-11 items-center justify-center rounded-2xl border border-border bg-card dark:border-border-dark dark:bg-card-dark">
-                <Text className="text-xl font-semibold text-foreground dark:text-foreground-dark">
+                className="h-11 w-11 items-center justify-center rounded-2xl border border-border bg-card">
+                <Text className="text-xl font-semibold text-foreground">
                   −
                 </Text>
               </Pressable>
-              <Text className="min-w-8 text-center text-xl font-bold text-foreground dark:text-foreground-dark">
+              <Text className="min-w-8 text-center text-xl font-bold text-foreground">
                 {quantity}
               </Text>
               <Pressable
                 onPress={() => setQuantity((value) => value + 1)}
                 accessibilityRole="button"
-                className="h-11 w-11 items-center justify-center rounded-2xl border border-border bg-card dark:border-border-dark dark:bg-card-dark">
-                <Text className="text-xl font-semibold text-foreground dark:text-foreground-dark">
+                className="h-11 w-11 items-center justify-center rounded-2xl border border-border bg-card">
+                <Text className="text-xl font-semibold text-foreground">
                   +
                 </Text>
               </Pressable>
@@ -122,7 +122,7 @@ export function PosItemSheet({ visible, item, onClose, onAdd }: PosItemSheetProp
 
           {options.length > 0 ? (
             <View className="gap-3">
-              <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Add-ons
               </Text>
               {options.map((option) => {
@@ -130,13 +130,13 @@ export function PosItemSheet({ visible, item, onClose, onAdd }: PosItemSheetProp
                 return (
                   <View
                     key={option.id}
-                    className="flex-row items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 dark:border-border-dark dark:bg-card-dark"
+                    className="flex-row items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3"
                     style={{ borderCurve: 'continuous' }}>
                     <View className="flex-1 gap-0.5">
-                      <Text className="text-base font-medium text-foreground dark:text-foreground-dark">
+                      <Text className="text-base font-medium text-foreground">
                         {option.name}
                       </Text>
-                      <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+                      <Text className="text-sm text-muted-foreground">
                         +{formatMoney(option.priceCents)}
                       </Text>
                     </View>
@@ -149,12 +149,12 @@ export function PosItemSheet({ visible, item, onClose, onAdd }: PosItemSheetProp
                           }))
                         }
                         accessibilityRole="button"
-                        className="h-9 w-9 items-center justify-center rounded-xl border border-border dark:border-border-dark">
-                        <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+                        className="h-9 w-9 items-center justify-center rounded-xl border border-border">
+                        <Text className="text-lg font-semibold text-foreground">
                           −
                         </Text>
                       </Pressable>
-                      <Text className="min-w-6 text-center text-base font-semibold text-foreground dark:text-foreground-dark">
+                      <Text className="min-w-6 text-center text-base font-semibold text-foreground">
                         {count}
                       </Text>
                       <Pressable
@@ -165,8 +165,8 @@ export function PosItemSheet({ visible, item, onClose, onAdd }: PosItemSheetProp
                           }))
                         }
                         accessibilityRole="button"
-                        className="h-9 w-9 items-center justify-center rounded-xl bg-primary dark:bg-primary-dark">
-                        <Text className="text-lg font-semibold text-primary-foreground dark:text-primary-foreground-dark">
+                        className="h-9 w-9 items-center justify-center rounded-xl bg-primary">
+                        <Text className="text-lg font-semibold text-primary-foreground">
                           +
                         </Text>
                       </Pressable>
@@ -178,7 +178,7 @@ export function PosItemSheet({ visible, item, onClose, onAdd }: PosItemSheetProp
           ) : null}
 
           <View className="gap-2">
-            <Text className="px-1 text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="px-1 text-sm font-medium text-muted-foreground">
               Special instructions
             </Text>
             <TextInput
@@ -187,18 +187,18 @@ export function PosItemSheet({ visible, item, onClose, onAdd }: PosItemSheetProp
               placeholder="No onions, extra spicy..."
               placeholderTextColor="#8E8E93"
               multiline
-              className="min-h-[88px] rounded-2xl border border-input bg-card px-4 py-3.5 text-base text-foreground dark:border-input-dark dark:bg-card-dark dark:text-foreground-dark"
+              className="min-h-[88px] rounded-2xl border border-input bg-card px-4 py-3.5 text-base text-foreground"
               style={{ borderCurve: 'continuous', textAlignVertical: 'top' }}
             />
           </View>
 
           <View
-            className="flex-row items-center justify-between rounded-2xl border border-border bg-muted px-4 py-3 dark:border-border-dark dark:bg-muted-dark"
+            className="flex-row items-center justify-between rounded-2xl border border-border bg-muted px-4 py-3"
             style={{ borderCurve: 'continuous' }}>
-            <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-sm font-medium text-muted-foreground">
               Line total
             </Text>
-            <Text className="text-lg font-bold text-foreground dark:text-foreground-dark">
+            <Text className="text-lg font-bold text-foreground">
               {formatMoney(lineTotalCents(previewLine))}
             </Text>
           </View>

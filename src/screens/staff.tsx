@@ -45,12 +45,12 @@ async function fetchStaff(api: ApiClient): Promise<StaffMember[]> {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row items-center justify-between gap-4">
-      <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <Text className="text-sm font-medium text-muted-foreground">
         {label}
       </Text>
       <Text
         selectable
-        className="flex-1 text-right text-base text-foreground dark:text-foreground-dark">
+        className="flex-1 text-right text-base text-foreground">
         {value}
       </Text>
     </View>
@@ -60,30 +60,30 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 function StaffCard({ member }: { member: StaffMember }) {
   return (
     <View
-      className="gap-4 rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+      className="gap-4 rounded-3xl border border-border bg-card p-5"
       style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
       <View className="flex-row items-center gap-4">
         {member.profile_photo_url ? (
           <Image source={{ uri: member.profile_photo_url }} className="h-14 w-14 rounded-full" />
         ) : (
-          <View className="h-14 w-14 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-dark/15">
-            <Text className="text-lg font-bold text-primary dark:text-primary-dark">
+          <View className="h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+            <Text className="text-lg font-bold text-primary">
               {getInitials(member.firstname, member.lastName)}
             </Text>
           </View>
         )}
 
         <View className="flex-1 gap-1.5">
-          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+          <Text className="text-lg font-semibold text-foreground">
             {member.firstname} {member.lastName}
           </Text>
           <View className="flex-row flex-wrap gap-2">
-            <View className="rounded-full bg-primary/10 px-3 py-1 dark:bg-primary-dark/15">
-              <Text className="text-xs font-semibold text-primary dark:text-primary-dark">
+            <View className="rounded-full bg-primary/10 px-3 py-1">
+              <Text className="text-xs font-semibold text-primary">
                 {formatLabel(member.role)}
               </Text>
             </View>
-            <View className="rounded-full bg-muted px-3 py-1 dark:bg-muted-dark">
+            <View className="rounded-full bg-muted px-3 py-1">
               <Text className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
                 {formatLabel(member.employmentType)}
               </Text>
@@ -92,7 +92,7 @@ function StaffCard({ member }: { member: StaffMember }) {
         </View>
       </View>
 
-      <View className="h-px bg-muted dark:bg-muted-dark" />
+      <View className="h-px bg-muted" />
 
       <View className="gap-3">
         <DetailRow label="Email" value={member.email} />
@@ -103,14 +103,14 @@ function StaffCard({ member }: { member: StaffMember }) {
 
       {member.availability?.length ? (
         <View className="gap-2">
-          <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-sm font-medium text-muted-foreground">
             Availability
           </Text>
           <View className="flex-row flex-wrap gap-2">
             {member.availability.map((day) => (
               <View
                 key={day}
-                className="rounded-xl border border-border bg-muted px-3 py-1.5 dark:border-border-dark dark:bg-muted-dark">
+                className="rounded-xl border border-border bg-muted px-3 py-1.5">
                 <Text className="text-xs font-semibold text-neutral-700 dark:text-neutral-200">
                   {day}
                 </Text>
@@ -142,8 +142,8 @@ export default function StaffScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-base font-medium text-muted-foreground">
           Loading...
         </Text>
       </View>
@@ -152,11 +152,11 @@ export default function StaffScreen() {
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-center text-xl font-semibold text-foreground dark:text-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-center text-xl font-semibold text-foreground">
           Sign in required
         </Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
           Sign in from the Home tab to view staff members.
         </Text>
       </View>
@@ -167,12 +167,12 @@ export default function StaffScreen() {
     <ScreenScroll refreshing={isFetching} onRefresh={() => refetch()}>
       <View className="gap-2">
         <Text
-          className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+          className={`font-bold tracking-tight text-foreground ${
             isTablet ? 'text-3xl' : 'text-4xl'
           }`}>
           Staff
         </Text>
-        <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-base leading-6 text-muted-foreground">
           {isLoading ? 'Loading staff members...' : `${staff.length} staff members`}
         </Text>
       </View>
@@ -195,9 +195,9 @@ export default function StaffScreen() {
 
       {!isLoading && !isError && staff.length === 0 ? (
         <View
-          className="rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+          className="rounded-3xl border border-border bg-card p-5"
           style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
-          <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base leading-6 text-muted-foreground">
             No staff members found.
           </Text>
         </View>

@@ -24,7 +24,7 @@ export function ScreenScroll({
 
   return (
     <ScrollView
-      className="flex-1 bg-background dark:bg-background-dark"
+      className="flex-1 bg-background"
       contentContainerStyle={{
         ...scrollContentStyle,
         paddingBottom: (scrollContentStyle.paddingBottom as number) + bottomInset,

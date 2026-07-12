@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 
 import { formatMoney } from '@/utils/format-money';
@@ -15,25 +16,25 @@ interface PosCartLineRowProps {
 export function PosCartLineRow({ line, onDecrement, onIncrement, onRemove }: PosCartLineRowProps) {
   return (
     <View
-      className="gap-3 rounded-2xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+      className="gap-3 rounded-2xl border border-border bg-card p-4"
       style={{ borderCurve: 'continuous' }}>
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 gap-1">
-          <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+          <Text className="text-base font-semibold text-foreground">
             {line.itemName}
           </Text>
           {line.options.length > 0 ? (
-            <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-sm text-muted-foreground">
               {line.options.map((option) => `${option.quantity}× ${option.name}`).join(', ')}
             </Text>
           ) : null}
           {line.specialInstructions ? (
-            <Text className="text-sm italic text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-sm italic text-muted-foreground">
               “{line.specialInstructions}”
             </Text>
           ) : null}
         </View>
-        <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+        <Text className="text-base font-semibold text-foreground">
           {formatMoney(lineTotalCents(line))}
         </Text>
       </View>
@@ -43,23 +44,28 @@ export function PosCartLineRow({ line, onDecrement, onIncrement, onRemove }: Pos
           <Pressable
             onPress={onDecrement}
             accessibilityRole="button"
-            className="h-9 w-9 items-center justify-center rounded-xl border border-border dark:border-border-dark">
-            <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">−</Text>
+            className="h-9 w-9 items-center justify-center rounded-xl border border-border">
+            <Text className="text-lg font-semibold text-foreground">−</Text>
           </Pressable>
-          <Text className="min-w-6 text-center text-base font-semibold text-foreground dark:text-foreground-dark">
+          <Text className="min-w-6 text-center text-base font-semibold text-foreground">
             {line.quantity}
           </Text>
           <Pressable
             onPress={onIncrement}
             accessibilityRole="button"
-            className="h-9 w-9 items-center justify-center rounded-xl bg-primary dark:bg-primary-dark">
-            <Text className="text-lg font-semibold text-primary-foreground dark:text-primary-foreground-dark">
+            className="h-9 w-9 items-center justify-center rounded-xl bg-primary">
+            <Text className="text-lg font-semibold text-primary-foreground">
               +
             </Text>
           </Pressable>
         </View>
-        <Pressable onPress={onRemove} accessibilityRole="button">
-          <Text className="text-sm font-semibold text-red-600 dark:text-red-400">Remove</Text>
+        <Pressable
+          onPress={onRemove}
+          accessibilityRole="button"
+          accessibilityLabel="Remove item"
+          hitSlop={4}
+          className="h-9 w-9 items-center justify-center rounded-xl border border-border">
+          <Ionicons name="trash-outline" size={18} color="#DC2626" />
         </Pressable>
       </View>
     </View>

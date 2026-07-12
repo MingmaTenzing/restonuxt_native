@@ -1,12 +1,16 @@
 import { describe, expect, test } from 'bun:test';
 
 import {
+  addCartLine,
+  areCartLinesMergeable,
   buildOrderItemCreates,
   cartItemCount,
+  cartLineMergeKey,
   cartTotalCents,
   lineTotalCents,
   removeCartLine,
   updateCartLineQuantity,
+  clearCart,
 } from './cart';
 import type { CartLine } from './types';
 
@@ -72,5 +76,144 @@ describe('cart mutations', () => {
 
   test('removeCartLine drops matching id', () => {
     expect(removeCartLine([sampleLine], 'line-1')).toEqual([]);
+  });
+
+  test('clearCart returns an empty ticket', () => {
+    expect(clearCart()).toEqual([]);
+  });
+});
+
+describe('addCartLine', () => {
+  const plainBurger: CartLine = {
+    id: 'line-a',
+    menuItemId: 'menu-burger',
+    itemName: 'Burger',
+    unitPriceCents: 1200,
+    quantity: 1,
+    specialInstructions: null,
+    options: [],
+  };
+
+  test('merges identical items without options into one line', () => {
+    const incoming = { ...plainBurger, id: 'line-b', quantity: 2 };
+    const result = addCartLine([plainBurger], incoming);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.id).toBe('line-a');
+    expect(result[0]?.quantity).toBe(3);
+  });
+
+  test('keeps separate lines when menu options differ', () => {
+    const withCheese: CartLine = {
+      ...plainBurger,
+      id: 'line-cheese',
+      options: [{ menuOptionId: 'opt-cheese', name: 'Cheese', priceCents: 100, quantity: 1 }],
+    };
+    const withoutCheese = { ...plainBurger, id: 'line-plain', quantity: 1 };
+
+    const result = addCartLine([withCheese], withoutCheese);
+
+    expect(result).toHaveLength(2);
+    expect(result.map((line) => line.id)).toEqual(['line-cheese', 'line-plain']);
+  });
+
+  test('merges when option selections match even if option order differs', () => {
+    const lineOne: CartLine = {
+      ...plainBurger,
+      id: 'line-1',
+      quantity: 1,
+      options: [
+        { menuOptionId: 'opt-bacon', name: 'Bacon', priceCents: 200, quantity: 1 },
+        { menuOptionId: 'opt-cheese', name: 'Cheese', priceCents: 100, quantity: 2 },
+      ],
+    };
+    const lineTwo: CartLine = {
+      ...plainBurger,
+      id: 'line-2',
+      quantity: 2,
+      options: [
+        { menuOptionId: 'opt-cheese', name: 'Cheese', priceCents: 100, quantity: 2 },
+        { menuOptionId: 'opt-bacon', name: 'Bacon', priceCents: 200, quantity: 1 },
+      ],
+    };
+
+    const result = addCartLine([lineOne], lineTwo);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.quantity).toBe(3);
+  });
+
+  test('keeps separate lines when option quantities differ', () => {
+    const oneCheese: CartLine = {
+      ...plainBurger,
+      id: 'line-1',
+      options: [{ menuOptionId: 'opt-cheese', name: 'Cheese', priceCents: 100, quantity: 1 }],
+    };
+    const twoCheese: CartLine = {
+      ...plainBurger,
+      id: 'line-2',
+      options: [{ menuOptionId: 'opt-cheese', name: 'Cheese', priceCents: 100, quantity: 2 }],
+    };
+
+    const result = addCartLine([oneCheese], twoCheese);
+
+    expect(result).toHaveLength(2);
+  });
+
+  test('keeps separate lines when special instructions differ', () => {
+    const noOnions: CartLine = {
+      ...plainBurger,
+      id: 'line-1',
+      specialInstructions: 'No onions',
+    };
+    const plain = { ...plainBurger, id: 'line-2' };
+
+    const result = addCartLine([noOnions], plain);
+
+    expect(result).toHaveLength(2);
+  });
+
+  test('merges lines with matching special instructions', () => {
+    const first: CartLine = {
+      ...plainBurger,
+      id: 'line-1',
+      quantity: 1,
+      specialInstructions: 'Extra crispy',
+    };
+    const second: CartLine = {
+      ...plainBurger,
+      id: 'line-2',
+      quantity: 2,
+      specialInstructions: 'Extra crispy',
+    };
+
+    const result = addCartLine([first], second);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.quantity).toBe(3);
+  });
+});
+
+describe('cartLineMergeKey', () => {
+  test('treats null and empty instructions the same for matching', () => {
+    const withNull = cartLineMergeKey({
+      menuItemId: 'm1',
+      specialInstructions: null,
+      options: [],
+    });
+    const withEmpty = cartLineMergeKey({
+      menuItemId: 'm1',
+      specialInstructions: '',
+      options: [],
+    });
+
+    expect(withNull).toBe(withEmpty);
+  });
+
+  test('areCartLinesMergeable reflects merge key equality', () => {
+    const a: CartLine = { ...sampleLine, id: 'a' };
+    const b: CartLine = { ...sampleLine, id: 'b', quantity: 5 };
+
+    expect(areCartLinesMergeable(a, b)).toBe(true);
   });
 });

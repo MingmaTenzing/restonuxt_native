@@ -6,7 +6,7 @@ export { TableCell } from './cell';
 export function Table({ children }: PropsWithChildren) {
   return (
     <View
-      className="overflow-hidden rounded-3xl border border-border bg-card dark:border-border-dark dark:bg-card-dark"
+      className="overflow-hidden rounded-3xl border border-border bg-card"
       style={{ borderCurve: 'continuous', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.06)' }}>
       {children}
     </View>
@@ -15,7 +15,7 @@ export function Table({ children }: PropsWithChildren) {
 
 export function TableRow({ children }: PropsWithChildren) {
   return (
-    <View className="flex-row border-b border-neutral-100 last:border-b-0 dark:border-border-dark">
+    <View className="flex-row border-b border-border last:border-b-0">
       {children}
     </View>
   );

@@ -47,20 +47,18 @@ function BalanceDueHeader({
   const isDark = useColorScheme() === 'dark';
 
   return (
-    <View className="gap-4 bg-neutral-950 px-5 py-5 dark:bg-card-dark">
+    <View className="gap-4 bg-neutral-950 px-5 py-5">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 gap-1">
           <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">
             Balance due
           </Text>
-          <Text className="text-4xl font-bold tracking-tight text-white dark:text-foreground-dark">
+          <Text className="text-4xl font-bold tracking-tight text-white">
             {formatMoney(amountDueCents)}
           </Text>
-          <Text className="text-sm text-neutral-400 dark:text-muted-foreground-dark">
-            {payableLabel}
-          </Text>
+          <Text className="text-sm text-neutral-400">{payableLabel}</Text>
         </View>
-        <View className="h-11 w-11 items-center justify-center rounded-2xl bg-white/10 dark:bg-primary-dark/15">
+        <View className="h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
           <Ionicons
             name={isPaid ? 'checkmark-circle' : 'wallet-outline'}
             size={22}
@@ -94,161 +92,151 @@ export function CheckoutPaymentPanel({
 
   const controls = (
     <View className="gap-5 px-5 pb-5">
-        {isPaid ? (
-          <View
-            className="items-center gap-3 rounded-2xl border border-border bg-muted/50 px-5 py-6 dark:border-border-dark dark:bg-muted-dark/50"
-            style={{ borderCurve: 'continuous' }}>
-            <View className="h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 dark:bg-emerald-400/15">
-              <Ionicons name="checkmark-circle" size={32} color="#10B981" />
-            </View>
-            <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
-              Sale closed
-            </Text>
-            <Text className="text-center text-sm text-muted-foreground dark:text-muted-foreground-dark">
-              Payment recorded. You can return to the cashier queue.
-            </Text>
+      {isPaid ? (
+        <View
+          className="bg-muted/50 items-center gap-3 rounded-2xl border border-border px-5 py-6"
+          style={{ borderCurve: 'continuous' }}>
+          <View className="h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 dark:bg-emerald-400/15">
+            <Ionicons name="checkmark-circle" size={32} color="#10B981" />
           </View>
-        ) : (
-          <>
-            <View className="gap-2">
-              <Text className="px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
-                Payment method
-              </Text>
-              <View className="flex-row gap-1 rounded-2xl bg-muted p-1 dark:bg-muted-dark">
-                {METHODS.map((method) => {
-                  const isSelected = paymentMethod === method.value;
-                  return (
-                    <Pressable
-                      key={method.value}
-                      onPress={() => onPaymentMethodChange(method.value)}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isSelected }}
-                      className={`flex-1 flex-row items-center justify-center gap-2 rounded-xl px-3 py-3 ${
-                        isSelected ? 'bg-card dark:bg-card-dark' : ''
-                      }`}
-                      style={{
-                        borderCurve: 'continuous',
-                        boxShadow: isSelected ? '0 2px 8px rgba(0, 0, 0, 0.08)' : 'none',
-                      }}>
-                      <Ionicons
-                        name={method.icon}
-                        size={18}
-                        color={isSelected ? (isDark ? '#E4E4E7' : '#18181B') : '#71717A'}
-                      />
-                      <Text
-                        className={`text-sm font-semibold ${
-                          isSelected
-                            ? 'text-foreground dark:text-foreground-dark'
-                            : 'text-muted-foreground dark:text-muted-foreground-dark'
-                        }`}>
-                        {method.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+          <Text className="text-lg font-semibold text-foreground">Sale closed</Text>
+          <Text className="text-center text-sm text-muted-foreground">
+            Payment recorded. You can return to the cashier queue.
+          </Text>
+        </View>
+      ) : (
+        <>
+          <View className="gap-2">
+            <Text className="px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Payment method
+            </Text>
+            <View className="flex-row gap-1 rounded-2xl bg-muted p-1">
+              {METHODS.map((method) => {
+                const isSelected = paymentMethod === method.value;
+                return (
+                  <Pressable
+                    key={method.value}
+                    onPress={() => onPaymentMethodChange(method.value)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    className={`flex-1 flex-row items-center justify-center gap-2 rounded-xl px-3 py-3 ${
+                      isSelected ? 'bg-card' : ''
+                    }`}
+                    style={{
+                      borderCurve: 'continuous',
+                      boxShadow: isSelected ? '0 2px 8px rgba(0, 0, 0, 0.08)' : 'none',
+                    }}>
+                    <Ionicons
+                      name={method.icon}
+                      size={18}
+                      color={isSelected ? (isDark ? '#E4E4E7' : '#18181B') : '#71717A'}
+                    />
+                    <Text
+                      className={`text-sm font-semibold ${
+                        isSelected ? 'text-foreground' : 'text-muted-foreground'
+                      }`}>
+                      {method.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {paymentMethod === 'CASH' ? (
+            <View className="gap-4">
+              <View className="gap-2">
+                <Text className="px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Tendered amount
+                </Text>
+                <View className="flex-row items-center gap-2">
+                  <TextInput
+                    value={tenderedDollars}
+                    onChangeText={onTenderedChange}
+                    placeholder="0.00"
+                    placeholderTextColor="#8E8E93"
+                    keyboardType="decimal-pad"
+                    className="flex-1 rounded-2xl border border-border bg-background px-4 py-3.5 text-2xl font-bold tabular-nums text-foreground"
+                    style={{ borderCurve: 'continuous' }}
+                  />
+                  <Pressable
+                    onPress={onSetExactAmount}
+                    accessibilityRole="button"
+                    className="rounded-2xl border border-border bg-background px-4 py-3.5"
+                    style={{ borderCurve: 'continuous' }}>
+                    <Text className="text-sm font-semibold text-foreground">Exact</Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              <View className="flex-row flex-wrap gap-2">
+                {QUICK_AMOUNTS.map((amount) => (
+                  <Pressable
+                    key={amount}
+                    onPress={() => onAddQuickAmount(amount)}
+                    accessibilityRole="button"
+                    className="min-w-[72px] flex-1 items-center rounded-2xl border border-border bg-background py-2.5 active:opacity-70"
+                    style={{ borderCurve: 'continuous' }}>
+                    <Text className="text-sm font-semibold text-foreground">+{amount}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <View
+                className="bg-muted/50 flex-row items-center justify-between rounded-2xl border border-border px-4 py-4"
+                style={{ borderCurve: 'continuous' }}>
+                <Text className="text-sm font-medium text-muted-foreground">Change due</Text>
+                <Text
+                  className={`text-2xl font-bold tabular-nums ${
+                    changeDueCents > 0
+                      ? 'text-emerald-700 dark:text-emerald-400'
+                      : 'text-foreground'
+                  }`}>
+                  {formatMoney(changeDueCents)}
+                </Text>
               </View>
             </View>
-
-            {paymentMethod === 'CASH' ? (
-              <View className="gap-4">
-                <View className="gap-2">
-                  <Text className="px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
-                    Tendered amount
-                  </Text>
-                  <View className="flex-row items-center gap-2">
-                    <TextInput
-                      value={tenderedDollars}
-                      onChangeText={onTenderedChange}
-                      placeholder="0.00"
-                      placeholderTextColor="#8E8E93"
-                      keyboardType="decimal-pad"
-                      className="flex-1 rounded-2xl border border-border bg-background px-4 py-3.5 text-2xl font-bold tabular-nums text-foreground dark:border-border-dark dark:bg-background-dark dark:text-foreground-dark"
-                      style={{ borderCurve: 'continuous' }}
-                    />
-                    <Pressable
-                      onPress={onSetExactAmount}
-                      accessibilityRole="button"
-                      className="rounded-2xl border border-border bg-background px-4 py-3.5 dark:border-border-dark dark:bg-background-dark"
-                      style={{ borderCurve: 'continuous' }}>
-                      <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark">
-                        Exact
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
-
-                <View className="flex-row flex-wrap gap-2">
-                  {QUICK_AMOUNTS.map((amount) => (
-                    <Pressable
-                      key={amount}
-                      onPress={() => onAddQuickAmount(amount)}
-                      accessibilityRole="button"
-                      className="min-w-[72px] flex-1 items-center rounded-2xl border border-border bg-background py-2.5 active:opacity-70 dark:border-border-dark dark:bg-background-dark"
-                      style={{ borderCurve: 'continuous' }}>
-                      <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark">
-                        +{amount}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-
-                <View
-                  className="flex-row items-center justify-between rounded-2xl border border-border bg-muted/50 px-4 py-4 dark:border-border-dark dark:bg-muted-dark/50"
-                  style={{ borderCurve: 'continuous' }}>
-                  <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
-                    Change due
-                  </Text>
-                  <Text
-                    className={`text-2xl font-bold tabular-nums ${
-                      changeDueCents > 0
-                        ? 'text-emerald-700 dark:text-emerald-400'
-                        : 'text-foreground dark:text-foreground-dark'
-                    }`}>
-                    {formatMoney(changeDueCents)}
-                  </Text>
-                </View>
+          ) : (
+            <View
+              className="bg-muted/50 flex-row items-start gap-3 rounded-2xl border border-border px-4 py-4"
+              style={{ borderCurve: 'continuous' }}>
+              <View className="bg-primary/10 mt-0.5 h-9 w-9 items-center justify-center rounded-xl">
+                <Ionicons name="card-outline" size={18} color={isDark ? '#E4E4E7' : '#18181B'} />
               </View>
-            ) : (
-              <View
-                className="flex-row items-start gap-3 rounded-2xl border border-border bg-muted/50 px-4 py-4 dark:border-border-dark dark:bg-muted-dark/50"
-                style={{ borderCurve: 'continuous' }}>
-                <View className="mt-0.5 h-9 w-9 items-center justify-center rounded-xl bg-primary/10 dark:bg-primary-dark/15">
-                  <Ionicons name="card-outline" size={18} color={isDark ? '#E4E4E7' : '#18181B'} />
-                </View>
-                <Text className="flex-1 text-sm leading-5 text-muted-foreground dark:text-muted-foreground-dark">
-                  Present the card terminal to the customer. Confirm payment on the device, then
-                  close the sale here.
-                </Text>
-              </View>
-            )}
+              <Text className="flex-1 text-sm leading-5 text-muted-foreground">
+                Present the card terminal to the customer. Confirm payment on the device, then close
+                the sale here.
+              </Text>
+            </View>
+          )}
 
-            {errorMessage ? (
-              <View
-                className="rounded-2xl border border-red-200/80 bg-red-50 px-4 py-3 dark:border-red-900/50 dark:bg-red-950/40"
-                style={{ borderCurve: 'continuous' }}>
-                <Text selectable className="text-sm text-red-700 dark:text-red-300">
-                  {errorMessage}
-                </Text>
-              </View>
-            ) : null}
+          {errorMessage ? (
+            <View
+              className="rounded-2xl border border-red-200/80 bg-red-50 px-4 py-3 dark:border-red-900/50 dark:bg-red-950/40"
+              style={{ borderCurve: 'continuous' }}>
+              <Text selectable className="text-sm text-red-700 dark:text-red-300">
+                {errorMessage}
+              </Text>
+            </View>
+          ) : null}
 
-            <Button onPress={isSubmitting || !canPay ? undefined : onSubmit}>
-              {isSubmitting
-                ? 'Closing sale...'
-                : canPay
-                  ? `Close sale · ${formatMoney(amountDueCents)}`
-                  : paymentMethod === 'CASH'
-                    ? 'Enter tendered amount'
-                    : 'Nothing to collect'}
-            </Button>
-          </>
-        )}
+          <Button onPress={isSubmitting || !canPay ? undefined : onSubmit}>
+            {isSubmitting
+              ? 'Closing sale...'
+              : canPay
+                ? `Close sale · ${formatMoney(amountDueCents)}`
+                : paymentMethod === 'CASH'
+                  ? 'Enter tendered amount'
+                  : 'Nothing to collect'}
+          </Button>
+        </>
+      )}
     </View>
   );
 
   return (
     <View
-      className={`overflow-hidden rounded-3xl border border-border bg-card dark:border-border-dark dark:bg-card-dark ${
+      className={`overflow-hidden rounded-3xl border border-border bg-card ${
         fillHeight ? 'flex-1' : ''
       }`}
       style={{ borderCurve: 'continuous', boxShadow: '0 12px 32px rgba(0, 0, 0, 0.08)' }}>

@@ -17,28 +17,28 @@ export function TableCard({ table, onPress }: TableCardProps) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Edit table ${table.number}`}
-      className="flex-row items-center gap-4 rounded-3xl border border-border bg-card p-4 active:opacity-70 dark:border-border-dark dark:bg-card-dark"
+      className="flex-row items-center gap-4 rounded-3xl border border-border bg-card p-4 active:opacity-70"
       style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
       <View
         className={`h-14 w-14 items-center justify-center rounded-2xl ${
           isOccupied
             ? 'bg-amber-500/15 dark:bg-amber-400/15'
-            : 'bg-primary/10 dark:bg-primary-dark/15'
+            : 'bg-primary/10'
         }`}
         style={{ borderCurve: 'continuous' }}>
         <Text
           className={`text-lg font-bold ${
-            isOccupied ? 'text-amber-600 dark:text-amber-400' : 'text-primary dark:text-primary-dark'
+            isOccupied ? 'text-amber-600 dark:text-amber-400' : 'text-primary'
           }`}>
           {table.number}
         </Text>
       </View>
 
       <View className="flex-1 gap-1">
-        <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+        <Text className="text-base font-semibold text-foreground">
           Table {table.number}
         </Text>
-        <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-sm text-muted-foreground">
           Seats {table.capacity}
         </Text>
       </View>

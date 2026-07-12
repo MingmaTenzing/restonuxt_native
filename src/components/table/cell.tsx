@@ -9,11 +9,11 @@ export function TableCell({ children, label }: TableCellProps) {
   return (
     <View className="flex-1 gap-1 px-4 py-3">
       {label ? (
-        <Text className="text-xs font-semibold uppercase tracking-wide text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {label}
         </Text>
       ) : null}
-      <Text className="text-base text-foreground dark:text-foreground-dark">{children}</Text>
+      <Text className="text-base text-foreground">{children}</Text>
     </View>
   );
 }

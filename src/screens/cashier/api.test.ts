@@ -7,6 +7,7 @@ import { testApiClient } from '@/test/test-api-client';
 import {
   closeTakeawaySale,
   fetchActiveSessions,
+  fetchCheckoutOrder,
   fetchSessionCheckout,
   fetchUnpaidTakeawayOrders,
   markTablePaid,
@@ -94,6 +95,30 @@ describe('cashier api', () => {
 
     expect(orders).toHaveLength(1);
     expect(orders[0]?.id).toBe('order-1');
+  });
+
+  test('fetchCheckoutOrder unwraps nested order payload', async () => {
+    restore = withMockFetch((input) => {
+      expect(String(input)).toBe(apiUrl('/api/orders/order-42'));
+      return jsonResponse({
+        order: { id: 'order-42', orderNo: 42, paymentStatus: 'UNPAID', totalAmountCents: 1500 },
+      });
+    });
+
+    const order = await fetchCheckoutOrder(testApiClient('token'), 'order-42');
+
+    expect(order.id).toBe('order-42');
+    expect(order.totalAmountCents).toBe(1500);
+  });
+
+  test('fetchCheckoutOrder throws friendly message on 404', async () => {
+    restore = withMockFetch(() => {
+      return new Response('Not found', { status: 404 });
+    });
+
+    await expect(fetchCheckoutOrder(testApiClient('token'), 'missing')).rejects.toThrow(
+      'This order no longer exists.'
+    );
   });
 
   test('markTablePaid posts checkout payload', async () => {

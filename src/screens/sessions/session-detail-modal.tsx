@@ -76,14 +76,14 @@ export function SessionDetailModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}>
-      <View className="flex-1 bg-background dark:bg-background-dark">
-        <View className="flex-row items-center justify-between border-b border-neutral-200/70 px-5 pb-4 pt-6 dark:border-border-dark">
+      <View className="flex-1 bg-background">
+        <View className="flex-row items-center justify-between border-b border-border/70 px-5 pb-4 pt-6">
           <Pressable onPress={onClose} hitSlop={12} disabled={isClosing}>
-            <Text className="text-base font-medium text-primary dark:text-primary-dark">
+            <Text className="text-base font-medium text-primary">
               Close
             </Text>
           </Pressable>
-          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+          <Text className="text-lg font-semibold text-foreground">
             Session details
           </Text>
           <View className="w-14" />
@@ -94,51 +94,51 @@ export function SessionDetailModal({
           contentContainerClassName="gap-5 px-5 py-5"
           keyboardShouldPersistTaps="handled">
           <View className="gap-2">
-            <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark">
+            <Text className="text-2xl font-bold text-foreground">
               Table {tableNumber}
             </Text>
-            <Text selectable className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+            <Text selectable className="text-sm text-muted-foreground">
               Status {session.status.replace(/_/g, ' ')} · Opened {formatDateTime(session.openedAt)}
             </Text>
             {session.closedAt ? (
-              <Text selectable className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+              <Text selectable className="text-sm text-muted-foreground">
                 Closed {formatDateTime(session.closedAt)}
               </Text>
             ) : null}
           </View>
 
           {isLoadingCheckout ? (
-            <Text className="text-base text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-base text-muted-foreground">
               Loading checkout summary...
             </Text>
           ) : summary ? (
             <View
-              className="gap-3 rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+              className="gap-3 rounded-3xl border border-border bg-card p-5"
               style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
-              <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Summary
               </Text>
               <View className="flex-row items-center justify-between">
-                <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+                <Text className="text-sm text-muted-foreground">
                   Session total
                 </Text>
-                <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+                <Text className="text-base font-semibold text-foreground">
                   {formatMoney(summary.sessionTotalCents)}
                 </Text>
               </View>
               <View className="flex-row items-center justify-between">
-                <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+                <Text className="text-sm text-muted-foreground">
                   Outstanding
                 </Text>
-                <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+                <Text className="text-base font-semibold text-foreground">
                   {formatMoney(summary.payableTotalCents)}
                 </Text>
               </View>
               <View className="flex-row items-center justify-between">
-                <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+                <Text className="text-sm text-muted-foreground">
                   Paid
                 </Text>
-                <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+                <Text className="text-base font-semibold text-foreground">
                   {formatMoney(summary.paidTotalCents)}
                 </Text>
               </View>
@@ -146,14 +146,14 @@ export function SessionDetailModal({
           ) : null}
 
           <View className="gap-3">
-            <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Orders ({orders.length})
             </Text>
             {orders.length === 0 ? (
               <View
-                className="rounded-2xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+                className="rounded-2xl border border-border bg-card p-4"
                 style={{ borderCurve: 'continuous' }}>
-                <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+                <Text className="text-base leading-6 text-muted-foreground">
                   No orders on this session yet.
                 </Text>
               </View>
@@ -161,18 +161,18 @@ export function SessionDetailModal({
               orders.map((order) => (
                 <View
                   key={order.id}
-                  className="gap-3 rounded-2xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+                  className="gap-3 rounded-2xl border border-border bg-card p-4"
                   style={{ borderCurve: 'continuous' }}>
                   <View className="flex-row items-start justify-between gap-3">
                     <View className="flex-1 gap-1">
-                      <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+                      <Text className="text-base font-semibold text-foreground">
                         #{order.orderNo} · {order.customerName || 'Guest'}
                       </Text>
-                      <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+                      <Text className="text-sm text-muted-foreground">
                         {countItems(order)} {countItems(order) === 1 ? 'item' : 'items'}
                       </Text>
                     </View>
-                    <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+                    <Text className="text-base font-semibold text-foreground">
                       {formatMoney(order.totalAmountCents)}
                     </Text>
                   </View>
@@ -187,7 +187,7 @@ export function SessionDetailModal({
 
           {isActive && hasUnpaidOrders ? (
             <View className="gap-2">
-              <Text className="px-1 text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="px-1 text-sm font-medium text-muted-foreground">
                 Payment method
               </Text>
               <View className="flex-row flex-wrap gap-2">
@@ -201,13 +201,13 @@ export function SessionDetailModal({
                       accessibilityState={{ selected: isSelected }}
                       className={`rounded-full px-4 py-2 ${
                         isSelected
-                          ? 'bg-primary dark:bg-primary-dark'
-                          : 'border border-border bg-card dark:border-border-dark dark:bg-card-dark'
+                          ? 'bg-primary'
+                          : 'border border-border bg-card'
                       }`}>
                       <Text
                         className={`text-sm font-semibold ${
                           isSelected
-                            ? 'text-primary-foreground dark:text-primary-foreground-dark'
+                            ? 'text-primary-foreground'
                             : 'text-neutral-600 dark:text-neutral-300'
                         }`}>
                         {option.label}
@@ -245,7 +245,7 @@ export function SessionDetailModal({
                     : 'Close session'}
               </Button>
               {!canClose && !isLoadingCheckout ? (
-                <Text className="text-center text-sm text-muted-foreground dark:text-muted-foreground-dark">
+                <Text className="text-center text-sm text-muted-foreground">
                   Unable to close this session right now.
                 </Text>
               ) : null}

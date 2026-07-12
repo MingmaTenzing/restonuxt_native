@@ -20,12 +20,12 @@ export default function EventsScreen() {
     <ScreenScroll>
       <View className="gap-2">
         <Text
-          className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+          className={`font-bold tracking-tight text-foreground ${
             isTablet ? 'text-3xl' : 'text-4xl'
           }`}>
           Events
         </Text>
-        <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-base leading-6 text-muted-foreground">
           {events.length} {pluralize(events.length, 'scheduled event')} in the current plan.
         </Text>
       </View>

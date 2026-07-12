@@ -15,7 +15,7 @@ export function ThemeToggle({ variant = 'row' }: ThemeToggleProps) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-        className="h-10 w-10 items-center justify-center rounded-full border border-border bg-card active:opacity-80 dark:border-border-dark dark:bg-card-dark"
+        className="h-10 w-10 items-center justify-center rounded-full border border-border bg-card active:opacity-80"
         style={{ borderCurve: 'continuous' }}
         onPress={toggleColorScheme}>
         <Ionicons
@@ -28,12 +28,12 @@ export function ThemeToggle({ variant = 'row' }: ThemeToggleProps) {
   }
 
   return (
-    <View className="flex-row items-center justify-between gap-4 border-b border-neutral-100 px-4 py-3 dark:border-border-dark">
+    <View className="flex-row items-center justify-between gap-4 border-b border-border px-4 py-3">
       <View className="flex-1 gap-1">
-        <Text className="text-base font-medium text-foreground dark:text-foreground-dark">
+        <Text className="text-base font-medium text-foreground">
           Dark mode
         </Text>
-        <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-sm text-muted-foreground">
           Use a dark appearance across the app
         </Text>
       </View>

@@ -146,14 +146,14 @@ export function MenuItemFormModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}>
-      <View className="flex-1 bg-background dark:bg-background-dark">
-        <View className="flex-row items-center justify-between border-b border-neutral-200/70 px-5 pb-4 pt-6 dark:border-border-dark">
+      <View className="flex-1 bg-background">
+        <View className="flex-row items-center justify-between border-b border-border/70 px-5 pb-4 pt-6">
           <Pressable onPress={onClose} hitSlop={12} disabled={isBusy}>
-            <Text className="text-base font-medium text-primary dark:text-primary-dark">
+            <Text className="text-base font-medium text-primary">
               Cancel
             </Text>
           </Pressable>
-          <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+          <Text className="text-lg font-semibold text-foreground">
             {item ? 'Item details' : 'New item'}
           </Text>
           <View className="w-14" />
@@ -168,13 +168,13 @@ export function MenuItemFormModal({
             disabled={isUploadingImage}
             accessibilityRole="button"
             accessibilityLabel="Choose menu item photo"
-            className="relative h-56 w-full items-center justify-center bg-muted dark:bg-muted-dark">
+            className="relative h-56 w-full items-center justify-center bg-muted">
             {previewUri ? (
               <Image source={{ uri: previewUri }} resizeMode="cover" className="h-full w-full" />
             ) : (
               <View className="items-center gap-2">
                 <Ionicons name="image-outline" size={40} color="#8E8E93" />
-                <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+                <Text className="text-sm font-medium text-muted-foreground">
                   Add a photo
                 </Text>
               </View>
@@ -184,8 +184,8 @@ export function MenuItemFormModal({
                 <ActivityIndicator color="#FAFAFA" />
               </View>
             ) : (
-              <View className="absolute bottom-4 right-4 rounded-full bg-primary px-3 py-2 dark:bg-primary-dark">
-                <Text className="text-sm font-semibold text-primary-foreground dark:text-primary-foreground-dark">
+              <View className="absolute bottom-4 right-4 rounded-full bg-primary px-3 py-2">
+                <Text className="text-sm font-semibold text-primary-foreground">
                   {previewUri ? 'Change' : 'Upload'}
                 </Text>
               </View>
@@ -221,13 +221,13 @@ export function MenuItemFormModal({
                         accessibilityState={{ selected: isActive }}
                         className={`rounded-full px-3 py-1.5 ${
                           isActive
-                            ? 'bg-primary dark:bg-primary-dark'
-                            : 'bg-muted dark:bg-muted-dark'
+                            ? 'bg-primary'
+                            : 'bg-muted'
                         }`}>
                         <Text
                           className={`text-xs font-semibold ${
                             isActive
-                              ? 'text-primary-foreground dark:text-primary-foreground-dark'
+                              ? 'text-primary-foreground'
                               : 'text-neutral-600 dark:text-neutral-300'
                           }`}>
                           {option}

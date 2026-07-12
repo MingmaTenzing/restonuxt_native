@@ -9,8 +9,8 @@ export default function DashboardScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-base font-medium text-muted-foreground">
           Loading...
         </Text>
       </View>
@@ -19,7 +19,7 @@ export default function DashboardScreen() {
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 py-8 dark:bg-background-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5 py-8">
         <SignIn />
       </View>
     );

@@ -20,8 +20,10 @@ import {
   buildOrderItemCreates,
   cartItemCount,
   cartTotalCents,
+  clearCart,
   createCartLineId,
 } from './cart';
+import { canSubmitPosOrder } from './pos-order';
 import { PosCartBar } from './pos-cart-bar';
 import { PosCartPanel } from './pos-cart-panel';
 import { PosCartSheet } from './pos-cart-sheet';
@@ -151,10 +153,13 @@ export default function PosScreen() {
   const itemCount = cartItemCount(cartLines);
   const totalCents = cartTotalCents(cartLines);
 
-  const canSubmit =
-    cartLines.length > 0 &&
-    customerName.trim().length > 0 &&
-    (mode === 'TAKEAWAY' || (!!selectedTableId && !!selectedTable?.activeSessionId));
+  const canSubmit = canSubmitPosOrder({
+    lineCount: cartLines.length,
+    customerName,
+    mode,
+    selectedTableId,
+    hasActiveSession: !!selectedTable?.activeSessionId,
+  });
 
   const destinationLabel = mode === 'DINING' ? (selectedTable?.number ?? null) : null;
 
@@ -189,6 +194,7 @@ export default function PosScreen() {
     customerName,
     onCustomerNameChange: setCustomerName,
     onUpdateLines: setCartLines,
+    onClearCart: () => setCartLines(clearCart()),
     onSubmit: () => submitMutation.mutate(),
     isSubmitting: submitMutation.isPending,
     errorMessage: submitMutation.isError ? (submitMutation.error as Error).message : null,
@@ -199,8 +205,8 @@ export default function PosScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-base font-medium text-muted-foreground">
           Loading...
         </Text>
       </View>
@@ -209,11 +215,11 @@ export default function PosScreen() {
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-center text-xl font-semibold text-foreground dark:text-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-center text-xl font-semibold text-foreground">
           Sign in required
         </Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
           Sign in from the Home tab to take orders.
         </Text>
       </View>
@@ -222,7 +228,7 @@ export default function PosScreen() {
 
   const menuPane = (
     <ScrollView
-      className="flex-1 bg-background dark:bg-background-dark"
+      className="flex-1 bg-background"
       style={{ flex: 1 }}
       contentContainerStyle={{
         ...posScrollContentStyle,
@@ -247,12 +253,12 @@ export default function PosScreen() {
       }>
       <View className="gap-2">
         <Text
-          className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+          className={`font-bold tracking-tight text-foreground ${
             isTablet ? 'text-3xl' : 'text-4xl'
           }`}>
           POS
         </Text>
-        <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="text-base leading-6 text-muted-foreground">
           {isLoadingMenu
             ? 'Loading menu...'
             : `${menuItems.length} dishes ready · ${mode === 'DINING' ? 'table service' : 'takeaway'}`}
@@ -271,14 +277,14 @@ export default function PosScreen() {
                 accessibilityState={{ selected: isActive }}
                 className={`rounded-2xl px-4 py-3 ${
                   isActive
-                    ? 'bg-primary dark:bg-primary-dark'
-                    : 'border border-border bg-card dark:border-border-dark dark:bg-card-dark'
+                    ? 'bg-primary'
+                    : 'border border-border bg-card'
                 }`}
                 style={{ borderCurve: 'continuous' }}>
                 <Text
                   className={`text-sm font-semibold ${
                     isActive
-                      ? 'text-primary-foreground dark:text-primary-foreground-dark'
+                      ? 'text-primary-foreground'
                       : 'text-neutral-600 dark:text-neutral-300'
                   }`}>
                   {option.label}
@@ -286,8 +292,8 @@ export default function PosScreen() {
                 <Text
                   className={`text-xs ${
                     isActive
-                      ? 'text-primary-foreground/80 dark:text-primary-foreground-dark/80'
-                      : 'text-muted-foreground dark:text-muted-foreground-dark'
+                      ? 'text-primary-foreground/80'
+                      : 'text-muted-foreground'
                   }`}>
                   {option.hint}
                 </Text>
@@ -299,7 +305,7 @@ export default function PosScreen() {
 
       {mode === 'DINING' ? (
         isLoadingTables ? (
-          <Text className="text-base text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base text-muted-foreground">
             Loading tables...
           </Text>
         ) : (
@@ -317,7 +323,7 @@ export default function PosScreen() {
       {!isMenuError ? (
         <View className="gap-3">
           <View
-            className="flex-row items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3 dark:border-border-dark dark:bg-card-dark"
+            className="flex-row items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3"
             style={{ borderCurve: 'continuous' }}>
             <Ionicons name="search" size={18} color="#8E8E93" />
             <TextInput
@@ -329,7 +335,7 @@ export default function PosScreen() {
               autoCorrect={false}
               clearButtonMode="while-editing"
               returnKeyType="search"
-              className="flex-1 text-base text-foreground dark:text-foreground-dark"
+              className="flex-1 text-base text-foreground"
             />
           </View>
 
@@ -345,13 +351,13 @@ export default function PosScreen() {
                     accessibilityState={{ selected: isActive }}
                     className={`rounded-full px-4 py-2 ${
                       isActive
-                        ? 'bg-primary dark:bg-primary-dark'
-                        : 'border border-border bg-card dark:border-border-dark dark:bg-card-dark'
+                        ? 'bg-primary'
+                        : 'border border-border bg-card'
                     }`}>
                     <Text
                       className={`text-sm font-semibold ${
                         isActive
-                          ? 'text-primary-foreground dark:text-primary-foreground-dark'
+                          ? 'text-primary-foreground'
                           : 'text-neutral-600 dark:text-neutral-300'
                       }`}>
                       {option ?? 'All'}
@@ -388,9 +394,9 @@ export default function PosScreen() {
 
       {!isLoadingMenu && !isMenuError && menuItems.length === 0 ? (
         <View
-          className="rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+          className="rounded-3xl border border-border bg-card p-5"
           style={{ borderCurve: 'continuous' }}>
-          <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base leading-6 text-muted-foreground">
             No available menu items. Mark dishes as available in the Menu tab.
           </Text>
         </View>
@@ -398,9 +404,9 @@ export default function PosScreen() {
 
       {!isLoadingMenu && !isMenuError && menuItems.length > 0 && filteredItems.length === 0 ? (
         <View
-          className="rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
+          className="rounded-3xl border border-border bg-card p-5"
           style={{ borderCurve: 'continuous' }}>
-          <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-base leading-6 text-muted-foreground">
             No dishes match your search.
           </Text>
         </View>
@@ -409,10 +415,10 @@ export default function PosScreen() {
       {sections.map(([category, categoryItems]) => (
         <View key={category} className="gap-3">
           <View className="flex-row items-baseline justify-between">
-            <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               {category}
             </Text>
-            <Text className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-xs font-medium text-muted-foreground">
               {categoryItems.length}
             </Text>
           </View>
@@ -432,7 +438,7 @@ export default function PosScreen() {
   );
 
   return (
-    <View className="flex-1 bg-background dark:bg-background-dark">
+    <View className="flex-1 bg-background">
       <View className="min-h-0 flex-1 flex-row items-stretch">
         <View className="min-h-0 min-w-0 flex-1">{menuPane}</View>
 

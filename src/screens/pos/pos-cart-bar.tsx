@@ -30,37 +30,37 @@ export function PosCartBar({
       accessibilityLabel={`View cart, ${itemCount} items, ${formatMoney(totalCents)}${
         destinationLabel ? `, table ${destinationLabel}` : ''
       }`}
-      className="absolute bottom-24 left-5 right-5 overflow-hidden rounded-3xl border border-border bg-card active:opacity-90 dark:border-border-dark dark:bg-card-dark"
+      className="absolute bottom-24 left-5 right-5 overflow-hidden rounded-3xl border border-border bg-card active:opacity-90"
       style={{
         borderCurve: 'continuous',
         boxShadow: '0 12px 32px rgba(0, 0, 0, 0.12)',
       }}>
-      <View className="h-1.5 bg-primary/15 dark:bg-primary-dark/20" />
+      <View className="h-1.5 bg-primary/15" />
       <View className="flex-row items-center justify-between gap-4 px-5 py-4">
         <View className="flex-row items-center gap-3">
           {destinationLabel ? (
-            <View className="h-11 min-w-11 items-center justify-center rounded-2xl bg-primary px-2.5 dark:bg-primary-dark">
-              <Text className="text-lg font-bold text-primary-foreground dark:text-primary-foreground-dark">
+            <View className="h-11 min-w-11 items-center justify-center rounded-2xl bg-primary px-2.5">
+              <Text className="text-lg font-bold text-primary-foreground">
                 {destinationLabel}
               </Text>
             </View>
           ) : (
-            <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary-dark/15">
+            <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
               <Ionicons name="receipt-outline" size={22} color={iconColor} />
             </View>
           )}
           <View className="gap-0.5">
-            <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+            <Text className="text-base font-semibold text-foreground">
               {itemCount} {itemCount === 1 ? 'item' : 'items'}
               {destinationLabel ? ` · Table ${destinationLabel}` : ''}
             </Text>
-            <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-sm text-muted-foreground">
               {destinationLabel ? 'Confirm table, then send' : 'Tap to review ticket'}
             </Text>
           </View>
         </View>
         <View className="flex-row items-center gap-2">
-          <Text className="text-xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+          <Text className="text-xl font-bold tracking-tight text-foreground">
             {formatMoney(totalCents)}
           </Text>
           <Ionicons name="chevron-up" size={18} color={iconColor} />

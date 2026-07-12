@@ -57,7 +57,7 @@ function ConnectionBadge({ state }: { state: KitchenConnectionState }) {
   const style = styles[state];
 
   return (
-    <View className="flex-row items-center gap-2 rounded-full bg-muted px-3 py-1.5 dark:bg-muted-dark">
+    <View className="flex-row items-center gap-2 rounded-full bg-muted px-3 py-1.5">
       <View className={`h-2.5 w-2.5 rounded-full ${style.dot}`} />
       <Text className={`text-sm font-semibold ${style.text}`}>{style.label}</Text>
     </View>
@@ -92,15 +92,15 @@ function QueueTabs({
             onPress={() => onChange(tab.id)}
             className={`rounded-full px-4 py-2.5 active:opacity-80 ${
               selected
-                ? 'bg-primary dark:bg-primary-dark'
-                : 'border border-border bg-card dark:border-border-dark dark:bg-card-dark'
+                ? 'bg-primary'
+                : 'border border-border bg-card'
             }`}
             style={{ borderCurve: 'continuous' }}>
             <Text
               className={`text-sm font-semibold ${
                 selected
-                  ? 'text-primary-foreground dark:text-primary-foreground-dark'
-                  : 'text-foreground dark:text-foreground-dark'
+                  ? 'text-primary-foreground'
+                  : 'text-foreground'
               }`}>
               {tab.label} ({tab.count})
             </Text>
@@ -269,8 +269,8 @@ export default function KitchenScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-base font-medium text-muted-foreground">
           Loading...
         </Text>
       </View>
@@ -279,11 +279,11 @@ export default function KitchenScreen() {
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-center text-xl font-semibold text-foreground dark:text-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-center text-xl font-semibold text-foreground">
           Sign in required
         </Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
           Sign in from the Home tab to open the kitchen display.
         </Text>
       </View>
@@ -291,17 +291,17 @@ export default function KitchenScreen() {
   }
 
   return (
-    <View className="flex-1 bg-background dark:bg-background-dark">
-      <View className="gap-4 border-b border-neutral-200/80 px-5 pb-4 pt-7 dark:border-border-dark">
+    <View className="flex-1 bg-background">
+      <View className="gap-4 border-b border-neutral-200/80 px-5 pb-4 pt-7">
         <View className="flex-row items-start justify-between gap-4">
           <View className="flex-1 gap-1">
             <Text
-              className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+              className={`font-bold tracking-tight text-foreground ${
                 isTablet ? 'text-3xl' : 'text-4xl'
               }`}>
               Kitchen
             </Text>
-            <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-base leading-6 text-muted-foreground">
               {orderCountLabel}
             </Text>
           </View>
@@ -356,9 +356,9 @@ export default function KitchenScreen() {
           }>
           {!isLoading && visibleOrders.length === 0 ? (
             <View
-              className="rounded-3xl border border-border bg-card p-6 dark:border-border-dark dark:bg-card-dark"
+              className="rounded-3xl border border-border bg-card p-6"
               style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
-              <Text className="text-center text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="text-center text-base leading-6 text-muted-foreground">
                 {activeTab === 'active'
                   ? 'No pending orders right now. New tickets will appear here automatically.'
                   : 'No completed orders in the last 24 hours.'}
@@ -368,7 +368,7 @@ export default function KitchenScreen() {
 
           {isLoading ? (
             <View className="py-10">
-              <Text className="text-center text-base text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="text-center text-base text-muted-foreground">
                 Loading kitchen queue...
               </Text>
             </View>

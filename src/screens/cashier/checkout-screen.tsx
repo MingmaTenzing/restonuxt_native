@@ -9,7 +9,6 @@ import { Button } from '@/components/button';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { countItems } from '@/screens/orders/order-stats';
-import type { PaymentMethod } from '@/screens/orders/types';
 import { formatDate } from '@/utils/format-date';
 import { formatMoney } from '@/utils/format-money';
 
@@ -20,22 +19,20 @@ import {
   markTablePaid,
 } from './api';
 import { CheckoutOrderBlock } from './checkout-order-block';
+import {
+  canAcceptCheckoutPayment,
+  formatTenderedInput,
+  getChangeDueCents,
+  getTableCheckoutAmountDue,
+  getTakeawayCheckoutAmountDue,
+  isTableCheckoutPaid,
+  isTakeawayCheckoutPaid,
+  parseTenderedCents,
+  type CashOrCard,
+} from './checkout';
 import { CheckoutPaymentPanel } from './checkout-payment-panel';
 
 type CheckoutKind = 'table' | 'takeaway';
-type CashOrCard = Extract<PaymentMethod, 'CASH' | 'CARD_TERMINAL'>;
-
-function parseTenderedCents(value: string) {
-  const cleaned = value.trim().replace(/[^0-9.]/g, '');
-  if (!cleaned) return 0;
-  const dollars = Number.parseFloat(cleaned);
-  if (!Number.isFinite(dollars) || dollars < 0) return 0;
-  return Math.round(dollars * 100);
-}
-
-function formatTenderedInput(cents: number) {
-  return (cents / 100).toFixed(2);
-}
 
 function SummaryChip({
   label,
@@ -50,18 +47,18 @@ function SummaryChip({
     <View
       className={`min-w-[100px] flex-1 gap-1 rounded-2xl border px-4 py-3 ${
         highlight
-          ? 'border-primary/25 bg-primary/5 dark:border-primary-dark/25 dark:bg-primary-dark/10'
-          : 'border-border bg-card dark:border-border-dark dark:bg-card-dark'
+          ? 'border-primary/25 bg-primary/5'
+          : 'border-border bg-card'
       }`}
       style={{ borderCurve: 'continuous' }}>
-      <Text className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <Text className="text-xs font-medium text-muted-foreground">
         {label}
       </Text>
       <Text
         className={`text-base font-bold tabular-nums ${
           highlight
-            ? 'text-foreground dark:text-foreground-dark'
-            : 'text-foreground dark:text-foreground-dark'
+            ? 'text-foreground'
+            : 'text-foreground'
         }`}>
         {value}
       </Text>
@@ -76,7 +73,7 @@ function CheckoutSkeleton() {
         {[1, 2, 3].map((key) => (
           <View
             key={key}
-            className="h-16 flex-1 rounded-2xl bg-muted dark:bg-muted-dark"
+            className="h-16 flex-1 rounded-2xl bg-muted"
             style={{ borderCurve: 'continuous' }}
           />
         ))}
@@ -84,7 +81,7 @@ function CheckoutSkeleton() {
       {[1, 2].map((key) => (
         <View
           key={key}
-          className="h-48 rounded-3xl bg-muted dark:bg-muted-dark"
+          className="h-48 rounded-3xl bg-muted"
           style={{ borderCurve: 'continuous' }}
         />
       ))}
@@ -140,22 +137,31 @@ export function CashierCheckoutScreen({
 
   const amountDueCents =
     kind === 'table'
-      ? (checkout?.summary.payableTotalCents ?? 0)
-      : (takeawayOrder?.totalAmountCents ?? 0);
+      ? checkout
+        ? getTableCheckoutAmountDue(checkout.summary)
+        : 0
+      : takeawayOrder
+        ? getTakeawayCheckoutAmountDue(takeawayOrder)
+        : 0;
 
   const isPaid =
     kind === 'table'
-      ? (checkout?.summary.payableOrderCount ?? 0) === 0 && (checkout?.summary.orderCount ?? 0) > 0
-      : takeawayOrder?.paymentStatus === 'PAID';
+      ? checkout
+        ? isTableCheckoutPaid(checkout.summary)
+        : false
+      : takeawayOrder
+        ? isTakeawayCheckoutPaid(takeawayOrder)
+        : false;
 
   const tenderedCents = parseTenderedCents(tenderedDollars);
-  const changeDueCents =
-    paymentMethod === 'CASH' ? Math.max(tenderedCents - amountDueCents, 0) : 0;
+  const changeDueCents = getChangeDueCents(paymentMethod, tenderedCents, amountDueCents);
 
-  const canPay =
-    !isPaid &&
-    amountDueCents > 0 &&
-    (paymentMethod === 'CARD_TERMINAL' || tenderedCents >= amountDueCents);
+  const canPay = canAcceptCheckoutPayment({
+    isPaid: !!isPaid,
+    amountDueCents,
+    paymentMethod,
+    tenderedCents,
+  });
 
   const invalidateCashier = () => {
     queryClient.invalidateQueries({ queryKey: ['cashier-sessions'] });
@@ -262,8 +268,8 @@ export function CashierCheckoutScreen({
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-base font-medium text-muted-foreground">
           Loading...
         </Text>
       </View>
@@ -272,8 +278,8 @@ export function CashierCheckoutScreen({
 
   if (!isSignedIn) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5 dark:bg-background-dark">
-        <Text className="text-center text-xl font-semibold text-foreground dark:text-foreground-dark">
+      <View className="flex-1 items-center justify-center bg-background px-5">
+        <Text className="text-center text-xl font-semibold text-foreground">
           Sign in required
         </Text>
       </View>
@@ -281,9 +287,9 @@ export function CashierCheckoutScreen({
   }
 
   return (
-    <View className="flex-1 bg-background dark:bg-background-dark">
+    <View className="flex-1 bg-background">
       <View
-        className="border-b border-border dark:border-border-dark"
+        className="border-b border-border"
         style={{
           paddingTop: insets.top + 20,
           paddingHorizontal: horizontalPadding,
@@ -293,26 +299,26 @@ export function CashierCheckoutScreen({
           onPress={handleBack}
           hitSlop={12}
           accessibilityRole="button"
-          className="mb-5 flex-row items-center gap-1.5 self-start rounded-full border border-border bg-card px-3.5 py-2 dark:border-border-dark dark:bg-card-dark"
+          className="mb-5 flex-row items-center gap-1.5 self-start rounded-full border border-border bg-card px-3.5 py-2"
           style={{ borderCurve: 'continuous' }}>
           <Ionicons name="chevron-back" size={16} color="#71717A" />
-          <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-sm font-medium text-muted-foreground">
             Cashier
           </Text>
         </Pressable>
 
         <View className="flex-row items-start justify-between gap-4">
           <View className="min-w-0 flex-1 gap-1">
-            <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {kind === 'table' ? 'Table checkout' : 'Takeaway checkout'}
             </Text>
             <Text
-              className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${
+              className={`font-bold tracking-tight text-foreground ${
                 isTablet ? 'text-3xl' : 'text-4xl'
               }`}>
               {title}
             </Text>
-            <Text className="text-base text-muted-foreground dark:text-muted-foreground-dark">
+            <Text className="text-base text-muted-foreground">
               {isLoading ? 'Loading checkout details...' : subtitle}
             </Text>
           </View>
@@ -322,13 +328,13 @@ export function CashierCheckoutScreen({
               className={`rounded-full px-3 py-1.5 ${
                 isPaid
                   ? 'bg-emerald-500/15 dark:bg-emerald-400/15'
-                  : 'bg-primary/10 dark:bg-primary-dark/15'
+                  : 'bg-primary/10'
               }`}>
               <Text
                 className={`text-xs font-bold uppercase tracking-wider ${
                   isPaid
                     ? 'text-emerald-700 dark:text-emerald-400'
-                    : 'text-foreground dark:text-foreground-dark'
+                    : 'text-foreground'
                 }`}>
                 {isPaid ? 'Paid' : 'Unpaid'}
               </Text>
@@ -374,10 +380,10 @@ export function CashierCheckoutScreen({
 
           {!isLoading && !isError && orders.length === 0 ? (
             <View
-              className="items-center gap-3 rounded-3xl border border-dashed border-border bg-card px-5 py-10 dark:border-border-dark dark:bg-card-dark"
+              className="items-center gap-3 rounded-3xl border border-dashed border-border bg-card px-5 py-10"
               style={{ borderCurve: 'continuous' }}>
               <Ionicons name="receipt-outline" size={32} color="#A1A1AA" />
-              <Text className="text-center text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
+              <Text className="text-center text-base leading-6 text-muted-foreground">
                 {kind === 'table'
                   ? 'No orders in this session yet.'
                   : 'This takeaway order could not be found.'}
@@ -412,10 +418,10 @@ export function CashierCheckoutScreen({
               </View>
 
               <View className="gap-1">
-                <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
+                <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   {kind === 'table' ? 'Session orders' : 'Order details'}
                 </Text>
-                <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
+                <Text className="text-lg font-semibold text-foreground">
                   {kind === 'table' ? 'Receipt breakdown' : 'Items on this order'}
                 </Text>
               </View>
@@ -431,8 +437,8 @@ export function CashierCheckoutScreen({
           <View
             className={
               isTablet
-                ? 'min-h-0 w-[380px] flex-1 border-l border-border dark:border-border-dark'
-                : 'border-t border-border bg-background dark:border-border-dark dark:bg-background-dark'
+                ? 'min-h-0 w-[380px] flex-1 border-l border-border'
+                : 'border-t border-border bg-background'
             }
             style={{
               paddingHorizontal: horizontalPadding,

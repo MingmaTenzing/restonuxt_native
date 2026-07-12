@@ -9,15 +9,15 @@ export function BarChart({ values }: BarChartProps) {
 
   return (
     <View
-      className="h-36 flex-row items-end gap-2 rounded-3xl border border-border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+      className="h-36 flex-row items-end gap-2 rounded-3xl border border-border bg-card p-4"
       style={{ borderCurve: 'continuous', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.06)' }}>
       {values.map((value, index) => (
         <View key={`${value}-${index}`} className="flex-1 items-center gap-2">
           <View
-            className="w-full rounded-t-xl bg-chart-2 transition-all dark:bg-chart-2-dark"
+            className="w-full rounded-t-xl bg-chart-2 transition-all"
             style={{ height: `${Math.max((value / maxValue) * 100, 8)}%` }}
           />
-          <Text className="text-xs font-semibold text-muted-foreground dark:text-muted-foreground-dark">
+          <Text className="text-xs font-semibold text-muted-foreground">
             {value}
           </Text>
         </View>
