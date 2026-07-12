@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
@@ -38,6 +38,7 @@ export default function OrdersScreen() {
     queryKey: ['orders', range],
     enabled: isReady,
     queryFn: () => fetchOrders(api, range),
+    placeholderData: keepPreviousData,
   });
 
   const stats = computeOrderStats(orders);
@@ -82,7 +83,9 @@ export default function OrdersScreen() {
         </Text>
       </View>
 
-      {!isError && !isLoading ? <OrderStatsRow stats={stats} /> : null}
+      {!isError && orders.length > 0 ? (
+        <OrderStatsRow stats={stats} isRefreshing={isFetching && !isLoading} />
+      ) : null}
 
       {!isError ? (
         <OrderSearch

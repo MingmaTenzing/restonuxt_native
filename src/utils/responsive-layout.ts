@@ -7,6 +7,7 @@ export const RESPONSIVE = {
   VERTICAL_PADDING: 28,
   GRID_GAP: 16,
   POS_SIDEBAR_WIDTH: 380,
+  POS_MENU_PANE_MIN_WIDTH: 320,
 } as const;
 
 export function isTabletWidth(width: number) {
@@ -90,7 +91,38 @@ export function getFabPosition(width: number) {
   return { bottom: 96, right: inset };
 }
 
+export function getPosSidebarWidth(screenWidth: number) {
+  if (!isTabletWidth(screenWidth)) return 0;
+  if (screenWidth >= RESPONSIVE.LARGE_TABLET_MIN_WIDTH) {
+    return RESPONSIVE.POS_SIDEBAR_WIDTH;
+  }
+  return Math.min(340, Math.max(280, Math.round(screenWidth * 0.38)));
+}
+
 export function getPosMenuPaneWidth(width: number, isTablet: boolean) {
   if (!isTablet) return width;
-  return Math.max(width - RESPONSIVE.POS_SIDEBAR_WIDTH, RESPONSIVE.TABLET_MIN_WIDTH);
+  return Math.max(
+    width - getPosSidebarWidth(width),
+    RESPONSIVE.POS_MENU_PANE_MIN_WIDTH
+  );
+}
+
+export function getPosMenuScrollContentStyle(
+  screenWidth: number,
+  isTablet: boolean,
+  extra?: Record<string, unknown>
+) {
+  const horizontalPadding = getHorizontalPadding(screenWidth);
+
+  if (!isTablet) {
+    return getScrollContentStyle(screenWidth, extra);
+  }
+
+  return {
+    gap: 24,
+    paddingHorizontal: horizontalPadding,
+    paddingTop: RESPONSIVE.VERTICAL_PADDING,
+    paddingBottom: RESPONSIVE.VERTICAL_PADDING,
+    ...extra,
+  };
 }

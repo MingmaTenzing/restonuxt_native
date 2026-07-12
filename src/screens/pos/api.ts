@@ -29,6 +29,7 @@ export async function submitDiningOrder(api: ApiClient, input: PosDiningOrderInp
       data: {
         tableId: input.tableId,
         customerName: input.customerName,
+        totalAmountCents: input.totalAmountCents,
         items: { create: input.items },
       },
     }),
@@ -41,6 +42,7 @@ export async function submitTakeawayOrder(api: ApiClient, input: PosTakeawayOrde
     body: JSON.stringify({
       data: {
         customerName: input.customerName,
+        totalAmountCents: input.totalAmountCents,
         items: { create: input.items },
       },
     }),

@@ -31,9 +31,9 @@ export function PosMenuCard({ item, onPress, width, style }: PosMenuCardProps) {
         <Image source={{ uri: item.imageUrl }} className="h-24 w-full rounded-2xl" />
       ) : (
         <View
-          className="h-24 items-center justify-center rounded-2xl bg-amber-500/10 dark:bg-amber-400/10"
+          className="h-24 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary-dark/15"
           style={{ borderCurve: 'continuous' }}>
-          <Text className="text-3xl font-bold text-amber-700 dark:text-amber-300">
+          <Text className="text-3xl font-bold text-primary dark:text-primary-dark">
             {item.name.slice(0, 1).toUpperCase()}
           </Text>
         </View>
@@ -46,7 +46,7 @@ export function PosMenuCard({ item, onPress, width, style }: PosMenuCardProps) {
           {item.name}
         </Text>
         <View className="flex-row items-center justify-between gap-2">
-          <Text className="text-base font-bold tracking-tight text-amber-700 dark:text-amber-300">
+          <Text className="text-base font-bold tracking-tight text-foreground dark:text-foreground-dark">
             {formatMoney(item.priceCents)}
           </Text>
           <View className="h-8 w-8 items-center justify-center rounded-full bg-primary dark:bg-primary-dark">

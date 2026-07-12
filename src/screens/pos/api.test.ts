@@ -87,7 +87,15 @@ describe('pos api', () => {
     await submitDiningOrder(testApiClient('token'), {
       tableId: 'table-1',
       customerName: 'Alex',
-      items: [{ menuItemId: 'm1', quantity: 2, unitPriceCents: 1200 }],
+      totalAmountCents: 2400,
+      items: [
+        {
+          menuItemId: 'm1',
+          itemName: 'Burger',
+          quantity: 2,
+          unitPriceCents: 1200,
+        },
+      ],
     });
 
     expect(capturedInit?.method).toBe('POST');
@@ -95,8 +103,16 @@ describe('pos api', () => {
       data: {
         tableId: 'table-1',
         customerName: 'Alex',
+        totalAmountCents: 2400,
         items: {
-          create: [{ menuItemId: 'm1', quantity: 2, unitPriceCents: 1200 }],
+          create: [
+            {
+              menuItemId: 'm1',
+              itemName: 'Burger',
+              quantity: 2,
+              unitPriceCents: 1200,
+            },
+          ],
         },
       },
     });
@@ -113,14 +129,30 @@ describe('pos api', () => {
 
     await submitTakeawayOrder(testApiClient('token'), {
       customerName: 'Sam',
-      items: [{ menuItemId: 'm2', quantity: 1, unitPriceCents: 900 }],
+      totalAmountCents: 900,
+      items: [
+        {
+          menuItemId: 'm2',
+          itemName: 'Soup',
+          quantity: 1,
+          unitPriceCents: 900,
+        },
+      ],
     });
 
     expect(JSON.parse(String(capturedInit?.body))).toEqual({
       data: {
         customerName: 'Sam',
+        totalAmountCents: 900,
         items: {
-          create: [{ menuItemId: 'm2', quantity: 1, unitPriceCents: 900 }],
+          create: [
+            {
+              menuItemId: 'm2',
+              itemName: 'Soup',
+              quantity: 1,
+              unitPriceCents: 900,
+            },
+          ],
         },
       },
     });

@@ -18,6 +18,18 @@ export async function fetchUnpaidTakeawayOrders(api: ApiClient) {
   return api<Order[]>('/api/orders/takeaway-unpaid');
 }
 
+export async function fetchCheckoutOrder(api: ApiClient, orderId: string) {
+  try {
+    const payload = await api<Record<string, unknown>>(`/api/orders/${orderId}`);
+    return (payload.order ?? payload.data ?? payload) as Order;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('404')) {
+      throw new Error('This order no longer exists.');
+    }
+    throw error;
+  }
+}
+
 export async function markTablePaid(api: ApiClient, input: MarkTablePaidInput) {
   return api('/api/orders/checkout/table/mark-paid', {
     method: 'POST',

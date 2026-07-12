@@ -83,7 +83,7 @@ export function PosItemSheet({ visible, item, onClose, onAdd }: PosItemSheetProp
             <Text className="text-2xl font-bold text-foreground dark:text-foreground-dark">
               {item.name}
             </Text>
-            <Text className="text-base font-semibold text-amber-700 dark:text-amber-300">
+            <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
               {formatMoney(item.priceCents)} base
             </Text>
             {item.description ? (
@@ -193,10 +193,12 @@ export function PosItemSheet({ visible, item, onClose, onAdd }: PosItemSheetProp
           </View>
 
           <View
-            className="flex-row items-center justify-between rounded-2xl border border-amber-200/70 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/40"
+            className="flex-row items-center justify-between rounded-2xl border border-border bg-muted px-4 py-3 dark:border-border-dark dark:bg-muted-dark"
             style={{ borderCurve: 'continuous' }}>
-            <Text className="text-sm font-medium text-amber-900 dark:text-amber-100">Line total</Text>
-            <Text className="text-lg font-bold text-amber-800 dark:text-amber-200">
+            <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">
+              Line total
+            </Text>
+            <Text className="text-lg font-bold text-foreground dark:text-foreground-dark">
               {formatMoney(lineTotalCents(previewLine))}
             </Text>
           </View>

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { useApi } from '@/hooks/use-api';
@@ -56,12 +57,13 @@ function searchItems(items: PosMenuItem[], query: string) {
 export default function PosScreen() {
   const { api, isLoaded, isSignedIn, isReady } = useApi();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
   const {
     isTablet,
     gridGap,
     posProductCardWidth,
     posSidebarWidth,
-    scrollContentStyle,
+    posScrollContentStyle,
   } = useResponsiveLayout();
 
   const [mode, setMode] = useState<PosMode>('DINING');
@@ -114,11 +116,16 @@ export default function PosScreen() {
         return submitDiningOrder(api, {
           tableId: selectedTableId,
           customerName: name,
+          totalAmountCents: totalCents,
           items,
         });
       }
 
-      return submitTakeawayOrder(api, { customerName: name, items });
+      return submitTakeawayOrder(api, {
+        customerName: name,
+        totalAmountCents: totalCents,
+        items,
+      });
     },
     onSuccess: (order) => {
       setCartLines([]);
@@ -149,9 +156,13 @@ export default function PosScreen() {
     customerName.trim().length > 0 &&
     (mode === 'TAKEAWAY' || (!!selectedTableId && !!selectedTable?.activeSessionId));
 
+  const destinationLabel = mode === 'DINING' ? (selectedTable?.number ?? null) : null;
+
   const submitLabel =
     mode === 'DINING'
-      ? `Send to kitchen · ${formatMoney(totalCents)}`
+      ? selectedTable
+        ? `Send to Table ${selectedTable.number} · ${formatMoney(totalCents)}`
+        : `Select a table · ${formatMoney(totalCents)}`
       : `Send takeaway · ${formatMoney(totalCents)}`;
 
   const handleMenuPress = (item: PosMenuItem) => {
@@ -183,6 +194,7 @@ export default function PosScreen() {
     errorMessage: submitMutation.isError ? (submitMutation.error as Error).message : null,
     canSubmit,
     submitLabel,
+    destinationLabel,
   };
 
   if (!isLoaded) {
@@ -211,11 +223,18 @@ export default function PosScreen() {
   const menuPane = (
     <ScrollView
       className="flex-1 bg-background dark:bg-background-dark"
+      style={{ flex: 1 }}
       contentContainerStyle={{
-        ...scrollContentStyle,
-        paddingBottom: !isTablet && itemCount > 0 ? 160 : scrollContentStyle.paddingBottom,
+        ...posScrollContentStyle,
+        paddingTop: isTablet
+          ? Math.max(insets.top, 12) + 16
+          : (posScrollContentStyle.paddingTop as number),
+        paddingBottom:
+          !isTablet && itemCount > 0
+            ? 160
+            : Math.max((posScrollContentStyle.paddingBottom as number) ?? 28, insets.bottom + 16),
       }}
-      contentInsetAdjustmentBehavior="automatic"
+      contentInsetAdjustmentBehavior={isTablet ? 'never' : 'automatic'}
       keyboardDismissMode="on-drag"
       refreshControl={
         <RefreshControl
@@ -326,12 +345,14 @@ export default function PosScreen() {
                     accessibilityState={{ selected: isActive }}
                     className={`rounded-full px-4 py-2 ${
                       isActive
-                        ? 'bg-amber-600 dark:bg-amber-500'
+                        ? 'bg-primary dark:bg-primary-dark'
                         : 'border border-border bg-card dark:border-border-dark dark:bg-card-dark'
                     }`}>
                     <Text
                       className={`text-sm font-semibold ${
-                        isActive ? 'text-amber-50' : 'text-neutral-600 dark:text-neutral-300'
+                        isActive
+                          ? 'text-primary-foreground dark:text-primary-foreground-dark'
+                          : 'text-neutral-600 dark:text-neutral-300'
                       }`}>
                       {option ?? 'All'}
                     </Text>
@@ -411,13 +432,18 @@ export default function PosScreen() {
   );
 
   return (
-    <>
-      <View className="flex-1 flex-row bg-background dark:bg-background-dark">
-        <View className="flex-1">{menuPane}</View>
+    <View className="flex-1 bg-background dark:bg-background-dark">
+      <View className="min-h-0 flex-1 flex-row items-stretch">
+        <View className="min-h-0 min-w-0 flex-1">{menuPane}</View>
 
         {isTablet ? (
-          <View style={{ width: posSidebarWidth }}>
-            <PosCartPanel {...cartPanelProps} variant="sidebar" />
+          <View className="min-h-0 self-stretch" style={{ width: posSidebarWidth }}>
+            <PosCartPanel
+              {...cartPanelProps}
+              variant="sidebar"
+              topInset={Math.max(insets.top, 12)}
+              bottomInset={insets.bottom}
+            />
           </View>
         ) : null}
       </View>
@@ -427,6 +453,7 @@ export default function PosScreen() {
           <PosCartBar
             itemCount={itemCount}
             totalCents={totalCents}
+            destinationLabel={destinationLabel}
             onPress={() => setCartVisible(true)}
           />
           <PosCartSheet
@@ -443,6 +470,6 @@ export default function PosScreen() {
         onClose={() => setCustomizingItem(null)}
         onAdd={(line) => setCartLines((lines) => addCartLine(lines, line))}
       />
-    </>
+    </View>
   );
 }

@@ -31,6 +31,8 @@ export interface CartLine {
 /** Body for Prisma nested create on POST /api/orders/pos/* */
 export interface OrderItemCreateInput {
   menuItemId: string;
+  itemName: string;
+  unitPriceCents: number;
   quantity: number;
   specialInstructions?: string | null;
   orderItemOptions?: {
@@ -46,11 +48,13 @@ export interface OrderItemCreateInput {
 export interface PosDiningOrderInput {
   tableId: string;
   customerName: string;
+  totalAmountCents: number;
   items: OrderItemCreateInput[];
 }
 
 export interface PosTakeawayOrderInput {
   customerName: string;
+  totalAmountCents: number;
   items: OrderItemCreateInput[];
 }
 

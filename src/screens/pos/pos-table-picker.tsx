@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, useColorScheme, View } from 'react-native';
 
 import type { PosTable } from './types';
 
@@ -20,6 +20,9 @@ export function PosTablePicker({
   openingTableId,
   onOpenSession,
 }: PosTablePickerProps) {
+  const isDark = useColorScheme() === 'dark';
+  const iconColor = isDark ? '#E4E4E7' : '#18181B';
+
   if (tables.length === 0) {
     return (
       <View
@@ -35,14 +38,62 @@ export function PosTablePicker({
   const selectedTable = tables.find((table) => table.id === selectedTableId) ?? null;
 
   return (
-    <View className="gap-3">
-      <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-muted-foreground-dark">
-        Table
-      </Text>
+    <View className="gap-4">
+      <View className="gap-1">
+        <Text className="text-sm font-semibold uppercase tracking-wider text-foreground dark:text-foreground-dark">
+          Choose table
+        </Text>
+        <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
+          Orders go to the selected table — check this before sending.
+        </Text>
+      </View>
+
+      {selectedTable ? (
+        <View
+          className="flex-row items-center gap-4 rounded-3xl border-2 border-primary bg-primary/5 px-5 py-4 dark:border-primary-dark dark:bg-primary-dark/10"
+          style={{ borderCurve: 'continuous' }}>
+          <View className="h-16 w-16 items-center justify-center rounded-2xl bg-primary dark:bg-primary-dark">
+            <Text className="text-3xl font-bold text-primary-foreground dark:text-primary-foreground-dark">
+              {selectedTable.number}
+            </Text>
+          </View>
+          <View className="flex-1 gap-0.5">
+            <Text className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground dark:text-muted-foreground-dark">
+              Sending to
+            </Text>
+            <Text className="text-3xl font-bold tracking-tight text-foreground dark:text-foreground-dark">
+              Table {selectedTable.number}
+            </Text>
+            <Text
+              className={`text-sm font-semibold ${
+                selectedTable.activeSessionId
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : 'text-muted-foreground dark:text-muted-foreground-dark'
+              }`}>
+              {selectedTable.activeSessionId
+                ? 'Session open · ready for orders'
+                : 'Session closed · open before sending'}
+            </Text>
+          </View>
+          <Ionicons name="restaurant" size={28} color={iconColor} />
+        </View>
+      ) : (
+        <View
+          className="rounded-3xl border-2 border-dashed border-border bg-muted/60 px-5 py-4 dark:border-border-dark dark:bg-muted-dark/40"
+          style={{ borderCurve: 'continuous' }}>
+          <Text className="text-base font-semibold text-foreground dark:text-foreground-dark">
+            No table selected
+          </Text>
+          <Text className="mt-1 text-sm text-muted-foreground dark:text-muted-foreground-dark">
+            Tap a table below before adding dishes.
+          </Text>
+        </View>
+      )}
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerClassName="gap-2">
+        contentContainerClassName="gap-3">
         {tables.map((table) => {
           const isSelected = table.id === selectedTableId;
           const hasSession = !!table.activeSessionId;
@@ -51,29 +102,52 @@ export function PosTablePicker({
               key={table.id}
               onPress={() => onSelect(table.id)}
               accessibilityRole="button"
+              accessibilityLabel={`Table ${table.number}, ${hasSession ? 'open' : 'free'}`}
               accessibilityState={{ selected: isSelected }}
-              className={`min-w-[72px] items-center gap-1 rounded-2xl border px-4 py-3 ${
+              className={`min-w-[96px] items-center gap-1.5 rounded-3xl border-2 px-5 py-4 ${
                 isSelected
-                  ? 'border-amber-600 bg-amber-500/15 dark:border-amber-400 dark:bg-amber-400/10'
+                  ? 'border-primary bg-primary dark:border-primary-dark dark:bg-primary-dark'
                   : 'border-border bg-card dark:border-border-dark dark:bg-card-dark'
               }`}
-              style={{ borderCurve: 'continuous' }}>
+              style={{
+                borderCurve: 'continuous',
+                boxShadow: isSelected ? '0 8px 20px rgba(0, 0, 0, 0.14)' : 'none',
+              }}>
               <Text
-                className={`text-lg font-bold ${
+                className={`text-xs font-semibold uppercase tracking-wider ${
                   isSelected
-                    ? 'text-amber-800 dark:text-amber-200'
+                    ? 'text-primary-foreground/80 dark:text-primary-foreground-dark/80'
+                    : 'text-muted-foreground dark:text-muted-foreground-dark'
+                }`}>
+                Table
+              </Text>
+              <Text
+                className={`text-4xl font-bold tracking-tight ${
+                  isSelected
+                    ? 'text-primary-foreground dark:text-primary-foreground-dark'
                     : 'text-foreground dark:text-foreground-dark'
                 }`}>
                 {table.number}
               </Text>
-              <Text
-                className={`text-xs font-medium ${
-                  hasSession
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-muted-foreground dark:text-muted-foreground-dark'
+              <View
+                className={`rounded-full px-2.5 py-0.5 ${
+                  isSelected
+                    ? 'bg-primary-foreground/15 dark:bg-primary-foreground-dark/15'
+                    : hasSession
+                      ? 'bg-emerald-500/15 dark:bg-emerald-400/15'
+                      : 'bg-muted dark:bg-muted-dark'
                 }`}>
-                {hasSession ? 'Open' : 'Free'}
-              </Text>
+                <Text
+                  className={`text-xs font-bold ${
+                    isSelected
+                      ? 'text-primary-foreground dark:text-primary-foreground-dark'
+                      : hasSession
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : 'text-muted-foreground dark:text-muted-foreground-dark'
+                  }`}>
+                  {hasSession ? 'OPEN' : 'FREE'}
+                </Text>
+              </View>
             </Pressable>
           );
         })}
@@ -81,13 +155,13 @@ export function PosTablePicker({
 
       {selectedTable && !selectedTable.activeSessionId ? (
         <View
-          className="flex-row items-center justify-between gap-3 rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/40"
+          className="flex-row items-center justify-between gap-3 rounded-2xl border border-border bg-muted px-4 py-3 dark:border-border-dark dark:bg-muted-dark"
           style={{ borderCurve: 'continuous' }}>
           <View className="flex-1 gap-0.5">
-            <Text className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+            <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark">
               Table {selectedTable.number} needs a session
             </Text>
-            <Text className="text-sm leading-5 text-amber-800 dark:text-amber-200">
+            <Text className="text-sm leading-5 text-muted-foreground dark:text-muted-foreground-dark">
               Open the table before sending orders to the kitchen.
             </Text>
           </View>
@@ -95,10 +169,10 @@ export function PosTablePicker({
             onPress={() => onOpenSession(selectedTable.id)}
             disabled={isOpeningSession}
             accessibilityRole="button"
-            className="flex-row items-center gap-1.5 rounded-full bg-amber-700 px-4 py-2 active:opacity-80 dark:bg-amber-500"
+            className="flex-row items-center gap-1.5 rounded-full bg-primary px-4 py-2.5 active:opacity-80 dark:bg-primary-dark"
             style={{ borderCurve: 'continuous' }}>
-            <Ionicons name="restaurant" size={14} color="#FFFBEB" />
-            <Text className="text-sm font-semibold text-amber-50">
+            <Ionicons name="restaurant" size={16} color={isDark ? '#18181B' : '#FAFAFA'} />
+            <Text className="text-sm font-semibold text-primary-foreground dark:text-primary-foreground-dark">
               {isOpeningSession && openingTableId === selectedTable.id ? 'Opening...' : 'Open'}
             </Text>
           </Pressable>

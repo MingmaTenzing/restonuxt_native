@@ -2,7 +2,10 @@ import { describe, expect, test } from 'bun:test';
 
 import {
   getGridCardWidth,
+  getGridCardWidthForPane,
   getListColumns,
+  getPosMenuPaneWidth,
+  getPosSidebarWidth,
   getProductGridColumns,
   isTabletWidth,
 } from './responsive-layout';
@@ -29,5 +32,23 @@ describe('responsive-layout', () => {
   test('computes card width for multi-column grids', () => {
     const cardWidth = getGridCardWidth(800, 2, 28, 16);
     expect(cardWidth).toBeGreaterThan(300);
+  });
+
+  test('sizes POS sidebar and menu pane for tablets', () => {
+    expect(getPosSidebarWidth(390)).toBe(0);
+    expect(getPosSidebarWidth(720)).toBeGreaterThanOrEqual(280);
+    expect(getPosSidebarWidth(720)).toBeLessThanOrEqual(340);
+    expect(getPosSidebarWidth(1200)).toBe(380);
+
+    const menuPaneWidth = getPosMenuPaneWidth(720, true);
+    expect(menuPaneWidth).toBe(720 - getPosSidebarWidth(720));
+    expect(menuPaneWidth).toBeGreaterThanOrEqual(320);
+  });
+
+  test('computes POS product card width from pane width', () => {
+    const paneWidth = getPosMenuPaneWidth(900, true);
+    const columns = getProductGridColumns(paneWidth);
+    const cardWidth = getGridCardWidthForPane(paneWidth, columns, 28, 16);
+    expect(cardWidth).toBeGreaterThan(120);
   });
 });

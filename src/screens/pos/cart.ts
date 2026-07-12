@@ -20,6 +20,8 @@ export function buildOrderItemCreates(lines: CartLine[]): OrderItemCreateInput[]
   return lines.map((line) => {
     const input: OrderItemCreateInput = {
       menuItemId: line.menuItemId,
+      itemName: line.itemName,
+      unitPriceCents: line.unitPriceCents,
       quantity: line.quantity,
     };
 

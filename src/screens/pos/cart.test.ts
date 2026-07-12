@@ -46,6 +46,8 @@ describe('buildOrderItemCreates', () => {
     expect(buildOrderItemCreates([sampleLine])).toEqual([
       {
         menuItemId: 'menu-1',
+        itemName: 'Margherita',
+        unitPriceCents: 1500,
         quantity: 2,
         specialInstructions: 'Extra basil',
         orderItemOptions: {

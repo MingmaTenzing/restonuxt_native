@@ -4,7 +4,7 @@ import { Button } from '@/components/button';
 import { TextField } from '@/components/text-field';
 import { formatMoney } from '@/utils/format-money';
 
-import { cartTotalCents, lineTotalCents, removeCartLine, updateCartLineQuantity } from './cart';
+import { cartTotalCents, removeCartLine, updateCartLineQuantity } from './cart';
 import type { CartLine } from './types';
 import { PosCartLineRow } from './pos-cart-line-row';
 
@@ -18,7 +18,10 @@ interface PosCartPanelProps {
   errorMessage: string | null;
   canSubmit: boolean;
   submitLabel: string;
+  destinationLabel?: string | null;
   variant?: 'sheet' | 'sidebar';
+  topInset?: number;
+  bottomInset?: number;
 }
 
 export function PosCartPanel({
@@ -31,17 +34,40 @@ export function PosCartPanel({
   errorMessage,
   canSubmit,
   submitLabel,
+  destinationLabel = null,
   variant = 'sheet',
+  topInset = 0,
+  bottomInset = 0,
 }: PosCartPanelProps) {
   const totalCents = cartTotalCents(lines);
   const isSidebar = variant === 'sidebar';
 
   const content = (
     <>
+      {destinationLabel ? (
+        <View
+          className="flex-row items-center gap-3 rounded-3xl border-2 border-primary bg-primary/5 px-4 py-3.5 dark:border-primary-dark dark:bg-primary-dark/10"
+          style={{ borderCurve: 'continuous' }}>
+          <View className="h-12 min-w-12 items-center justify-center rounded-2xl bg-primary px-3 dark:bg-primary-dark">
+            <Text className="text-xl font-bold text-primary-foreground dark:text-primary-foreground-dark">
+              {destinationLabel}
+            </Text>
+          </View>
+          <View className="flex-1 gap-0.5">
+            <Text className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground dark:text-muted-foreground-dark">
+              Destination
+            </Text>
+            <Text className="text-xl font-bold text-foreground dark:text-foreground-dark">
+              Table {destinationLabel}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
       <View
-        className="gap-1 rounded-3xl border border-dashed border-amber-400/50 bg-amber-50/60 px-5 py-4 dark:border-amber-500/30 dark:bg-amber-950/20"
+        className="gap-1 rounded-3xl border border-dashed border-border bg-muted/50 px-5 py-4 dark:border-border-dark dark:bg-muted-dark/40"
         style={{ borderCurve: 'continuous' }}>
-        <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-300">
+        <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground dark:text-muted-foreground-dark">
           Kitchen ticket
         </Text>
         <Text
@@ -52,6 +78,7 @@ export function PosCartPanel({
         </Text>
         <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
           {lines.length} {lines.length === 1 ? 'line' : 'lines'} on this ticket
+          {destinationLabel ? ` · Table ${destinationLabel}` : ''}
         </Text>
       </View>
 
@@ -106,18 +133,28 @@ export function PosCartPanel({
 
   if (isSidebar) {
     return (
-      <View className="flex-1 border-l border-border bg-background dark:border-border-dark dark:bg-background-dark">
-        <View className="border-b border-border px-5 py-4 dark:border-border-dark">
+      <View className="min-h-0 flex-1 border-l border-border bg-background dark:border-border-dark dark:bg-background-dark">
+        <View
+          className="border-b border-border px-5 pb-4 dark:border-border-dark"
+          style={{ paddingTop: topInset + 16 }}>
           <Text className="text-lg font-semibold text-foreground dark:text-foreground-dark">
             Order ticket
           </Text>
           <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
-            Live cart — always visible on tablet
+            {destinationLabel
+              ? `Sending to Table ${destinationLabel}`
+              : 'Live cart — always visible on tablet'}
           </Text>
         </View>
         <ScrollView
-          className="flex-1"
-          contentContainerClassName="gap-5 px-5 py-5"
+          className="min-h-0 flex-1"
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            gap: 20,
+            paddingHorizontal: 20,
+            paddingTop: 20,
+            paddingBottom: Math.max(bottomInset, 20) + 8,
+          }}
           keyboardShouldPersistTaps="handled">
           {content}
         </ScrollView>

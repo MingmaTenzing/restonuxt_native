@@ -38,6 +38,15 @@ export default function RootLayout() {
                 contentStyle: { backgroundColor: isDark ? '#09090B' : '#FFFFFF' },
               }}>
               <Stack.Screen name="(tabs)" />
+              <Stack.Screen
+                name="cashier/checkout/table/[sessionId]"
+                options={{ presentation: 'card', animation: 'slide_from_right' }}
+              />
+              <Stack.Screen
+                name="cashier/checkout/takeaway/[orderId]"
+                options={{ presentation: 'card', animation: 'slide_from_right' }}
+              />
+              <Stack.Screen name="order/[id]" options={{ presentation: 'card' }} />
               <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />
             </Stack>
             <StatusBar style="auto" />
