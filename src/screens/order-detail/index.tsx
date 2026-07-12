@@ -137,6 +137,7 @@ export default function OrderDetailScreen() {
     isError,
     error,
     refetch,
+    isFetching,
   } = useQuery({
     queryKey: ['order', id],
     enabled: isReady && !!id,
@@ -154,7 +155,7 @@ export default function OrderDetailScreen() {
           headerBackTitle: 'Orders',
         }}
       />
-      <ScreenScroll>
+      <ScreenScroll refreshing={isFetching} onRefresh={() => refetch()}>
         {isLoading ? (
           <View className="items-center justify-center py-16">
             <Text className="text-base font-medium text-muted-foreground dark:text-muted-foreground-dark">

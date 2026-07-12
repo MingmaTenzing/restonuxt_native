@@ -12,47 +12,6 @@ import { TableCard } from './table-card';
 import { TableFormModal } from './table-form-modal';
 import type { Table, TableInput, TableUpdateInput } from './types';
 
-function normalizeSession(raw: Record<string, unknown>) {
-  const id = typeof raw.id === 'string' ? raw.id : null;
-  const openedAt =
-    typeof raw.openedAt === 'string'
-      ? raw.openedAt
-      : typeof raw.opened_at === 'string'
-        ? raw.opened_at
-        : null;
-  if (!id || !openedAt) return null;
-  return { id, openedAt };
-}
-
-function normalizeTable(raw: Record<string, unknown>): Table {
-  const sessionsRaw = raw.sessions ?? raw.tableSessions ?? raw.table_sessions;
-  const sessions = Array.isArray(sessionsRaw)
-    ? sessionsRaw
-        .map((session) => normalizeSession(session as Record<string, unknown>))
-        .filter((session): session is NonNullable<typeof session> => session !== null)
-    : undefined;
-
-  return {
-    id: String(raw.id),
-    number: String(raw.number ?? raw.table_number ?? ''),
-    capacity: Number(raw.capacity ?? 0),
-    sessions,
-  };
-}
-
-function normalizeTablesResponse(payload: unknown): Table[] {
-  const list = Array.isArray(payload)
-    ? payload
-    : ((payload as { data?: unknown; tables?: unknown })?.data ??
-      (payload as { tables?: unknown })?.tables ??
-      []);
-
-  if (!Array.isArray(list)) return [];
-  return list
-    .map((item) => normalizeTable(item as Record<string, unknown>))
-    .sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true }));
-}
-
 function getTableLetter(tableNumber: string) {
   const first = tableNumber.trim().charAt(0).toUpperCase();
   return /[A-Z]/.test(first) ? first : '#';
@@ -103,12 +62,13 @@ export default function TablesScreen() {
     isError,
     error,
     refetch,
+    isFetching,
   } = useQuery({
     queryKey: ['tables'],
     enabled: isReady,
     queryFn: async () => {
-      const payload = await api<unknown>('/api/tables');
-      return normalizeTablesResponse(payload);
+      const tables = await api<Table[]>('/api/tables');
+      return tables.sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true }));
     },
   });
 
@@ -205,7 +165,7 @@ export default function TablesScreen() {
 
   return (
     <>
-      <ScreenScroll bottomInset={72}>
+      <ScreenScroll bottomInset={72} refreshing={isFetching} onRefresh={() => refetch()}>
         <View className="gap-2">
           <Text
             className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${

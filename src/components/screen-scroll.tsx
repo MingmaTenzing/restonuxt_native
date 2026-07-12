@@ -1,15 +1,25 @@
 import { Children, PropsWithChildren } from 'react';
-import { ScrollView, ScrollViewProps, View } from 'react-native';
+import { RefreshControl, ScrollView, ScrollViewProps, View } from 'react-native';
 
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 
 type ScreenScrollProps = PropsWithChildren<
   ScrollViewProps & {
     bottomInset?: number;
+    /** Pass with `onRefresh` to enable pull-to-refresh. */
+    refreshing?: boolean;
+    onRefresh?: () => void;
   }
 >;
 
-export function ScreenScroll({ children, bottomInset = 0, ...scrollProps }: ScreenScrollProps) {
+export function ScreenScroll({
+  children,
+  bottomInset = 0,
+  refreshing = false,
+  onRefresh,
+  refreshControl,
+  ...scrollProps
+}: ScreenScrollProps) {
   const { scrollContentStyle } = useResponsiveLayout();
 
   return (
@@ -21,6 +31,12 @@ export function ScreenScroll({ children, bottomInset = 0, ...scrollProps }: Scre
       }}
       contentInsetAdjustmentBehavior="automatic"
       keyboardDismissMode="on-drag"
+      refreshControl={
+        refreshControl ??
+        (onRefresh ? (
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        ) : undefined)
+      }
       {...scrollProps}>
       {children}
     </ScrollView>

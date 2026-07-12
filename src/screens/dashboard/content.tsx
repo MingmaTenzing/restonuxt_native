@@ -4,6 +4,7 @@ import { Text, useColorScheme, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ScreenScroll } from '@/components/screen-scroll';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import type { ApiClient } from '@/utils/api';
@@ -47,83 +48,38 @@ const emptyKpi: WeeklyKpi = {
   endOfWeek: '',
 };
 
-async function fetchJson<T>(api: ApiClient, path: string): Promise<T> {
-  return api<T>(path);
-}
+type RevenueTrendRow = {
+  createdAt: string;
+  _sum: { totalAmountCents: number | null };
+};
 
-function unwrapArray<T>(payload: unknown, keys: string[] = []): T[] {
-  if (Array.isArray(payload)) return payload as T[];
-  if (!payload || typeof payload !== 'object') return [];
-
-  for (const key of keys) {
-    const value = (payload as Record<string, unknown>)[key];
-    if (Array.isArray(value)) return value as T[];
-  }
-
-  const values = Object.values(payload);
-  const firstArray = values.find(Array.isArray);
-  return (firstArray as T[] | undefined) ?? [];
-}
-
-function unwrapObject<T>(payload: unknown, fallback: T, keys: string[] = []): T {
-  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return fallback;
-
-  for (const key of keys) {
-    const value = (payload as Record<string, unknown>)[key];
-    if (value && typeof value === 'object' && !Array.isArray(value)) return value as T;
-  }
-
-  return payload as T;
-}
-
-function normalizeRevenueTrend(payload: unknown): RevenuePoint[] {
-  return unwrapArray<Record<string, unknown>>(payload, ['revenueTrend', 'trend', 'data']).map(
-    (point, index) => {
-      const labelSource =
-        point.label ?? point.date ?? point.day ?? point.week ?? `Point ${index + 1}`;
-      const valueSource =
-        point.revenueCents ??
-        point.revenue_cents ??
-        point.totalRevenueCents ??
-        point.totalAmountCents ??
-        point.value ??
-        point.total ??
-        0;
-
-      return {
-        label: String(labelSource),
-        revenueCents: Number(valueSource) || 0,
-      };
-    }
-  );
+function toRevenuePoints(rows: RevenueTrendRow[]): RevenuePoint[] {
+  return rows.map((row) => ({
+    label: new Intl.DateTimeFormat('en-AU', { month: 'short', day: 'numeric' }).format(
+      new Date(row.createdAt)
+    ),
+    revenueCents: row._sum.totalAmountCents ?? 0,
+  }));
 }
 
 async function fetchDashboardStats(api: ApiClient): Promise<DashboardStats> {
   const [popularItems, recentOrders, revenueTrend, rosterOverview, soldByCategory, weeklyKpi] =
     await Promise.all([
-      fetchJson<unknown>(api, DASHBOARD_ENDPOINTS.popularItems),
-      fetchJson<unknown>(api, DASHBOARD_ENDPOINTS.recentOrders),
-      fetchJson<unknown>(api, DASHBOARD_ENDPOINTS.revenueTrend),
-      fetchJson<unknown>(api, DASHBOARD_ENDPOINTS.rosterOverview),
-      fetchJson<unknown>(api, DASHBOARD_ENDPOINTS.soldByCategory),
-      fetchJson<unknown>(api, DASHBOARD_ENDPOINTS.weeklyKpi),
+      api<PopularItem[]>(DASHBOARD_ENDPOINTS.popularItems),
+      api<RecentOrder[]>(DASHBOARD_ENDPOINTS.recentOrders),
+      api<RevenueTrendRow[]>(DASHBOARD_ENDPOINTS.revenueTrend),
+      api<RosterOverview>(DASHBOARD_ENDPOINTS.rosterOverview),
+      api<SoldByCategory[]>(DASHBOARD_ENDPOINTS.soldByCategory),
+      api<WeeklyKpi>(DASHBOARD_ENDPOINTS.weeklyKpi),
     ]);
 
   return {
-    popularItems: unwrapArray<PopularItem>(popularItems, ['popularItems', 'items', 'data']),
-    recentOrders: unwrapArray<RecentOrder>(recentOrders, ['recentOrders', 'orders', 'data']),
-    revenueTrend: normalizeRevenueTrend(revenueTrend),
-    rosterOverview: unwrapObject<RosterOverview>(rosterOverview, emptyRoster, [
-      'rosterOverview',
-      'overview',
-      'data',
-    ]),
-    soldByCategory: unwrapArray<SoldByCategory>(soldByCategory, [
-      'soldByCategory',
-      'categories',
-      'data',
-    ]),
-    weeklyKpi: unwrapObject<WeeklyKpi>(weeklyKpi, emptyKpi, ['weeklyKpi', 'kpi', 'data']),
+    popularItems,
+    recentOrders,
+    revenueTrend: toRevenuePoints(revenueTrend),
+    rosterOverview,
+    soldByCategory,
+    weeklyKpi,
   };
 }
 
@@ -222,33 +178,44 @@ function MetricCard({
 }
 
 function RevenueTrendCard({ points }: { points: RevenuePoint[] }) {
+  const chartHeight = 128;
   const maxRevenue = Math.max(...points.map((point) => point.revenueCents), 1);
   const visiblePoints = points.slice(-7);
 
   return (
     <View
-      className="gap-5 rounded-3xl border border-border bg-card p-5 dark:border-border-dark dark:bg-card-dark"
-      style={{ borderCurve: 'continuous', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}>
+      className="gap-4 overflow-hidden rounded-3xl bg-muted/40 p-5 dark:bg-muted-dark/20"
+      style={{ borderCurve: 'continuous' }}>
       {visiblePoints.length > 0 ? (
         <>
-          <View className="h-36 flex-row items-end gap-2">
+          <View className="flex-row items-end" style={{ height: chartHeight }}>
+            {visiblePoints.map((point, index) => {
+              const barHeight = Math.max((point.revenueCents / maxRevenue) * chartHeight, 6);
+
+              return (
+                <View key={`${point.label}-${index}`} className="h-full flex-1 justify-end px-0.5">
+                  <View
+                    className="w-full rounded-t-xl bg-chart-2 dark:bg-chart-2-dark"
+                    style={{ height: barHeight }}
+                  />
+                </View>
+              );
+            })}
+          </View>
+
+          <View className="flex-row gap-1">
             {visiblePoints.map((point, index) => (
-              <View key={`${point.label}-${index}`} className="flex-1 items-center gap-2">
-                <View
-                  className="w-full rounded-t-xl bg-chart-2 dark:bg-chart-2-dark"
-                  style={{
-                    height: `${Math.max((point.revenueCents / maxRevenue) * 100, 8)}%`,
-                  }}
-                />
+              <View key={`${point.label}-label-${index}`} className="flex-1 items-center">
                 <Text
                   numberOfLines={1}
-                  className="text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
+                  className="text-center text-xs font-medium text-muted-foreground dark:text-muted-foreground-dark">
                   {formatTrendLabel(point.label)}
                 </Text>
               </View>
             ))}
           </View>
-          <View className="flex-row items-center justify-between">
+
+          <View className="flex-row items-center justify-between border-t border-border/60 pt-3 dark:border-border-dark/60">
             <Text className="text-sm text-muted-foreground dark:text-muted-foreground-dark">
               Peak
             </Text>
@@ -449,7 +416,7 @@ export function DashboardContent() {
   };
 
   return (
-    <ScreenScroll>
+    <ScreenScroll refreshing={isFetching} onRefresh={() => refetch()}>
       <View className="gap-3">
         <View className="flex-row items-start justify-between gap-4">
           <View className="flex-1 gap-2">
@@ -463,7 +430,10 @@ export function DashboardContent() {
               Live restaurant performance, orders, menu movement, and roster coverage.
             </Text>
           </View>
-          <DashboardUserAction />
+          <View className="flex-row items-center gap-2">
+            <ThemeToggle variant="compact" />
+            <DashboardUserAction />
+          </View>
         </View>
         {stats.weeklyKpi.startofWeek || stats.weeklyKpi.endOfWeek ? (
           <Text className="text-sm font-medium text-muted-foreground dark:text-muted-foreground-dark">

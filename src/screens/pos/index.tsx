@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { useApi } from '@/hooks/use-api';
@@ -79,13 +79,14 @@ export default function PosScreen() {
     isError: isMenuError,
     error: menuError,
     refetch: refetchMenu,
+    isFetching: isFetchingMenu,
   } = useQuery({
     queryKey: ['pos-menu'],
     enabled: isReady,
     queryFn: () => fetchPosMenu(api),
   });
 
-  const { data: tables = [], isLoading: isLoadingTables } = useQuery({
+  const { data: tables = [], isLoading: isLoadingTables, refetch: refetchTables, isFetching: isFetchingTables } = useQuery({
     queryKey: ['pos-tables'],
     enabled: isReady && mode === 'DINING',
     queryFn: () => fetchPosTables(api),
@@ -215,7 +216,16 @@ export default function PosScreen() {
         paddingBottom: !isTablet && itemCount > 0 ? 160 : scrollContentStyle.paddingBottom,
       }}
       contentInsetAdjustmentBehavior="automatic"
-      keyboardDismissMode="on-drag">
+      keyboardDismissMode="on-drag"
+      refreshControl={
+        <RefreshControl
+          refreshing={isFetchingMenu || isFetchingTables}
+          onRefresh={() => {
+            void refetchMenu();
+            if (mode === 'DINING') void refetchTables();
+          }}
+        />
+      }>
       <View className="gap-2">
         <Text
           className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${

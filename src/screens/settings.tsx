@@ -2,6 +2,7 @@ import { Text, View } from 'react-native';
 
 import { ScreenScroll } from '@/components/screen-scroll';
 import { Table, TableCell, TableRow } from '@/components/table';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { useAppState } from '@/hooks/use-app-state';
 import { useTheme } from '@/hooks/use-theme';
@@ -21,11 +22,12 @@ export default function SettingsScreen() {
           Settings
         </Text>
         <Text className="text-base leading-6 text-muted-foreground dark:text-muted-foreground-dark">
-          App-level hooks and reusable rows are separated from route files.
+          App preferences and appearance.
         </Text>
       </View>
 
       <Table>
+        <ThemeToggle />
         <TableRow>
           <TableCell label="App state">{appState}</TableCell>
           <TableCell label="Theme">{theme.colorScheme}</TableCell>

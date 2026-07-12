@@ -13,59 +13,7 @@ import { buildCreateMenuItemBody } from './menu-form-utils';
 import { MenuItemFormModal } from './menu-item-form-modal';
 import type { MenuItem, MenuItemInput, MenuOption, MenuOptionInput } from './types';
 
-function normalizeMenuOption(raw: Record<string, unknown>): MenuOption | null {
-  const id = typeof raw.id === 'string' ? raw.id : null;
-  const name = typeof raw.name === 'string' ? raw.name : null;
-  const menuItemId =
-    typeof raw.menuItemId === 'string'
-      ? raw.menuItemId
-      : typeof raw.menu_item_id === 'string'
-        ? raw.menu_item_id
-        : null;
-  const priceCents =
-    typeof raw.priceCents === 'number'
-      ? raw.priceCents
-      : typeof raw.price_cents === 'number'
-        ? raw.price_cents
-        : null;
-
-  if (!id || !name || !menuItemId || priceCents === null) return null;
-  return { id, name, menuItemId, priceCents };
-}
-
-function normalizeMenuItem(raw: Record<string, unknown>): MenuItem {
-  const optionsRaw = raw.options ?? raw.menuOptions ?? raw.menu_item_options;
-  const options = Array.isArray(optionsRaw)
-    ? optionsRaw
-        .map((option) => normalizeMenuOption(option as Record<string, unknown>))
-        .filter((option): option is MenuOption => option !== null)
-    : undefined;
-
-  return {
-    id: String(raw.id),
-    name: String(raw.name ?? ''),
-    description: typeof raw.description === 'string' ? raw.description : null,
-    priceCents: Number(raw.priceCents ?? raw.price_cents ?? 0),
-    category: String(raw.category ?? ''),
-    imageUrl: typeof raw.imageUrl === 'string' ? raw.imageUrl : null,
-    isAvailable: Boolean(raw.isAvailable ?? raw.is_available ?? true),
-    options,
-  };
-}
-
-function normalizeMenuResponse(payload: unknown): MenuItem[] {
-  const list = Array.isArray(payload)
-    ? payload
-    : ((payload as { data?: unknown; menu?: unknown; items?: unknown })?.data ??
-      (payload as { menu?: unknown })?.menu ??
-      (payload as { items?: unknown })?.items ??
-      []);
-
-  if (!Array.isArray(list)) return [];
-  return list.map((item) => normalizeMenuItem(item as Record<string, unknown>));
-}
-
-function groupByCategory(items: MenuItem[]) {
+ function groupByCategory(items: MenuItem[]) {
   const groups = new Map<string, MenuItem[]>();
   for (const item of items) {
     const list = groups.get(item.category) ?? [];
@@ -100,13 +48,11 @@ export default function MenuScreen() {
     isError,
     error,
     refetch,
+    isFetching,
   } = useQuery({
     queryKey: ['menu'],
     enabled: isReady,
-    queryFn: async () => {
-      const payload = await api<unknown>('/api/menu');
-      return normalizeMenuResponse(payload);
-    },
+    queryFn: () => api<MenuItem[]>('/api/menu'),
   });
 
   const invalidateMenu = () => queryClient.invalidateQueries({ queryKey: ['menu'] });
@@ -261,7 +207,7 @@ export default function MenuScreen() {
 
   return (
     <>
-      <ScreenScroll bottomInset={72}>
+      <ScreenScroll bottomInset={72} refreshing={isFetching} onRefresh={() => refetch()}>
         <View className="gap-2">
           <Text
             className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${

@@ -47,11 +47,29 @@ Follow `.cursor/rules/expo-first.mdc` on every task:
 1. Read the relevant skill from `.agents/skills/` — see [`.agents/skills/README.md`](.agents/skills/README.md) for the catalog.
 2. Use **Expo MCP** (`user-expo`): `GetMcpTools` → `CallMcpTool` for docs, `add_library`, builds.
 3. Read **`RESTOQUICK_DOC.md`** for architecture, data flows, HTTP API, WebSocket, enums, and auth — it is the single source of truth for RestoQuick.
+4. Read **`web-app-reference/`** when implementing or porting a feature — local gitignored clone of the Nuxt web app; mirror its API usage, types, and screen behavior (keep native code simple; no normalization layers).
+
+## Web app reference (`web-app-reference/`)
+
+The Nuxt dashboard is the behavioral reference for this native client. It lives in **`web-app-reference/`** at the repo root, is **gitignored**, and is not shipped with the app.
+
+Set it up once (pick one):
+
+```bash
+# Symlink if you already have the repo as a sibling folder
+ln -s ../RestoQuick_Nuxt web-app-reference
+
+# Or clone into the project root
+git clone https://github.com/MingmaTenzing/RestoQuick_Nuxt.git web-app-reference
+```
+
+When building a native screen, check the matching Nuxt page/composable first — e.g. `web-app-reference/app/pages/Dashboard/orders/` for orders, `web-app-reference/server/api/` for exact response shapes, `web-app-reference/app/composables/` for data-fetch patterns. Port UI to React Native; copy API contracts as-is (`useFetch<T>` → `api<T>`).
 
 ## Code conventions
 
+- **Keep it simple** — match the RestoQuick Nuxt app and API: use typed responses directly (`api<TableSession[]>(...)`), `unwrapList` only when an endpoint may wrap an array, and small inline maps for UI-only shapes. Do not add normalization layers, snake_case/camelCase adapters, or defensive reshaping unless the API contract is genuinely inconsistent. Simpler is better; never overcomplicate straightforward data fetching.
 - **Minimize scope** — smallest correct diff; no drive-by refactors.
-- **Match existing patterns** in the file and feature folder before inventing new abstractions.
+- **Match existing patterns** in the file and feature folder before inventing new abstractions. When in doubt, read the equivalent feature in **`web-app-reference/`** and existing simple screens like `orders/` and `cashier/api.ts`.
 - **Routes vs screens** — `src/app/*.tsx` should re-export or thinly compose `src/screens/*`; keep business logic out of `app/`.
 - **Data fetching** — React Query for server state; read `native-data-fetching` skill for fetch/auth/error patterns.
 - **UI** — NativeWind (`className`); read `building-native-ui` for navigation, tabs, scroll views, and platform patterns.
@@ -64,6 +82,7 @@ Follow `.cursor/rules/expo-first.mdc` on every task:
 | File | Purpose |
 |------|---------|
 | `RESTOQUICK_DOC.md` | Platform docs: architecture, data flows, API reference, native app guide |
+| `web-app-reference/` | Local gitignored Nuxt web app — reference for API usage, types, and feature parity |
 | `app.json` | Expo config and plugins |
 | `src/app/(tabs)/_layout.tsx` | Native tab navigation (`NativeTabs`) |
 | `src/hooks/use-kitchen-websocket.ts` | Kitchen real-time updates |

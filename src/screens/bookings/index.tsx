@@ -39,6 +39,7 @@ export default function BookingsScreen() {
     isError,
     error,
     refetch,
+    isFetching,
   } = useQuery({
     queryKey: ['bookings'],
     enabled: isReady,
@@ -81,7 +82,7 @@ export default function BookingsScreen() {
 
   return (
     <>
-      <ScreenScroll bottomInset={72}>
+      <ScreenScroll bottomInset={72} refreshing={isFetching} onRefresh={() => refetch()}>
         <View className="gap-2">
           <Text
             className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${

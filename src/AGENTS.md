@@ -38,6 +38,8 @@ Conventions for routes, screens, and feature code in this Expo Router app.
 
 - Base URL: `process.env.EXPO_PUBLIC_API_BASE_URL`
 - Attach Clerk session token on API requests (see existing screen patterns and `native-data-fetching` skill).
+- **API responses are camelCase** (Prisma/Nitro) — type them and use them directly, like the Nuxt web app in **`web-app-reference/`** does with `useFetch<T>`. Prefer `api<Order[]>(...)` or `unwrapList<T>(payload)` over `normalize*` helpers. Map to a display shape inline only when the UI needs it (e.g. chart labels).
+- When adding a feature, find the Nuxt counterpart under `web-app-reference/app/pages/Dashboard/` and the handler under `web-app-reference/server/api/` before writing native code.
 - Kitchen WebSocket: `src/hooks/kitchen-websocket-client.ts` + `src/utils/websocket-url.ts` (see `RESTOQUICK_DOC.md` → Kitchen display flow)
 
 ## Testing

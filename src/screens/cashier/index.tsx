@@ -45,6 +45,7 @@ export default function CashierScreen() {
     isError: isSessionsError,
     error: sessionsError,
     refetch: refetchSessions,
+    isFetching: isFetchingSessions,
   } = useQuery({
     queryKey: ['cashier-sessions'],
     enabled: isReady && mode === 'TABLES',
@@ -57,6 +58,7 @@ export default function CashierScreen() {
     isError: isTakeawayError,
     error: takeawayError,
     refetch: refetchTakeaway,
+    isFetching: isFetchingTakeaway,
   } = useQuery({
     queryKey: ['cashier-takeaway'],
     enabled: isReady && mode === 'TAKEAWAY',
@@ -181,10 +183,16 @@ export default function CashierScreen() {
   const isLoading = mode === 'TABLES' ? isLoadingSessions : isLoadingTakeaway;
   const outstanding = mode === 'TABLES' ? tableOutstanding : takeawayOutstanding;
   const queueCount = mode === 'TABLES' ? sessions.length : takeawayOrders.length;
+  const isRefreshing = mode === 'TABLES' ? isFetchingSessions : isFetchingTakeaway;
+
+  const handleRefresh = () => {
+    if (mode === 'TABLES') void refetchSessions();
+    else void refetchTakeaway();
+  };
 
   return (
     <>
-      <ScreenScroll>
+      <ScreenScroll refreshing={isRefreshing} onRefresh={handleRefresh}>
         <View className={`gap-2 ${isTablet ? 'flex-row items-end justify-between' : ''}`}>
           <View className="flex-1 gap-2">
             <Text

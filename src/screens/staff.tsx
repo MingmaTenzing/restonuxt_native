@@ -133,6 +133,7 @@ export default function StaffScreen() {
     isError,
     error,
     refetch,
+    isFetching,
   } = useQuery({
     queryKey: ['staff'],
     enabled: isReady,
@@ -163,7 +164,7 @@ export default function StaffScreen() {
   }
 
   return (
-    <ScreenScroll>
+    <ScreenScroll refreshing={isFetching} onRefresh={() => refetch()}>
       <View className="gap-2">
         <Text
           className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${

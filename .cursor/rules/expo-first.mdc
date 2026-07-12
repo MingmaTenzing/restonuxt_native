@@ -13,6 +13,7 @@ Before implementing, debugging, or advising on anything in this Expo project:
 2. **Check Expo MCP** (`user-expo`) — `GetMcpTools` then `CallMcpTool` for docs, installs, builds.
 3. **Prefer official patterns** from skills and MCP over improvising.
 4. **Check `RESTOQUICK_DOC.md`** for architecture, data flows, APIs, WebSockets, enums, and auth.
+5. **Check `web-app-reference/`** (local gitignored Nuxt repo) for how the web app calls APIs and implements each dashboard feature — port behavior, not Vue/Nuxt internals.
 
 ## Quick skill map
 

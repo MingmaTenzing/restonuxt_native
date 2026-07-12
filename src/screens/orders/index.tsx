@@ -33,6 +33,7 @@ export default function OrdersScreen() {
     isError,
     error,
     refetch,
+    isFetching,
   } = useQuery({
     queryKey: ['orders', range],
     enabled: isReady,
@@ -66,7 +67,7 @@ export default function OrdersScreen() {
   }
 
   return (
-    <ScreenScroll>
+    <ScreenScroll refreshing={isFetching} onRefresh={() => refetch()}>
       <View className="gap-2">
         <Text
           className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${

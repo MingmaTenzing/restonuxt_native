@@ -7,7 +7,8 @@ import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import type { Order, PaymentMethod } from '@/screens/orders/types';
+import type { PaymentMethod } from '@/screens/orders/types';
+import type { Table } from '@/screens/tables/types';
 
 import { SessionCard } from './session-card';
 import { SessionCreateModal } from './session-create-modal';
@@ -19,129 +20,14 @@ import type {
   TableSession,
 } from './types';
 
-function normalizeTable(raw: Record<string, unknown>) {
-  const id = typeof raw.id === 'string' ? raw.id : null;
-  const number =
-    typeof raw.number === 'string'
-      ? raw.number
-      : typeof raw.table_number === 'string'
-        ? raw.table_number
-        : null;
-  const capacity = typeof raw.capacity === 'number' ? raw.capacity : null;
-  if (!id || !number || capacity === null) return null;
-  return { id, number, capacity };
-}
-
-function normalizeSessionTable(raw: Record<string, unknown> | null | undefined) {
-  if (!raw || typeof raw !== 'object') return null;
-  const table = normalizeTable(raw);
-  return table;
-}
-
-function normalizeOrder(raw: Record<string, unknown>): Order {
-  return {
-    id: String(raw.id),
-    orderNo: Number(raw.orderNo ?? raw.order_no ?? 0),
-    checkoutSessionId: String(raw.checkoutSessionId ?? raw.checkout_session_id ?? ''),
-    status: (raw.status ?? 'PENDING') as Order['status'],
-    totalAmountCents: Number(raw.totalAmountCents ?? raw.total_amount_cents ?? 0),
-    paymentStatus: (raw.paymentStatus ?? raw.payment_status ?? 'UNPAID') as Order['paymentStatus'],
-    paymentMethod: (raw.paymentMethod ?? raw.payment_method ?? null) as Order['paymentMethod'],
-    paidAt: typeof raw.paidAt === 'string' ? raw.paidAt : typeof raw.paid_at === 'string' ? raw.paid_at : null,
-    orderType: (raw.orderType ?? raw.order_type ?? 'DINING') as Order['orderType'],
-    customerName: String(raw.customerName ?? raw.customer_name ?? ''),
-    tableId: typeof raw.tableId === 'string' ? raw.tableId : typeof raw.table_id === 'string' ? raw.table_id : null,
-    tableSessionId:
-      typeof raw.tableSessionId === 'string'
-        ? raw.tableSessionId
-        : typeof raw.table_session_id === 'string'
-          ? raw.table_session_id
-          : null,
-    items: Array.isArray(raw.items) ? (raw.items as Order['items']) : undefined,
-    createdAt: String(raw.createdAt ?? raw.created_at ?? ''),
-    updatedAt: String(raw.updatedAt ?? raw.updated_at ?? ''),
-  };
-}
-
-function normalizeSession(raw: Record<string, unknown>): TableSession {
-  const ordersRaw = raw.orders;
-  const orders = Array.isArray(ordersRaw)
-    ? ordersRaw.map((order) => normalizeOrder(order as Record<string, unknown>))
-    : undefined;
-
-  return {
-    id: String(raw.id),
-    status: (raw.status ?? 'ACTIVE') as TableSession['status'],
-    openedAt: String(raw.openedAt ?? raw.opened_at ?? ''),
-    closedAt:
-      typeof raw.closedAt === 'string'
-        ? raw.closedAt
-        : typeof raw.closed_at === 'string'
-          ? raw.closed_at
-          : null,
-    createdAt: String(raw.createdAt ?? raw.created_at ?? ''),
-    updatedAt: String(raw.updatedAt ?? raw.updated_at ?? ''),
-    tableId: String(raw.tableId ?? raw.table_id ?? ''),
-    table: normalizeSessionTable(raw.table as Record<string, unknown> | undefined),
-    orders,
-  };
-}
-
-function normalizeSessionsResponse(payload: unknown): TableSession[] {
-  const list = Array.isArray(payload)
-    ? payload
-    : ((payload as { data?: unknown; sessions?: unknown })?.data ??
-      (payload as { sessions?: unknown })?.sessions ??
-      []);
-
-  if (!Array.isArray(list)) return [];
-  return list.map((item) => normalizeSession(item as Record<string, unknown>));
-}
-
-function normalizeCheckout(raw: Record<string, unknown>): SessionCheckout {
-  const session = normalizeSession(raw);
-  const summaryRaw = raw.summary as Record<string, unknown> | undefined;
-  const summary = {
-    orderCount: Number(summaryRaw?.orderCount ?? summaryRaw?.order_count ?? 0),
-    payableOrderCount: Number(summaryRaw?.payableOrderCount ?? summaryRaw?.payable_order_count ?? 0),
-    paidOrderCount: Number(summaryRaw?.paidOrderCount ?? summaryRaw?.paid_order_count ?? 0),
-    payableOrderIds: Array.isArray(summaryRaw?.payableOrderIds)
-      ? (summaryRaw.payableOrderIds as string[])
-      : Array.isArray(summaryRaw?.payable_order_ids)
-        ? (summaryRaw.payable_order_ids as string[])
-        : [],
-    sessionTotalCents: Number(summaryRaw?.sessionTotalCents ?? summaryRaw?.session_total_cents ?? 0),
-    payableTotalCents: Number(summaryRaw?.payableTotalCents ?? summaryRaw?.payable_total_cents ?? 0),
-    paidTotalCents: Number(summaryRaw?.paidTotalCents ?? summaryRaw?.paid_total_cents ?? 0),
-    hasOutstandingBalance: Boolean(
-      summaryRaw?.hasOutstandingBalance ?? summaryRaw?.has_outstanding_balance ?? false
-    ),
-  };
-
-  return { ...session, orders: session.orders ?? [], summary };
-}
-
-function normalizeTablesForPicker(payload: unknown): TableOption[] {
-  const list = Array.isArray(payload)
-    ? payload
-    : ((payload as { data?: unknown; tables?: unknown })?.data ??
-      (payload as { tables?: unknown })?.tables ??
-      []);
-
-  if (!Array.isArray(list)) return [];
-
-  return list
-    .map((item) => {
-      const table = normalizeTable(item as Record<string, unknown>);
-      if (!table) return null;
-      const sessionsRaw =
-        (item as Record<string, unknown>).sessions ??
-        (item as Record<string, unknown>).tableSessions ??
-        (item as Record<string, unknown>).table_sessions;
-      const hasActiveSession = Array.isArray(sessionsRaw) && sessionsRaw.length > 0;
-      return { ...table, hasActiveSession };
-    })
-    .filter((table): table is TableOption => table !== null)
+function mapTableOptions(tables: Table[]): TableOption[] {
+  return tables
+    .map((table) => ({
+      id: table.id,
+      number: table.number,
+      capacity: table.capacity,
+      hasActiveSession: (table.sessions?.length ?? 0) > 0,
+    }))
     .sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true }));
 }
 
@@ -177,22 +63,17 @@ export default function SessionsScreen() {
     isError,
     error,
     refetch,
+    isFetching,
   } = useQuery({
     queryKey: ['sessions', statusFilter],
     enabled: isReady,
-    queryFn: async () => {
-      const payload = await api<unknown>(buildSessionsPath(statusFilter, ''));
-      return normalizeSessionsResponse(payload);
-    },
+    queryFn: () => api<TableSession[]>(buildSessionsPath(statusFilter, '')),
   });
 
   const { data: tables = [], isLoading: isLoadingTables } = useQuery({
     queryKey: ['tables'],
     enabled: isReady && isCreateVisible,
-    queryFn: async () => {
-      const payload = await api<unknown>('/api/tables');
-      return normalizeTablesForPicker(payload);
-    },
+    queryFn: async () => mapTableOptions(await api<Table[]>('/api/tables')),
   });
 
   const {
@@ -201,10 +82,7 @@ export default function SessionsScreen() {
   } = useQuery({
     queryKey: ['session-checkout', selectedSession?.id],
     enabled: isReady && isDetailVisible && !!selectedSession?.id,
-    queryFn: async () => {
-      const payload = await api<unknown>(`/api/orders/checkout/table/${selectedSession!.id}`);
-      return normalizeCheckout(payload as Record<string, unknown>);
-    },
+    queryFn: () => api<SessionCheckout>(`/api/orders/checkout/table/${selectedSession!.id}`),
   });
 
   const invalidateSessions = () => {
@@ -221,7 +99,7 @@ export default function SessionsScreen() {
     onSuccess: (created) => {
       invalidateSessions();
       setCreateVisible(false);
-      setSelectedSession(normalizeSession(created as unknown as Record<string, unknown>));
+      setSelectedSession(created);
       setDetailVisible(true);
     },
   });
@@ -320,7 +198,7 @@ export default function SessionsScreen() {
 
   return (
     <>
-      <ScreenScroll bottomInset={72}>
+      <ScreenScroll bottomInset={72} refreshing={isFetching} onRefresh={() => refetch()}>
         <View className="gap-2">
           <Text
             className={`font-bold tracking-tight text-foreground dark:text-foreground-dark ${

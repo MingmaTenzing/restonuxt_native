@@ -1,18 +1,12 @@
-import { useAuth } from '@clerk/expo';
-import { Pressable, Text } from 'react-native';
+import { UserButton } from '@clerk/expo/native';
+import { View } from 'react-native';
 
 export function DashboardUserAction() {
-  const { signOut } = useAuth();
-
   return (
-    <Pressable
-      accessibilityRole="button"
-      className="rounded-full border border-border bg-card px-4 py-2.5 active:opacity-80 dark:border-border-dark dark:bg-card-dark"
-      style={{ borderCurve: 'continuous' }}
-      onPress={() => signOut()}>
-      <Text className="text-sm font-semibold text-foreground dark:text-foreground-dark">
-        Sign out
-      </Text>
-    </Pressable>
+    <View
+      className="h-10 w-10 overflow-hidden rounded-full border border-border dark:border-border-dark"
+      style={{ borderCurve: 'continuous' }}>
+      <UserButton />
+    </View>
   );
 }
