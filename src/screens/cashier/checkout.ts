@@ -4,7 +4,11 @@ import type { SessionCheckoutSummary } from '@/screens/sessions/types';
 export type CashOrCard = Extract<PaymentMethod, 'CASH' | 'CARD_TERMINAL'>;
 
 export function parseTenderedCents(value: string) {
-  const cleaned = value.trim().replace(/[^0-9.]/g, '');
+  const trimmed = value.trim();
+  // Cash tender fields must never accept negatives (a leading "-" would otherwise
+  // be stripped by the digit filter and become a positive amount).
+  if (!trimmed || trimmed.includes('-')) return 0;
+  const cleaned = trimmed.replace(/[^0-9.]/g, '');
   if (!cleaned) return 0;
   const dollars = Number.parseFloat(cleaned);
   if (!Number.isFinite(dollars) || dollars < 0) return 0;
@@ -63,4 +67,92 @@ export function orderItemLineTotalCents(item: OrderItem) {
     0
   );
   return (item.unitPriceCents + optionsPerUnit) * (item.quantity ?? 1);
+}
+
+export type CheckoutPaymentPresentation = 'hidden' | 'sidebar' | 'sheet';
+
+/** Whether the checkout screen should expose payment UI at all. */
+export function shouldShowCheckoutPayment({
+  isLoading,
+  isError,
+  orderCount,
+}: {
+  isLoading: boolean;
+  isError: boolean;
+  orderCount: number;
+}) {
+  return !isLoading && !isError && orderCount > 0;
+}
+
+/**
+ * Mobile uses a floating balance bar + page-sheet popup.
+ * Tablet keeps the payment panel in a sidebar.
+ */
+export function getCheckoutPaymentPresentation({
+  isTablet,
+  showPayment,
+}: {
+  isTablet: boolean;
+  showPayment: boolean;
+}): CheckoutPaymentPresentation {
+  if (!showPayment) return 'hidden';
+  return isTablet ? 'sidebar' : 'sheet';
+}
+
+/** Extra bottom padding so the floating balance bar does not cover receipt content. */
+export function getCheckoutScrollBottomPadding({
+  isTablet,
+  safeBottom,
+}: {
+  isTablet: boolean;
+  safeBottom: number;
+}) {
+  return isTablet ? 24 : safeBottom + 112;
+}
+
+export function formatCheckoutPayableLabel({
+  kind,
+  payableOrderCount,
+  totalItems,
+}: {
+  kind: 'table' | 'takeaway';
+  payableOrderCount: number;
+  totalItems: number;
+}) {
+  if (kind === 'table') {
+    return `${payableOrderCount} payable ${payableOrderCount === 1 ? 'order' : 'orders'}`;
+  }
+  return `${totalItems} ${totalItems === 1 ? 'item' : 'items'}`;
+}
+
+/** Simulates tapping a quick-cash chip (+10 / +20 / …) on the tender field. */
+export function applyQuickCashAmount(currentTenderedCents: number, dollars: number) {
+  return formatTenderedInput(Math.max(0, currentTenderedCents) + dollars * 100);
+}
+
+/**
+ * Full cash-desk decision for the current tender + method.
+ * Used by the UI and covered by stress tests so payment gating stays consistent.
+ */
+export function resolveCheckoutTenderState({
+  isPaid,
+  amountDueCents,
+  paymentMethod,
+  tenderedInput,
+}: {
+  isPaid: boolean;
+  amountDueCents: number;
+  paymentMethod: CashOrCard;
+  tenderedInput: string;
+}) {
+  const tenderedCents = parseTenderedCents(tenderedInput);
+  const changeDueCents = getChangeDueCents(paymentMethod, tenderedCents, amountDueCents);
+  const canPay = canAcceptCheckoutPayment({
+    isPaid,
+    amountDueCents,
+    paymentMethod,
+    tenderedCents,
+  });
+
+  return { tenderedCents, changeDueCents, canPay };
 }

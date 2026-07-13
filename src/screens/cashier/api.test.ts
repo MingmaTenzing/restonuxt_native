@@ -111,6 +111,27 @@ describe('cashier api', () => {
     expect(order.totalAmountCents).toBe(1500);
   });
 
+  test('fetchCheckoutOrder unwraps data-wrapped payloads and flat payloads', async () => {
+    restore = withMockFetch((input) => {
+      expect(String(input)).toBe(apiUrl('/api/orders/order-data'));
+      return jsonResponse({
+        data: { id: 'order-data', orderNo: 7, paymentStatus: 'UNPAID', totalAmountCents: 900 },
+      });
+    });
+
+    const nested = await fetchCheckoutOrder(testApiClient('token'), 'order-data');
+    expect(nested.id).toBe('order-data');
+
+    restore?.();
+    restore = withMockFetch(() =>
+      jsonResponse({ id: 'order-flat', orderNo: 8, paymentStatus: 'PAID', totalAmountCents: 400 })
+    );
+
+    const flat = await fetchCheckoutOrder(testApiClient('token'), 'order-flat');
+    expect(flat.id).toBe('order-flat');
+    expect(flat.paymentStatus).toBe('PAID');
+  });
+
   test('fetchCheckoutOrder throws friendly message on 404', async () => {
     restore = withMockFetch(() => {
       return new Response('Not found', { status: 404 });
@@ -119,6 +140,12 @@ describe('cashier api', () => {
     await expect(fetchCheckoutOrder(testApiClient('token'), 'missing')).rejects.toThrow(
       'This order no longer exists.'
     );
+  });
+
+  test('fetchCheckoutOrder rethrows non-404 failures', async () => {
+    restore = withMockFetch(() => new Response('Server error', { status: 500 }));
+
+    await expect(fetchCheckoutOrder(testApiClient('token'), 'order-1')).rejects.toThrow();
   });
 
   test('markTablePaid posts checkout payload', async () => {
@@ -144,6 +171,27 @@ describe('cashier api', () => {
     });
   });
 
+  test('markTablePaid posts card terminal method for table checkout', async () => {
+    let capturedBody: unknown;
+
+    restore = withMockFetch((_input, init) => {
+      capturedBody = JSON.parse(String(init?.body));
+      return jsonResponse({ ok: true });
+    });
+
+    await markTablePaid(testApiClient('token'), {
+      tableSessionId: 'session-2',
+      orderIds: ['payable-1'],
+      paymentMethod: 'CARD_TERMINAL',
+    });
+
+    expect(capturedBody).toEqual({
+      tableSessionId: 'session-2',
+      orderIds: ['payable-1'],
+      paymentMethod: 'CARD_TERMINAL',
+    });
+  });
+
   test('closeTakeawaySale posts order id', async () => {
     let capturedInit: RequestInit | undefined;
 
@@ -155,13 +203,32 @@ describe('cashier api', () => {
 
     const order = await closeTakeawaySale(testApiClient('token'), {
       orderId: 'order-7',
-      paymentMethod: 'CARD',
+      paymentMethod: 'CARD_TERMINAL',
     });
 
     expect(order.id).toBe('order-7');
     expect(JSON.parse(String(capturedInit?.body))).toEqual({
       orderId: 'order-7',
-      paymentMethod: 'CARD',
+      paymentMethod: 'CARD_TERMINAL',
+    });
+  });
+
+  test('closeTakeawaySale accepts cash payment method', async () => {
+    let capturedBody: unknown;
+
+    restore = withMockFetch((_input, init) => {
+      capturedBody = JSON.parse(String(init?.body));
+      return jsonResponse({ id: 'order-8', paymentStatus: 'PAID' });
+    });
+
+    await closeTakeawaySale(testApiClient('token'), {
+      orderId: 'order-8',
+      paymentMethod: 'CASH',
+    });
+
+    expect(capturedBody).toEqual({
+      orderId: 'order-8',
+      paymentMethod: 'CASH',
     });
   });
 });

@@ -88,4 +88,85 @@ describe('toCashierSession', () => {
     expect(result.outstandingCents).toBe(0);
     expect(result.unpaidOrderCount).toBe(0);
   });
+
+  test('ignores paid orders even when they are larger than unpaid ones', () => {
+    const session = makeSession({
+      orders: [
+        {
+          id: 'paid-big',
+          orderNo: 1,
+          status: 'COMPLETED',
+          paymentStatus: 'PAID',
+          totalAmountCents: 50_000,
+          createdAt: '2026-07-12T10:00:00.000Z',
+          updatedAt: '2026-07-12T10:05:00.000Z',
+        },
+        {
+          id: 'unpaid-small',
+          orderNo: 2,
+          status: 'COMPLETED',
+          paymentStatus: 'UNPAID',
+          totalAmountCents: 125,
+          createdAt: '2026-07-12T10:10:00.000Z',
+          updatedAt: '2026-07-12T10:15:00.000Z',
+        },
+      ],
+    });
+
+    const result = toCashierSession(session);
+
+    expect(result.outstandingCents).toBe(125);
+    expect(result.unpaidOrderCount).toBe(1);
+  });
+
+  test('preserves session identity fields while enriching totals', () => {
+    const session = makeSession({
+      id: 'session-99',
+      tableId: 'table-42',
+      orders: [
+        {
+          id: 'o1',
+          orderNo: 9,
+          status: 'PENDING',
+          paymentStatus: 'UNPAID',
+          totalAmountCents: 999,
+          createdAt: '2026-07-12T10:00:00.000Z',
+          updatedAt: '2026-07-12T10:05:00.000Z',
+        },
+      ],
+    });
+
+    const result = toCashierSession(session);
+
+    expect(result).toMatchObject({
+      id: 'session-99',
+      tableId: 'table-42',
+      status: 'ACTIVE',
+      outstandingCents: 999,
+      unpaidOrderCount: 1,
+    });
+  });
+
+  test('sums 1_000 unpaid orders without dropping cents', () => {
+    const orders = Array.from({ length: 1_000 }, (_, index) => ({
+      id: `o-${index}`,
+      orderNo: index + 1,
+      status: 'COMPLETED' as const,
+      paymentStatus: (index % 3 === 0 ? 'PAID' : 'UNPAID') as 'PAID' | 'UNPAID',
+      totalAmountCents: 100 + (index % 7),
+      createdAt: '2026-07-12T10:00:00.000Z',
+      updatedAt: '2026-07-12T10:05:00.000Z',
+    }));
+
+    const expectedOutstanding = orders
+      .filter((order) => order.paymentStatus === 'UNPAID')
+      .reduce((sum, order) => sum + order.totalAmountCents, 0);
+    const expectedCount = orders.filter((order) => order.paymentStatus === 'UNPAID').length;
+
+    const result = toCashierSession(makeSession({ orders }));
+
+    expect(result.outstandingCents).toBe(expectedOutstanding);
+    expect(result.unpaidOrderCount).toBe(expectedCount);
+    expect(result.unpaidOrderCount).toBeGreaterThan(600);
+  });
 });

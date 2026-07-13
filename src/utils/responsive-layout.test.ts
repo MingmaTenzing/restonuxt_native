@@ -16,6 +16,14 @@ describe('responsive-layout', () => {
     expect(isTabletWidth(720)).toBe(true);
   });
 
+  test('phone vs tablet breakpoint matches checkout payment presentation split', () => {
+    // Cashier checkout uses isTablet from this helper: phones get the
+    // balance-due popup sheet, tablets get the sidebar payment panel.
+    expect(isTabletWidth(390)).toBe(false);
+    expect(isTabletWidth(768)).toBe(true);
+    expect(isTabletWidth(1024)).toBe(true);
+  });
+
   test('returns list columns by breakpoint', () => {
     expect(getListColumns(390)).toBe(1);
     expect(getListColumns(800)).toBe(2);

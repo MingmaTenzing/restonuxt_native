@@ -22,13 +22,17 @@ import { CheckoutOrderBlock } from './checkout-order-block';
 import { CheckoutBalanceBar } from './checkout-balance-bar';
 import {
   canAcceptCheckoutPayment,
+  formatCheckoutPayableLabel,
   formatTenderedInput,
   getChangeDueCents,
+  getCheckoutPaymentPresentation,
+  getCheckoutScrollBottomPadding,
   getTableCheckoutAmountDue,
   getTakeawayCheckoutAmountDue,
   isTableCheckoutPaid,
   isTakeawayCheckoutPaid,
   parseTenderedCents,
+  shouldShowCheckoutPayment,
   type CashOrCard,
 } from './checkout';
 import { CheckoutPaymentPanel } from './checkout-payment-panel';
@@ -239,10 +243,11 @@ export function CashierCheckoutScreen({
         ? `${takeawayOrder.customerName || 'Walk-in'} · ${formatDate(takeawayOrder.createdAt)}`
         : 'Takeaway checkout';
 
-  const payableLabel =
-    kind === 'table'
-      ? `${checkout?.summary.payableOrderCount ?? 0} payable ${(checkout?.summary.payableOrderCount ?? 0) === 1 ? 'order' : 'orders'}`
-      : `${totalItems} ${totalItems === 1 ? 'item' : 'items'}`;
+  const payableLabel = formatCheckoutPayableLabel({
+    kind,
+    payableOrderCount: checkout?.summary.payableOrderCount ?? 0,
+    totalItems,
+  });
 
   const handleRefresh = () => {
     if (kind === 'table') void tableQuery.refetch();
@@ -266,7 +271,15 @@ export function CashierCheckoutScreen({
     onSubmit: () => settleMutation.mutate(),
   };
 
-  const showPayment = !isLoading && !isError && orders.length > 0;
+  const showPayment = shouldShowCheckoutPayment({
+    isLoading,
+    isError,
+    orderCount: orders.length,
+  });
+  const paymentPresentation = getCheckoutPaymentPresentation({
+    isTablet,
+    showPayment,
+  });
 
   if (!isLoaded) {
     return (
@@ -353,7 +366,10 @@ export function CashierCheckoutScreen({
             gap: 16,
             paddingHorizontal: horizontalPadding,
             paddingTop: 16,
-            paddingBottom: isTablet ? 24 : insets.bottom + 112,
+            paddingBottom: getCheckoutScrollBottomPadding({
+              isTablet,
+              safeBottom: insets.bottom,
+            }),
           }}
           contentInsetAdjustmentBehavior="never"
           keyboardDismissMode="on-drag"
@@ -435,7 +451,7 @@ export function CashierCheckoutScreen({
           ) : null}
         </ScrollView>
 
-        {showPayment && isTablet ? (
+        {paymentPresentation === 'sidebar' ? (
           <View
             className="min-h-0 w-[380px] flex-1 border-l border-border"
             style={{
@@ -453,7 +469,7 @@ export function CashierCheckoutScreen({
         ) : null}
       </View>
 
-      {showPayment && !isTablet ? (
+      {paymentPresentation === 'sheet' ? (
         <>
           <CheckoutBalanceBar
             amountDueCents={amountDueCents}
