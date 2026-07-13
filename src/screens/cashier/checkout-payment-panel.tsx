@@ -33,7 +33,10 @@ interface CheckoutPaymentPanelProps {
   onSubmit: () => void;
   controlsScrollable?: boolean;
   fillHeight?: boolean;
+  variant?: 'card' | 'sheet';
 }
+
+export type { CheckoutPaymentPanelProps };
 
 function BalanceDueHeader({
   amountDueCents,
@@ -87,6 +90,7 @@ export function CheckoutPaymentPanel({
   onSubmit,
   controlsScrollable = false,
   fillHeight = false,
+  variant = 'card',
 }: CheckoutPaymentPanelProps) {
   const isDark = useColorScheme() === 'dark';
 
@@ -120,7 +124,7 @@ export function CheckoutPaymentPanel({
                     accessibilityRole="button"
                     accessibilityState={{ selected: isSelected }}
                     className={`flex-1 flex-row items-center justify-center gap-2 rounded-xl px-3 py-3 ${
-                      isSelected ? 'bg-card' : ''
+                      isSelected ? 'bg-card dark:bg-accent' : ''
                     }`}
                     style={{
                       borderCurve: 'continuous',
@@ -236,10 +240,16 @@ export function CheckoutPaymentPanel({
 
   return (
     <View
-      className={`overflow-hidden rounded-3xl border border-border bg-card ${
-        fillHeight ? 'flex-1' : ''
+      className={`overflow-hidden bg-card ${
+        variant === 'sheet'
+          ? 'flex-1 rounded-3xl border border-border'
+          : `rounded-3xl border border-border ${fillHeight ? 'flex-1' : ''}`
       }`}
-      style={{ borderCurve: 'continuous', boxShadow: '0 12px 32px rgba(0, 0, 0, 0.08)' }}>
+      style={
+        variant === 'sheet'
+          ? { borderCurve: 'continuous' }
+          : { borderCurve: 'continuous', boxShadow: '0 12px 32px rgba(0, 0, 0, 0.08)' }
+      }>
       <BalanceDueHeader
         amountDueCents={amountDueCents}
         payableLabel={payableLabel}

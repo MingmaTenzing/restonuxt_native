@@ -19,6 +19,7 @@ import {
   markTablePaid,
 } from './api';
 import { CheckoutOrderBlock } from './checkout-order-block';
+import { CheckoutBalanceBar } from './checkout-balance-bar';
 import {
   canAcceptCheckoutPayment,
   formatTenderedInput,
@@ -31,6 +32,7 @@ import {
   type CashOrCard,
 } from './checkout';
 import { CheckoutPaymentPanel } from './checkout-payment-panel';
+import { CheckoutPaymentSheet } from './checkout-payment-sheet';
 
 type CheckoutKind = 'table' | 'takeaway';
 
@@ -104,6 +106,7 @@ export function CashierCheckoutScreen({
 
   const [paymentMethod, setPaymentMethod] = useState<CashOrCard>('CASH');
   const [tenderedDollars, setTenderedDollars] = useState('');
+  const [isPaymentSheetVisible, setPaymentSheetVisible] = useState(false);
 
   const tableQuery = useQuery({
     queryKey: ['cashier-checkout', id],
@@ -189,6 +192,7 @@ export function CashierCheckoutScreen({
       });
     },
     onSuccess: async () => {
+      setPaymentSheetVisible(false);
       invalidateCashier();
       setTenderedDollars('');
       if (kind === 'table') await tableQuery.refetch();
@@ -245,26 +249,24 @@ export function CashierCheckoutScreen({
     else void takeawayQuery.refetch();
   };
 
-  const paymentPanel = !isLoading && !isError && orders.length > 0 ? (
-    <CheckoutPaymentPanel
-      amountDueCents={amountDueCents}
-      payableLabel={payableLabel}
-      paymentMethod={paymentMethod}
-      onPaymentMethodChange={setPaymentMethod}
-      tenderedDollars={tenderedDollars}
-      onTenderedChange={setTenderedDollars}
-      onAddQuickAmount={handleAddQuickAmount}
-      onSetExactAmount={handleSetExactAmount}
-      changeDueCents={changeDueCents}
-      canPay={canPay}
-      isSubmitting={settleMutation.isPending}
-      isPaid={!!isPaid}
-      errorMessage={settleMutation.isError ? (settleMutation.error as Error).message : null}
-      onSubmit={() => settleMutation.mutate()}
-      controlsScrollable
-      fillHeight={isTablet}
-    />
-  ) : null;
+  const paymentPanelProps = {
+    amountDueCents,
+    payableLabel,
+    paymentMethod,
+    onPaymentMethodChange: setPaymentMethod,
+    tenderedDollars,
+    onTenderedChange: setTenderedDollars,
+    onAddQuickAmount: handleAddQuickAmount,
+    onSetExactAmount: handleSetExactAmount,
+    changeDueCents,
+    canPay,
+    isSubmitting: settleMutation.isPending,
+    isPaid: !!isPaid,
+    errorMessage: settleMutation.isError ? (settleMutation.error as Error).message : null,
+    onSubmit: () => settleMutation.mutate(),
+  };
+
+  const showPayment = !isLoading && !isError && orders.length > 0;
 
   if (!isLoaded) {
     return (
@@ -351,7 +353,7 @@ export function CashierCheckoutScreen({
             gap: 16,
             paddingHorizontal: horizontalPadding,
             paddingTop: 16,
-            paddingBottom: isTablet ? 24 : 16,
+            paddingBottom: isTablet ? 24 : insets.bottom + 112,
           }}
           contentInsetAdjustmentBehavior="never"
           keyboardDismissMode="on-drag"
@@ -433,23 +435,40 @@ export function CashierCheckoutScreen({
           ) : null}
         </ScrollView>
 
-        {paymentPanel ? (
+        {showPayment && isTablet ? (
           <View
-            className={
-              isTablet
-                ? 'min-h-0 w-[380px] flex-1 border-l border-border'
-                : 'border-t border-border bg-background'
-            }
+            className="min-h-0 w-[380px] flex-1 border-l border-border"
             style={{
               paddingHorizontal: horizontalPadding,
-              paddingTop: isTablet ? 16 : 12,
+              paddingTop: 16,
               paddingBottom: insets.bottom + 16,
-              ...(isTablet ? { paddingLeft: 20 } : {}),
+              paddingLeft: 20,
             }}>
-            {paymentPanel}
+            <CheckoutPaymentPanel
+              {...paymentPanelProps}
+              controlsScrollable
+              fillHeight
+            />
           </View>
         ) : null}
       </View>
+
+      {showPayment && !isTablet ? (
+        <>
+          <CheckoutBalanceBar
+            amountDueCents={amountDueCents}
+            payableLabel={payableLabel}
+            isPaid={!!isPaid}
+            onPress={() => setPaymentSheetVisible(true)}
+            bottomInset={insets.bottom}
+          />
+          <CheckoutPaymentSheet
+            visible={isPaymentSheetVisible}
+            onClose={() => setPaymentSheetVisible(false)}
+            {...paymentPanelProps}
+          />
+        </>
+      ) : null}
     </View>
   );
 }
