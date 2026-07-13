@@ -26,7 +26,13 @@
           "photosPermission": "Allow access to your photos to upload menu item images."
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow RestoQuick to scan stock QR labels with your camera."
+        }
+      ]
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -38,7 +44,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.mingmatenzingsherpa.myexpoapp",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Allow RestoQuick to scan stock QR labels with your camera."
       }
     },
     "android": {

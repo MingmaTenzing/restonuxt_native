@@ -47,9 +47,21 @@ export default function RootLayout() {
                 options={{ presentation: 'card', animation: 'slide_from_right' }}
               />
               <Stack.Screen name="order/[id]" options={{ presentation: 'card' }} />
+              <Stack.Screen
+                name="stock/qr-labels"
+                options={{ presentation: 'card', animation: 'slide_from_right' }}
+              />
+              <Stack.Screen
+                name="stock/scan"
+                options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+              />
+              <Stack.Screen
+                name="stock/update/[id]"
+                options={{ presentation: 'card', animation: 'slide_from_right' }}
+              />
               <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />
             </Stack>
-            <StatusBar style="auto" />
+            <StatusBar style={isDark ? 'light' : 'dark'} />
           </ThemeProvider>
         </SafeAreaProvider>
       </QueryClientProvider>

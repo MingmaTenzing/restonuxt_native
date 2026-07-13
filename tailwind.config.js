@@ -1,95 +1,51 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // Required for Settings theme toggle (NativeWind setColorScheme / toggleColorScheme).
+  darkMode: 'class',
   content: ['./app/**/*.{js,ts,tsx}', './src/**/*.{js,ts,tsx}'],
-
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
       colors: {
-        // App theme source of truth, translated from the provided OKLCH CSS
-        // variables into RN-friendly hex values for NativeWind.
-        background: {
-          DEFAULT: '#FFFFFF',
-          dark: '#09090B',
-        },
-        foreground: {
-          DEFAULT: '#09090B',
-          dark: '#FAFAFA',
-        },
+        // Semantic colors resolve from CSS variables in global.css so light/dark
+        // switch with NativeWind's colorScheme (and dark: utilities).
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
         card: {
-          DEFAULT: '#FFFFFF',
-          dark: '#18181B',
-        },
-        'card-foreground': {
-          DEFAULT: '#09090B',
-          dark: '#FAFAFA',
+          DEFAULT: 'var(--card)',
+          foreground: 'var(--card-foreground)',
         },
         primary: {
-          DEFAULT: '#18181B',
-          dark: '#E4E4E7',
-        },
-        'primary-foreground': {
-          DEFAULT: '#FAFAFA',
-          dark: '#18181B',
+          DEFAULT: 'var(--primary)',
+          foreground: 'var(--primary-foreground)',
         },
         secondary: {
-          DEFAULT: '#F4F4F5',
-          dark: '#27272A',
-        },
-        'secondary-foreground': {
-          DEFAULT: '#18181B',
-          dark: '#FAFAFA',
+          DEFAULT: 'var(--secondary)',
+          foreground: 'var(--secondary-foreground)',
         },
         muted: {
-          DEFAULT: '#F4F4F5',
-          dark: '#27272A',
-        },
-        'muted-foreground': {
-          DEFAULT: '#71717A',
-          dark: '#A1A1AA',
+          DEFAULT: 'var(--muted)',
+          foreground: 'var(--muted-foreground)',
         },
         accent: {
-          DEFAULT: '#F4F4F5',
-          dark: '#3F3F46',
-        },
-        'accent-foreground': {
-          DEFAULT: '#18181B',
-          dark: '#FAFAFA',
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--accent-foreground)',
         },
         destructive: {
-          DEFAULT: '#E11D48',
-          dark: '#FB7185',
+          DEFAULT: 'var(--destructive)',
+          foreground: 'var(--destructive-foreground)',
         },
-        'destructive-foreground': {
-          DEFAULT: '#FFFFFF',
-          dark: '#FAFAFA',
-        },
-        border: {
-          DEFAULT: '#E4E4E7',
-          dark: '#3F3F46',
-        },
-        input: {
-          DEFAULT: '#E4E4E7',
-          dark: '#52525B',
-        },
-        ring: {
-          DEFAULT: '#A1A1AA',
-          dark: '#71717A',
-        },
+        border: 'var(--border)',
+        input: 'var(--input)',
+        ring: 'var(--ring)',
         chart: {
-          1: '#93C5FD',
-          2: '#2563EB',
-          3: '#1D4ED8',
-          4: '#1E40AF',
-          5: '#1E3A8A',
-          '1-dark': '#BFDBFE',
-          '2-dark': '#60A5FA',
-          '3-dark': '#3B82F6',
-          '4-dark': '#2563EB',
-          '5-dark': '#1D4ED8',
+          1: 'var(--chart-1)',
+          2: 'var(--chart-2)',
+          3: 'var(--chart-3)',
+          4: 'var(--chart-4)',
+          5: 'var(--chart-5)',
         },
-        // Keep neutral aligned with the same zinc/graphite family so existing
-        // utility classes continue to inherit the supplied theme.
+        // Fixed zinc palette — use dark: utilities when a shade should flip.
         neutral: {
           50: '#FAFAFA',
           100: '#F4F4F5',

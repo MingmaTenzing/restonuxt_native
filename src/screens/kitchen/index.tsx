@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { useApi } from '@/hooks/use-api';
@@ -291,8 +292,8 @@ export default function KitchenScreen() {
   }
 
   return (
-    <View className="flex-1 bg-background">
-      <View className="gap-4 border-b border-neutral-200/80 px-5 pb-4 pt-7">
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+      <View className="gap-4 border-b border-border px-5 pb-4 pt-3">
         <View className="flex-row items-start justify-between gap-4">
           <View className="flex-1 gap-1">
             <Text
@@ -398,6 +399,6 @@ export default function KitchenScreen() {
           )}
         </ScrollView>
       )}
-    </View>
+    </SafeAreaView>
   );
 }

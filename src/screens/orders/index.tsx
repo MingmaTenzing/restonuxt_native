@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
@@ -27,6 +27,15 @@ export default function OrdersScreen() {
   const [range, setRange] = useState<OrderRange>('day');
   const [query, setQuery] = useState('');
 
+  // Day stats stay on their own query so range tabs only refresh the list,
+  // not remount / flash the stats row on every filter change.
+  const { data: dayOrders = [] } = useQuery({
+    queryKey: ['orders', 'day'],
+    enabled: isReady,
+    queryFn: () => fetchOrders(api, 'day'),
+    staleTime: 30_000,
+  });
+
   const {
     data: orders = [],
     isLoading,
@@ -41,15 +50,13 @@ export default function OrdersScreen() {
     placeholderData: keepPreviousData,
   });
 
-  const stats = computeOrderStats(orders);
+  const stats = computeOrderStats(dayOrders);
   const visibleOrders = searchOrders(orders, query);
 
   if (!isLoaded) {
     return (
       <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-base font-medium text-muted-foreground">
-          Loading...
-        </Text>
+        <Text className="text-base font-medium text-muted-foreground">Loading...</Text>
       </View>
     );
   }
@@ -57,9 +64,7 @@ export default function OrdersScreen() {
   if (!isSignedIn) {
     return (
       <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-center text-xl font-semibold text-foreground">
-          Sign in required
-        </Text>
+        <Text className="text-center text-xl font-semibold text-foreground">Sign in required</Text>
         <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
           Sign in from the Home tab to view orders.
         </Text>
@@ -82,10 +87,15 @@ export default function OrdersScreen() {
             : `${orders.length} ${orders.length === 1 ? 'order' : 'orders'}`}
         </Text>
       </View>
-
-      {!isError && orders.length > 0 ? (
-        <OrderStatsRow stats={stats} isRefreshing={isFetching && !isLoading} />
-      ) : null}
+      <ResponsiveCardGrid>
+        {visibleOrders.map((order) => (
+          <OrderCard
+            key={order.id}
+            order={order}
+            onPress={() => router.push(`/order/${order.id}`)}
+          />
+        ))}
+      </ResponsiveCardGrid>
 
       {!isError ? (
         <OrderSearch
@@ -95,6 +105,8 @@ export default function OrdersScreen() {
           onRangeChange={setRange}
         />
       ) : null}
+
+      {!isError ? <OrderStatsRow stats={stats} /> : null}
 
       {isError ? (
         <View
@@ -131,16 +143,6 @@ export default function OrdersScreen() {
           </Text>
         </View>
       ) : null}
-
-      <ResponsiveCardGrid>
-        {visibleOrders.map((order) => (
-          <OrderCard
-            key={order.id}
-            order={order}
-            onPress={() => router.push(`/order/${order.id}`)}
-          />
-        ))}
-      </ResponsiveCardGrid>
     </ScreenScroll>
   );
 }

@@ -41,22 +41,16 @@ function MetricCard({
   );
 }
 
-export function OrderStatsRow({
-  stats,
-  isRefreshing = false,
-}: {
-  stats: OrderStats;
-  isRefreshing?: boolean;
-}) {
+export function OrderStatsRow({ stats }: { stats: OrderStats }) {
   const isDark = useColorScheme() === 'dark';
   const { isTablet, contentWidth, horizontalPadding, gridGap } = useResponsiveLayout();
   const metricWidth = (contentWidth - horizontalPadding * 2 - gridGap) / 2;
 
   return (
-    <View className="gap-3" style={{ opacity: isRefreshing ? 0.65 : 1 }}>
+    <View className="gap-3">
       {/* Revenue is the signature metric — given its own full-width, high-contrast card. */}
       <View
-        className="gap-1.5 rounded-3xl bg-neutral-950 p-5"
+        className="gap-1.5 rounded-3xl bg-neutral-950 p-5 dark:bg-neutral-900"
         style={{ borderCurve: 'continuous', boxShadow: '0 14px 30px rgba(0, 0, 0, 0.16)' }}>
         <Text className="text-xs font-medium uppercase tracking-wider text-neutral-300">
           Revenue today

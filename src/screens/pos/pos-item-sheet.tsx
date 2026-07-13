@@ -165,10 +165,8 @@ export function PosItemSheet({ visible, item, onClose, onAdd }: PosItemSheetProp
                           }))
                         }
                         accessibilityRole="button"
-                        className="h-9 w-9 items-center justify-center rounded-xl bg-primary">
-                        <Text className="text-lg font-semibold text-primary-foreground">
-                          +
-                        </Text>
+                        className="h-9 w-9 items-center justify-center rounded-xl bg-muted">
+                        <Text className="text-lg font-semibold text-foreground">+</Text>
                       </Pressable>
                     </View>
                   </View>

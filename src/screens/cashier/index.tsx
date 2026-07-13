@@ -8,6 +8,7 @@ import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
+import { useTheme } from '@/hooks/use-theme';
 import { formatMoney } from '@/utils/format-money';
 
 import { fetchActiveSessions, fetchUnpaidTakeawayOrders } from './api';
@@ -26,6 +27,7 @@ export default function CashierScreen() {
   const router = useRouter();
   const [mode, setMode] = useState<CashierMode>('TABLES');
   const { isTablet } = useResponsiveLayout();
+  const { isDark, colors } = useTheme();
 
   const {
     data: sessions = [],
@@ -131,8 +133,14 @@ export default function CashierScreen() {
             {formatMoney(outstanding)}
           </Text>
         </View>
-        <View className="h-12 w-12 items-center justify-center rounded-2xl bg-primary">
-          <Ionicons name="cash-outline" size={24} color="#FAFAFA" />
+        <View
+          className="h-12 w-12 items-center justify-center rounded-2xl"
+          style={{ backgroundColor: isDark ? colors.accent : colors.primary }}>
+          <Ionicons
+            name="cash-outline"
+            size={24}
+            color={isDark ? colors.text : colors.primaryForeground}
+          />
         </View>
       </View>
 

@@ -53,10 +53,8 @@ export function PosCartLineRow({ line, onDecrement, onIncrement, onRemove }: Pos
           <Pressable
             onPress={onIncrement}
             accessibilityRole="button"
-            className="h-9 w-9 items-center justify-center rounded-xl bg-primary">
-            <Text className="text-lg font-semibold text-primary-foreground">
-              +
-            </Text>
+            className="h-9 w-9 items-center justify-center rounded-xl bg-muted">
+            <Text className="text-lg font-semibold text-foreground">+</Text>
           </Pressable>
         </View>
         <Pressable

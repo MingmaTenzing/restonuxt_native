@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image, Pressable, Text, View, type ViewStyle } from 'react-native';
 
+import { useTheme } from '@/hooks/use-theme';
 import { formatMoney } from '@/utils/format-money';
 
 import type { PosMenuItem } from './types';
@@ -13,6 +14,7 @@ interface PosMenuCardProps {
 }
 
 export function PosMenuCard({ item, onPress, width, style }: PosMenuCardProps) {
+  const { isDark, colors } = useTheme();
   const optionCount = item.options?.length ?? 0;
 
   return (
@@ -31,9 +33,9 @@ export function PosMenuCard({ item, onPress, width, style }: PosMenuCardProps) {
         <Image source={{ uri: item.imageUrl }} className="h-24 w-full rounded-2xl" />
       ) : (
         <View
-          className="h-24 items-center justify-center rounded-2xl bg-primary/10"
+          className="h-24 items-center justify-center rounded-2xl bg-muted"
           style={{ borderCurve: 'continuous' }}>
-          <Text className="text-3xl font-bold text-primary">
+          <Text className="text-3xl font-bold text-foreground">
             {item.name.slice(0, 1).toUpperCase()}
           </Text>
         </View>
@@ -49,8 +51,10 @@ export function PosMenuCard({ item, onPress, width, style }: PosMenuCardProps) {
           <Text className="text-base font-bold tracking-tight text-foreground">
             {formatMoney(item.priceCents)}
           </Text>
-          <View className="h-8 w-8 items-center justify-center rounded-full bg-primary">
-            <Ionicons name="add" size={18} color="#FAFAFA" />
+          <View
+            className="h-8 w-8 items-center justify-center rounded-full"
+            style={{ backgroundColor: isDark ? colors.accent : colors.primary }}>
+            <Ionicons name="add" size={18} color={isDark ? colors.text : colors.primaryForeground} />
           </View>
         </View>
         {optionCount > 0 ? (

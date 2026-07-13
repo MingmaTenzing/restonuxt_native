@@ -4,13 +4,13 @@ Conventions for routes, screens, and feature code in this Expo Router app.
 
 ## Layering
 
-| Layer | Location | Responsibility |
-|-------|----------|----------------|
-| Routes | `src/app/` | URL mapping, layouts, thin re-exports |
-| Screens | `src/screens/<feature>/` | UI, local state, feature hooks |
-| Shared | `src/components/`, `src/hooks/`, `src/utils/` | Cross-feature reuse |
-| API types | `src/screens/<feature>/types.ts` | Request/response shapes aligned with `RESTOQUICK_DOC.md` (Part 2) |
-| API calls | `src/screens/<feature>/api.ts` or hooks | fetch / React Query |
+| Layer     | Location                                      | Responsibility                                                    |
+| --------- | --------------------------------------------- | ----------------------------------------------------------------- |
+| Routes    | `src/app/`                                    | URL mapping, layouts, thin re-exports                             |
+| Screens   | `src/screens/<feature>/`                      | UI, local state, feature hooks                                    |
+| Shared    | `src/components/`, `src/hooks/`, `src/utils/` | Cross-feature reuse                                               |
+| API types | `src/screens/<feature>/types.ts`              | Request/response shapes aligned with `RESTOQUICK_DOC.md` (Part 2) |
+| API calls | `src/screens/<feature>/api.ts` or hooks       | fetch / React Query                                               |
 
 **Anti-pattern:** putting components, types, or helpers inside `src/app/`.
 
@@ -23,16 +23,17 @@ Conventions for routes, screens, and feature code in this Expo Router app.
 
 ## Screens by feature
 
-| Folder | Tab / route | Notes |
-|--------|-------------|-------|
-| `dashboard/` | index | Stats, user actions |
-| `bookings/` | bookings | CRUD, stats row |
-| `kitchen/` | kitchen | WebSocket queue, real-time orders |
-| `menu/` | menu | Items, options, forms |
-| `orders/` | orders | List, search, stats |
-| `sessions/` | sessions | Table sessions |
-| `tables/` | tables | Floor plan / table CRUD |
-| `staff.tsx`, `events.tsx`, `settings.tsx` | respective tabs | Top-level screen files |
+| Folder                      | Tab / route     | Notes                             |
+| --------------------------- | --------------- | --------------------------------- |
+| `dashboard/`                | index           | Stats, user actions               |
+| `bookings/`                 | bookings        | CRUD, stats row                   |
+| `kitchen/`                  | kitchen         | WebSocket queue, real-time orders |
+| `menu/`                     | menu            | Items, options, forms             |
+| `orders/`                   | orders          | List, search, stats               |
+| `sessions/`                 | sessions        | Table sessions                    |
+| `tables/`                   | tables          | Floor plan / table CRUD           |
+| `agent/`                    | agent           | Streaming chat (`POST /api/restoquick-agent`) |
+| `staff.tsx`, `settings.tsx` | respective tabs | Top-level screen files            |
 
 ## Data and auth
 

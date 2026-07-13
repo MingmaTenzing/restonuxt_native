@@ -10,13 +10,6 @@ export default function TabLayout() {
         />
         <NativeTabs.Trigger.Label>Dashboard</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="events">
-        <NativeTabs.Trigger.Icon
-          md="event"
-          sf={{ default: 'calendar', selected: 'calendar.badge.clock' }}
-        />
-        <NativeTabs.Trigger.Label>Events</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="bookings">
         <NativeTabs.Trigger.Icon
           md="book_online"
@@ -60,10 +53,7 @@ export default function TabLayout() {
         <NativeTabs.Trigger.Label>Tables</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="sessions">
-        <NativeTabs.Trigger.Icon
-          md="schedule"
-          sf={{ default: 'clock', selected: 'clock.fill' }}
-        />
+        <NativeTabs.Trigger.Icon md="schedule" sf={{ default: 'clock', selected: 'clock.fill' }} />
         <NativeTabs.Trigger.Label>Sessions</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="menu">
@@ -73,12 +63,33 @@ export default function TabLayout() {
         />
         <NativeTabs.Trigger.Label>Menu</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="stock">
+        <NativeTabs.Trigger.Icon
+          md="inventory_2"
+          sf={{ default: 'shippingbox', selected: 'shippingbox.fill' }}
+        />
+        <NativeTabs.Trigger.Label>Stock</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="staff">
         <NativeTabs.Trigger.Icon
           md="people"
           sf={{ default: 'person.2', selected: 'person.2.fill' }}
         />
         <NativeTabs.Trigger.Label>Staff</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="roster">
+        <NativeTabs.Trigger.Icon
+          md="event_note"
+          sf={{ default: 'calendar', selected: 'calendar' }}
+        />
+        <NativeTabs.Trigger.Label>Roster</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="agent">
+        <NativeTabs.Trigger.Icon
+          md="auto_awesome"
+          sf={{ default: 'sparkles', selected: 'sparkles' }}
+        />
+        <NativeTabs.Trigger.Label>Resto Agent</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="settings">
         <NativeTabs.Trigger.Icon
