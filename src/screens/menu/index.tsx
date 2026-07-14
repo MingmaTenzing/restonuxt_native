@@ -5,6 +5,7 @@ import { Alert, Pressable, ScrollView, Text, TextInput, useColorScheme, View } f
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { CardGridSkeleton, ListScreenSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 
@@ -48,7 +49,7 @@ export default function MenuScreen() {
     isError,
     error,
     refetch,
-    isFetching,
+    isRefetching,
   } = useQuery({
     queryKey: ['menu'],
     enabled: isReady,
@@ -184,10 +185,10 @@ export default function MenuScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-base font-medium text-muted-foreground">
-          Loading...
-        </Text>
+      <View className="flex-1 bg-background">
+        <ScreenScroll bottomInset={72}>
+          <ListScreenSkeleton filters cards={6} />
+        </ScreenScroll>
       </View>
     );
   }
@@ -207,7 +208,7 @@ export default function MenuScreen() {
 
   return (
     <>
-      <ScreenScroll bottomInset={72} refreshing={isFetching} onRefresh={() => refetch()}>
+      <ScreenScroll bottomInset={72} refreshing={isRefetching} onRefresh={() => refetch()}>
         <View className="gap-2">
           <Text
             className={`font-bold tracking-tight text-foreground ${
@@ -311,34 +312,38 @@ export default function MenuScreen() {
           </View>
         ) : null}
 
-        {sections.map(([category, categoryItems]) => (
-          <View key={category} className="gap-3">
-            <View className="flex-row items-baseline justify-between">
-              <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {category}
-              </Text>
-              <Text className="text-xs font-medium text-muted-foreground">
-                {categoryItems.length}
-              </Text>
+        {isLoading ? (
+          <CardGridSkeleton count={6} />
+        ) : (
+          sections.map(([category, categoryItems]) => (
+            <View key={category} className="gap-3">
+              <View className="flex-row items-baseline justify-between">
+                <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  {category}
+                </Text>
+                <Text className="text-xs font-medium text-muted-foreground">
+                  {categoryItems.length}
+                </Text>
+              </View>
+              <ResponsiveCardGrid>
+                {categoryItems.map((item) => (
+                  <MenuItemCard
+                    key={item.id}
+                    item={item}
+                    onPress={() => openEdit(item)}
+                    isToggling={
+                      availabilityMutation.isPending &&
+                      availabilityMutation.variables?.item.id === item.id
+                    }
+                    onToggleAvailability={(isAvailable) =>
+                      availabilityMutation.mutate({ item, isAvailable })
+                    }
+                  />
+                ))}
+              </ResponsiveCardGrid>
             </View>
-            <ResponsiveCardGrid>
-              {categoryItems.map((item) => (
-                <MenuItemCard
-                  key={item.id}
-                  item={item}
-                  onPress={() => openEdit(item)}
-                  isToggling={
-                    availabilityMutation.isPending &&
-                    availabilityMutation.variables?.item.id === item.id
-                  }
-                  onToggleAvailability={(isAvailable) =>
-                    availabilityMutation.mutate({ item, isAvailable })
-                  }
-                />
-              ))}
-            </ResponsiveCardGrid>
-          </View>
-        ))}
+          ))
+        )}
       </ScreenScroll>
 
       <Pressable

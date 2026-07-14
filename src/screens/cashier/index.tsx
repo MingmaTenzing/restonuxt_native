@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { CardGridSkeleton, ListScreenSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { useTheme } from '@/hooks/use-theme';
@@ -35,7 +36,7 @@ export default function CashierScreen() {
     isError: isSessionsError,
     error: sessionsError,
     refetch: refetchSessions,
-    isFetching: isFetchingSessions,
+    isRefetching: isRefetchingSessions,
   } = useQuery({
     queryKey: ['cashier-sessions'],
     enabled: isReady && mode === 'TABLES',
@@ -48,7 +49,7 @@ export default function CashierScreen() {
     isError: isTakeawayError,
     error: takeawayError,
     refetch: refetchTakeaway,
-    isFetching: isFetchingTakeaway,
+    isRefetching: isRefetchingTakeaway,
   } = useQuery({
     queryKey: ['cashier-takeaway'],
     enabled: isReady && mode === 'TAKEAWAY',
@@ -71,10 +72,10 @@ export default function CashierScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-base font-medium text-muted-foreground">
-          Loading...
-        </Text>
+      <View className="flex-1 bg-background">
+        <ScreenScroll>
+          <ListScreenSkeleton statsCount={1} filters cards={4} />
+        </ScreenScroll>
       </View>
     );
   }
@@ -97,7 +98,7 @@ export default function CashierScreen() {
   const isLoading = mode === 'TABLES' ? isLoadingSessions : isLoadingTakeaway;
   const outstanding = mode === 'TABLES' ? tableOutstanding : takeawayOutstanding;
   const queueCount = mode === 'TABLES' ? sessions.length : takeawayOrders.length;
-  const isRefreshing = mode === 'TABLES' ? isFetchingSessions : isFetchingTakeaway;
+  const isRefreshing = mode === 'TABLES' ? isRefetchingSessions : isRefetchingTakeaway;
 
   const handleRefresh = () => {
     if (mode === 'TABLES') void refetchSessions();
@@ -209,7 +210,9 @@ export default function CashierScreen() {
         </View>
       ) : null}
 
-      {mode === 'TABLES' ? (
+      {isLoading ? (
+        <CardGridSkeleton />
+      ) : mode === 'TABLES' ? (
         <ResponsiveCardGrid>
           {sessions.map((session) => (
             <CashierSessionCard

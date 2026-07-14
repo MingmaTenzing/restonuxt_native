@@ -5,6 +5,7 @@ import { Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { CardGridSkeleton, OrderStatsSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { unwrapList, type ApiClient } from '@/utils/api';
@@ -27,9 +28,7 @@ export default function OrdersScreen() {
   const [range, setRange] = useState<OrderRange>('day');
   const [query, setQuery] = useState('');
 
-  // Day stats stay on their own query so range tabs only refresh the list,
-  // not remount / flash the stats row on every filter change.
-  const { data: dayOrders = [] } = useQuery({
+  const { data: dayOrders = [], isLoading: isDayLoading } = useQuery({
     queryKey: ['orders', 'day'],
     enabled: isReady,
     queryFn: () => fetchOrders(api, 'day'),
@@ -42,7 +41,7 @@ export default function OrdersScreen() {
     isError,
     error,
     refetch,
-    isFetching,
+    isRefetching,
   } = useQuery({
     queryKey: ['orders', range],
     enabled: isReady,
@@ -55,8 +54,20 @@ export default function OrdersScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-base font-medium text-muted-foreground">Loading...</Text>
+      <View className="flex-1 bg-background">
+        <ScreenScroll>
+          <View className="gap-2">
+            <Text
+              className={`font-bold tracking-tight text-foreground ${
+                isTablet ? 'text-3xl' : 'text-4xl'
+              }`}>
+              Orders
+            </Text>
+          </View>
+          <OrderSearch query="" onQueryChange={() => {}} range="day" onRangeChange={() => {}} />
+          <OrderStatsSkeleton />
+          <CardGridSkeleton />
+        </ScreenScroll>
       </View>
     );
   }
@@ -73,7 +84,7 @@ export default function OrdersScreen() {
   }
 
   return (
-    <ScreenScroll refreshing={isFetching} onRefresh={() => refetch()}>
+    <ScreenScroll refreshing={isRefetching} onRefresh={() => refetch()}>
       <View className="gap-2">
         <Text
           className={`font-bold tracking-tight text-foreground ${
@@ -87,15 +98,6 @@ export default function OrdersScreen() {
             : `${orders.length} ${orders.length === 1 ? 'order' : 'orders'}`}
         </Text>
       </View>
-      <ResponsiveCardGrid>
-        {visibleOrders.map((order) => (
-          <OrderCard
-            key={order.id}
-            order={order}
-            onPress={() => router.push(`/order/${order.id}`)}
-          />
-        ))}
-      </ResponsiveCardGrid>
 
       {!isError ? (
         <OrderSearch
@@ -106,7 +108,9 @@ export default function OrdersScreen() {
         />
       ) : null}
 
-      {!isError ? <OrderStatsRow stats={stats} /> : null}
+      {!isError ? (
+        isDayLoading ? <OrderStatsSkeleton /> : <OrderStatsRow stats={stats} />
+      ) : null}
 
       {isError ? (
         <View
@@ -143,6 +147,20 @@ export default function OrdersScreen() {
           </Text>
         </View>
       ) : null}
+
+      {isLoading ? (
+        <CardGridSkeleton />
+      ) : (
+        <ResponsiveCardGrid>
+          {visibleOrders.map((order) => (
+            <OrderCard
+              key={order.id}
+              order={order}
+              onPress={() => router.push(`/order/${order.id}`)}
+            />
+          ))}
+        </ResponsiveCardGrid>
+      )}
     </ScreenScroll>
   );
 }

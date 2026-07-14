@@ -5,6 +5,7 @@ import { Alert, Pressable, RefreshControl, ScrollView, Text, TextInput, View } f
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
+import { CardGridSkeleton, ListScreenSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { formatMoney } from '@/utils/format-money';
@@ -23,17 +24,30 @@ import {
   clearCart,
   createCartLineId,
 } from './cart';
-import { canSubmitPosOrder } from './pos-order';
 import { PosCartBar } from './pos-cart-bar';
 import { PosCartPanel } from './pos-cart-panel';
 import { PosCartSheet } from './pos-cart-sheet';
+import { PosDiningHeader } from './pos-dining-header';
+import {
+  applyEnterDiningOrder,
+  applyModeChange as nextModeState,
+  applyOpenedSession,
+  applyReturnToTableSelect,
+  isPosOrdering,
+  openSessionConfirmCopy,
+  resolveChangeTable,
+  resolveModeChange,
+  resolveTablePress,
+  type DiningStep,
+} from './pos-flow';
 import { PosItemSheet } from './pos-item-sheet';
 import { PosMenuCard } from './pos-menu-card';
-import { PosTablePicker } from './pos-table-picker';
-import type { CartLine, PosMenuItem, PosMode } from './types';
+import { getPosSubmitBlocker } from './pos-order';
+import { PosTableSelect } from './pos-table-select';
+import type { CartLine, PosMenuItem, PosMode, PosTable } from './types';
 
 const MODES: { value: PosMode; label: string; hint: string }[] = [
-  { value: 'DINING', label: 'Dining', hint: 'Send to a table session' },
+  { value: 'DINING', label: 'Dining', hint: 'Pick a table first' },
   { value: 'TAKEAWAY', label: 'Takeaway', hint: 'Pack for pickup' },
 ];
 
@@ -56,6 +70,23 @@ function searchItems(items: PosMenuItem[], query: string) {
   );
 }
 
+function confirmDestructiveAction({
+  title,
+  message,
+  confirmLabel,
+  onConfirm,
+}: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+}) {
+  Alert.alert(title, message, [
+    { text: 'Cancel', style: 'cancel' },
+    { text: confirmLabel, style: 'destructive', onPress: onConfirm },
+  ]);
+}
+
 export default function PosScreen() {
   const { api, isLoaded, isSignedIn, isReady } = useApi();
   const queryClient = useQueryClient();
@@ -66,9 +97,12 @@ export default function PosScreen() {
     posProductCardWidth,
     posSidebarWidth,
     posScrollContentStyle,
+    cardWidth,
+    listColumns,
   } = useResponsiveLayout();
 
   const [mode, setMode] = useState<PosMode>('DINING');
+  const [diningStep, setDiningStep] = useState<DiningStep>('pick-table');
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
@@ -77,20 +111,28 @@ export default function PosScreen() {
   const [isCartVisible, setCartVisible] = useState(false);
   const [customizingItem, setCustomizingItem] = useState<PosMenuItem | null>(null);
 
+  const isOrdering = isPosOrdering({ mode, diningStep });
+  const tableCardWidth = listColumns > 1 ? cardWidth : undefined;
+
   const {
     data: menuItems = [],
     isLoading: isLoadingMenu,
     isError: isMenuError,
     error: menuError,
     refetch: refetchMenu,
-    isFetching: isFetchingMenu,
+    isRefetching: isRefetchingMenu,
   } = useQuery({
     queryKey: ['pos-menu'],
-    enabled: isReady,
+    enabled: isReady && isOrdering,
     queryFn: () => fetchPosMenu(api),
   });
 
-  const { data: tables = [], isLoading: isLoadingTables, refetch: refetchTables, isFetching: isFetchingTables } = useQuery({
+  const {
+    data: tables = [],
+    isLoading: isLoadingTables,
+    refetch: refetchTables,
+    isRefetching: isRefetchingTables,
+  } = useQuery({
     queryKey: ['pos-tables'],
     enabled: isReady && mode === 'DINING',
     queryFn: () => fetchPosTables(api),
@@ -98,7 +140,10 @@ export default function PosScreen() {
 
   const openSessionMutation = useMutation({
     mutationFn: async (tableId: string) => createTableSession(api, tableId),
-    onSuccess: () => {
+    onSuccess: (session, tableId) => {
+      queryClient.setQueryData<PosTable[]>(['pos-tables'], (current) =>
+        current ? applyOpenedSession(current, tableId, session.id) : current
+      );
       queryClient.invalidateQueries({ queryKey: ['pos-tables'] });
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
     },
@@ -153,22 +198,105 @@ export default function PosScreen() {
   const itemCount = cartItemCount(cartLines);
   const totalCents = cartTotalCents(cartLines);
 
-  const canSubmit = canSubmitPosOrder({
-    lineCount: cartLines.length,
-    customerName,
-    mode,
-    selectedTableId,
-    hasActiveSession: !!selectedTable?.activeSessionId,
-  });
-
   const destinationLabel = mode === 'DINING' ? (selectedTable?.number ?? null) : null;
 
   const submitLabel =
     mode === 'DINING'
-      ? selectedTable
-        ? `Send to Table ${selectedTable.number} · ${formatMoney(totalCents)}`
-        : `Select a table · ${formatMoney(totalCents)}`
+      ? `Send to Table ${selectedTable?.number ?? ''} · ${formatMoney(totalCents)}`
       : `Send takeaway · ${formatMoney(totalCents)}`;
+
+  const resetTicket = () => {
+    setCartLines([]);
+    setCartVisible(false);
+    setCategoryFilter(null);
+    setQuery('');
+    setCustomizingItem(null);
+  };
+
+  const enterDiningOrder = (tableId: string) => {
+    const next = applyEnterDiningOrder(tableId);
+    setSelectedTableId(next.selectedTableId);
+    setDiningStep(next.diningStep);
+  };
+
+  const returnToTableSelect = () => {
+    resetTicket();
+    const next = applyReturnToTableSelect();
+    setSelectedTableId(next.selectedTableId);
+    setDiningStep(next.diningStep);
+  };
+
+  const commitModeChange = (nextMode: PosMode) => {
+    const next = nextModeState(nextMode);
+    resetTicket();
+    setMode(next.mode);
+    setSelectedTableId(next.selectedTableId);
+    setDiningStep(next.diningStep);
+  };
+
+  const handleModeChange = (nextMode: PosMode) => {
+    const decision = resolveModeChange({
+      currentMode: mode,
+      nextMode,
+      cartLineCount: cartLines.length,
+    });
+
+    if (decision.kind === 'noop') return;
+
+    if (decision.kind === 'confirm-clear-ticket') {
+      confirmDestructiveAction({
+        title: 'Switch service?',
+        message: 'Switching will clear the current ticket.',
+        confirmLabel: 'Switch',
+        onConfirm: () => commitModeChange(nextMode),
+      });
+      return;
+    }
+
+    commitModeChange(nextMode);
+  };
+
+  const handleTablePress = (table: PosTable) => {
+    const action = resolveTablePress({
+      table,
+      isOpeningSession: openSessionMutation.isPending,
+    });
+
+    if (action.kind === 'ignore') return;
+
+    if (action.kind === 'enter-order') {
+      enterDiningOrder(action.tableId);
+      return;
+    }
+
+    const copy = openSessionConfirmCopy(action.tableNumber);
+    Alert.alert(copy.title, copy.message, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: copy.confirmLabel,
+        onPress: () => {
+          openSessionMutation.mutate(action.tableId, {
+            onSuccess: () => enterDiningOrder(action.tableId),
+          });
+        },
+      },
+    ]);
+  };
+
+  const handleChangeTable = () => {
+    const decision = resolveChangeTable({ cartLineCount: cartLines.length });
+    if (decision.kind === 'proceed') {
+      returnToTableSelect();
+      return;
+    }
+
+    confirmDestructiveAction({
+      title: 'Change table?',
+      message: 'Going back will clear the current ticket.',
+      confirmLabel: 'Change table',
+      onConfirm: returnToTableSelect,
+    });
+  };
 
   const handleMenuPress = (item: PosMenuItem) => {
     if ((item.options?.length ?? 0) > 0) {
@@ -189,26 +317,87 @@ export default function PosScreen() {
     );
   };
 
+  const handleSubmitOrder = () => {
+    if (submitMutation.isPending) return;
+
+    const blocker = getPosSubmitBlocker({
+      lineCount: cartLines.length,
+      customerName,
+      mode,
+      selectedTableId,
+      hasActiveSession: !!selectedTable?.activeSessionId,
+      tableNumber: selectedTable?.number,
+    });
+
+    if (blocker?.kind === 'empty-cart') {
+      Alert.alert('Empty cart', 'Add at least one dish before sending to the kitchen.');
+      return;
+    }
+
+    if (blocker?.kind === 'missing-customer-name') {
+      Alert.alert('Guest name required', 'Enter a guest name for this ticket.');
+      return;
+    }
+
+    if (blocker?.kind === 'missing-table' || blocker?.kind === 'missing-session') {
+      returnToTableSelect();
+      return;
+    }
+
+    submitMutation.mutate();
+  };
+
   const cartPanelProps = {
     lines: cartLines,
     customerName,
     onCustomerNameChange: setCustomerName,
     onUpdateLines: setCartLines,
     onClearCart: () => setCartLines(clearCart()),
-    onSubmit: () => submitMutation.mutate(),
+    onSubmit: handleSubmitOrder,
     isSubmitting: submitMutation.isPending,
     errorMessage: submitMutation.isError ? (submitMutation.error as Error).message : null,
-    canSubmit,
     submitLabel,
     destinationLabel,
   };
 
+  const modeToggle = (
+    <View className="gap-3">
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
+        {MODES.map((option) => {
+          const isActive = option.value === mode;
+          return (
+            <Pressable
+              key={option.value}
+              onPress={() => handleModeChange(option.value)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isActive }}
+              className={`rounded-2xl px-4 py-3 ${
+                isActive ? 'bg-primary' : 'border border-border bg-card'
+              }`}
+              style={{ borderCurve: 'continuous' }}>
+              <Text
+                className={`text-sm font-semibold ${
+                  isActive ? 'text-primary-foreground' : 'text-neutral-600 dark:text-neutral-300'
+                }`}>
+                {option.label}
+              </Text>
+              <Text
+                className={`text-xs ${
+                  isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                }`}>
+                {option.hint}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-base font-medium text-muted-foreground">
-          Loading...
-        </Text>
+      <View className="flex-1 bg-background">
+        <ListScreenSkeleton filters cards={6} />
       </View>
     );
   }
@@ -226,6 +415,55 @@ export default function PosScreen() {
     );
   }
 
+  const tableSelectPane = (
+    <ScrollView
+      className="flex-1 bg-background"
+      contentContainerStyle={{
+        ...posScrollContentStyle,
+        paddingTop: Math.max(insets.top, 12) + 16,
+        paddingBottom: Math.max((posScrollContentStyle.paddingBottom as number) ?? 28, insets.bottom + 16),
+        gap: 24,
+      }}
+      contentInsetAdjustmentBehavior="automatic"
+      keyboardDismissMode="on-drag"
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetchingTables}
+          onRefresh={() => {
+            void refetchTables();
+          }}
+        />
+      }>
+      <View className="gap-2">
+        <Text className="text-4xl font-bold tracking-tight text-foreground">POS</Text>
+        <Text className="text-base leading-6 text-muted-foreground">
+          Choose a table to see which sessions are live, then start the order.
+        </Text>
+      </View>
+
+      {modeToggle}
+
+      {isLoadingTables ? (
+        <CardGridSkeleton count={4} />
+      ) : (
+        <PosTableSelect
+          tables={tables}
+          onTablePress={handleTablePress}
+          isOpeningSession={openSessionMutation.isPending}
+          openingTableId={openSessionMutation.variables ?? null}
+          cardWidth={tableCardWidth}
+          gap={gridGap}
+        />
+      )}
+
+      {openSessionMutation.isError ? (
+        <Text selectable className="text-sm text-red-600 dark:text-red-400">
+          {(openSessionMutation.error as Error).message}
+        </Text>
+      ) : null}
+    </ScrollView>
+  );
+
   const menuPane = (
     <ScrollView
       className="flex-1 bg-background"
@@ -239,15 +477,15 @@ export default function PosScreen() {
           !isTablet && itemCount > 0
             ? 160
             : Math.max((posScrollContentStyle.paddingBottom as number) ?? 28, insets.bottom + 16),
+        gap: 20,
       }}
       contentInsetAdjustmentBehavior={isTablet ? 'never' : 'automatic'}
       keyboardDismissMode="on-drag"
       refreshControl={
         <RefreshControl
-          refreshing={isFetchingMenu || isFetchingTables}
+          refreshing={isRefetchingMenu}
           onRefresh={() => {
             void refetchMenu();
-            if (mode === 'DINING') void refetchTables();
           }}
         />
       }>
@@ -256,7 +494,7 @@ export default function PosScreen() {
           className={`font-bold tracking-tight text-foreground ${
             isTablet ? 'text-3xl' : 'text-4xl'
           }`}>
-          POS
+          {mode === 'DINING' ? `Table ${selectedTable?.number ?? ''}` : 'Takeaway'}
         </Text>
         <Text className="text-base leading-6 text-muted-foreground">
           {isLoadingMenu
@@ -265,59 +503,10 @@ export default function PosScreen() {
         </Text>
       </View>
 
-      <View className="gap-3">
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
-          {MODES.map((option) => {
-            const isActive = option.value === mode;
-            return (
-              <Pressable
-                key={option.value}
-                onPress={() => setMode(option.value)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isActive }}
-                className={`rounded-2xl px-4 py-3 ${
-                  isActive
-                    ? 'bg-primary'
-                    : 'border border-border bg-card'
-                }`}
-                style={{ borderCurve: 'continuous' }}>
-                <Text
-                  className={`text-sm font-semibold ${
-                    isActive
-                      ? 'text-primary-foreground'
-                      : 'text-neutral-600 dark:text-neutral-300'
-                  }`}>
-                  {option.label}
-                </Text>
-                <Text
-                  className={`text-xs ${
-                    isActive
-                      ? 'text-primary-foreground/80'
-                      : 'text-muted-foreground'
-                  }`}>
-                  {option.hint}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
+      {modeToggle}
 
-      {mode === 'DINING' ? (
-        isLoadingTables ? (
-          <Text className="text-base text-muted-foreground">
-            Loading tables...
-          </Text>
-        ) : (
-          <PosTablePicker
-            tables={tables}
-            selectedTableId={selectedTableId}
-            onSelect={setSelectedTableId}
-            isOpeningSession={openSessionMutation.isPending}
-            openingTableId={openSessionMutation.variables ?? null}
-            onOpenSession={(tableId) => openSessionMutation.mutate(tableId)}
-          />
-        )
+      {mode === 'DINING' && selectedTable ? (
+        <PosDiningHeader tableNumber={selectedTable.number} onChangeTable={handleChangeTable} />
       ) : null}
 
       {!isMenuError ? (
@@ -350,9 +539,7 @@ export default function PosScreen() {
                     accessibilityRole="button"
                     accessibilityState={{ selected: isActive }}
                     className={`rounded-full px-4 py-2 ${
-                      isActive
-                        ? 'bg-primary'
-                        : 'border border-border bg-card'
+                      isActive ? 'bg-primary' : 'border border-border bg-card'
                     }`}>
                     <Text
                       className={`text-sm font-semibold ${
@@ -386,12 +573,6 @@ export default function PosScreen() {
         </View>
       ) : null}
 
-      {openSessionMutation.isError ? (
-        <Text selectable className="text-sm text-red-600 dark:text-red-400">
-          {(openSessionMutation.error as Error).message}
-        </Text>
-      ) : null}
-
       {!isLoadingMenu && !isMenuError && menuItems.length === 0 ? (
         <View
           className="rounded-3xl border border-border bg-card p-5"
@@ -412,37 +593,43 @@ export default function PosScreen() {
         </View>
       ) : null}
 
-      {sections.map(([category, categoryItems]) => (
-        <View key={category} className="gap-3">
-          <View className="flex-row items-baseline justify-between">
-            <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              {category}
-            </Text>
-            <Text className="text-xs font-medium text-muted-foreground">
-              {categoryItems.length}
-            </Text>
+      {isLoadingMenu ? (
+        <CardGridSkeleton count={6} />
+      ) : (
+        sections.map(([category, categoryItems]) => (
+          <View key={category} className="gap-3">
+            <View className="flex-row items-baseline justify-between">
+              <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                {category}
+              </Text>
+              <Text className="text-xs font-medium text-muted-foreground">
+                {categoryItems.length}
+              </Text>
+            </View>
+            <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
+              {categoryItems.map((item) => (
+                <PosMenuCard
+                  key={item.id}
+                  item={item}
+                  width={posProductCardWidth}
+                  onPress={() => handleMenuPress(item)}
+                />
+              ))}
+            </View>
           </View>
-          <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
-            {categoryItems.map((item) => (
-              <PosMenuCard
-                key={item.id}
-                item={item}
-                width={posProductCardWidth}
-                onPress={() => handleMenuPress(item)}
-              />
-            ))}
-          </View>
-        </View>
-      ))}
+        ))
+      )}
     </ScrollView>
   );
 
   return (
     <View className="flex-1 bg-background">
       <View className="min-h-0 flex-1 flex-row items-stretch">
-        <View className="min-h-0 min-w-0 flex-1">{menuPane}</View>
+        <View className="min-h-0 min-w-0 flex-1">
+          {isOrdering ? menuPane : tableSelectPane}
+        </View>
 
-        {isTablet ? (
+        {isTablet && isOrdering ? (
           <View className="min-h-0 self-stretch" style={{ width: posSidebarWidth }}>
             <PosCartPanel
               {...cartPanelProps}
@@ -454,7 +641,7 @@ export default function PosScreen() {
         ) : null}
       </View>
 
-      {!isTablet ? (
+      {!isTablet && isOrdering ? (
         <>
           <PosCartBar
             itemCount={itemCount}
@@ -470,12 +657,14 @@ export default function PosScreen() {
         </>
       ) : null}
 
-      <PosItemSheet
-        visible={!!customizingItem}
-        item={customizingItem}
-        onClose={() => setCustomizingItem(null)}
-        onAdd={(line) => setCartLines((lines) => addCartLine(lines, line))}
-      />
+      {isOrdering ? (
+        <PosItemSheet
+          visible={!!customizingItem}
+          item={customizingItem}
+          onClose={() => setCustomizingItem(null)}
+          onAdd={(line) => setCartLines((lines) => addCartLine(lines, line))}
+        />
+      ) : null}
     </View>
   );
 }

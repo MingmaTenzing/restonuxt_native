@@ -18,7 +18,6 @@ interface PosCartPanelProps {
   onSubmit: () => void;
   isSubmitting: boolean;
   errorMessage: string | null;
-  canSubmit: boolean;
   submitLabel: string;
   destinationLabel?: string | null;
   variant?: 'sheet' | 'sidebar';
@@ -35,7 +34,6 @@ export function PosCartPanel({
   onSubmit,
   isSubmitting,
   errorMessage,
-  canSubmit,
   submitLabel,
   destinationLabel = null,
   variant = 'sheet',
@@ -161,7 +159,7 @@ export function PosCartPanel({
         </Text>
       ) : null}
 
-      <Button onPress={isSubmitting || !canSubmit ? undefined : onSubmit}>
+      <Button onPress={onSubmit} disabled={isSubmitting}>
         {isSubmitting ? 'Sending to kitchen...' : submitLabel}
       </Button>
     </>

@@ -67,6 +67,73 @@ describe('buildOrderItemCreates', () => {
       },
     ]);
   });
+
+  test('omits specialInstructions and orderItemOptions when empty', () => {
+    const plain: CartLine = {
+      id: 'line-plain',
+      menuItemId: 'menu-2',
+      itemName: 'Fries',
+      unitPriceCents: 500,
+      quantity: 1,
+      specialInstructions: null,
+      options: [],
+    };
+
+    expect(buildOrderItemCreates([plain])).toEqual([
+      {
+        menuItemId: 'menu-2',
+        itemName: 'Fries',
+        unitPriceCents: 500,
+        quantity: 1,
+      },
+    ]);
+  });
+
+  test('always includes itemName and unitPriceCents required by Prisma', () => {
+    const [item] = buildOrderItemCreates([
+      {
+        id: 'line-x',
+        menuItemId: 'm9',
+        itemName: 'Soup',
+        unitPriceCents: 900,
+        quantity: 3,
+        specialInstructions: null,
+        options: [],
+      },
+    ]);
+
+    expect(item).toMatchObject({
+      menuItemId: 'm9',
+      itemName: 'Soup',
+      unitPriceCents: 900,
+      quantity: 3,
+    });
+    expect(item).not.toHaveProperty('specialInstructions');
+    expect(item).not.toHaveProperty('orderItemOptions');
+  });
+
+  test('maps multiple lines including mixed options', () => {
+    const withOptions = sampleLine;
+    const without: CartLine = {
+      id: 'line-2',
+      menuItemId: 'menu-2',
+      itemName: 'Water',
+      unitPriceCents: 0,
+      quantity: 2,
+      specialInstructions: null,
+      options: [],
+    };
+
+    const payload = buildOrderItemCreates([withOptions, without]);
+    expect(payload).toHaveLength(2);
+    expect(payload[0]?.orderItemOptions?.create).toHaveLength(1);
+    expect(payload[1]).toEqual({
+      menuItemId: 'menu-2',
+      itemName: 'Water',
+      unitPriceCents: 0,
+      quantity: 2,
+    });
+  });
 });
 
 describe('cart mutations', () => {

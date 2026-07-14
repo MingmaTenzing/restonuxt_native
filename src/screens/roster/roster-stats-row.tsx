@@ -43,9 +43,6 @@ const STAT_ITEMS: {
   { key: 'leave', label: 'Pending leave', valueKey: 'pendingLeaveRequests' },
 ];
 
-const HORIZONTAL_PADDING = 40;
-const CARD_GAP = 12;
-
 function StatCard({
   label,
   value,
@@ -95,14 +92,14 @@ function StatCard({
 }
 
 export function RosterStatsRow({ overview }: { overview: RosterOverview }) {
-  const { isTablet, contentWidth } = useResponsiveLayout();
-  const columns = isTablet ? 3 : 3;
+  const { isTablet, contentWidth, horizontalPadding, gridGap } = useResponsiveLayout();
+  const columns = isTablet ? 3 : 2;
   const cardWidth = Math.floor(
-    (contentWidth - HORIZONTAL_PADDING - CARD_GAP * (columns - 1)) / columns
+    (contentWidth - horizontalPadding * 2 - gridGap * (columns - 1)) / columns
   );
 
   return (
-    <View className="flex-row flex-wrap" style={{ gap: CARD_GAP }}>
+    <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
       {STAT_ITEMS.map((item) => (
         <StatCard
           key={item.key}

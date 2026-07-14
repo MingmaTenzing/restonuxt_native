@@ -55,7 +55,7 @@ export function PosCartBar({
               {destinationLabel ? ` · Table ${destinationLabel}` : ''}
             </Text>
             <Text className="text-sm text-muted-foreground">
-              {destinationLabel ? 'Confirm table, then send' : 'Tap to review ticket'}
+              Tap to review ticket
             </Text>
           </View>
         </View>

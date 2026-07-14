@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
+import { KitchenQueueSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { useKitchenWebSocket } from '@/hooks/use-kitchen-websocket';
@@ -270,11 +271,11 @@ export default function KitchenScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-base font-medium text-muted-foreground">
-          Loading...
-        </Text>
-      </View>
+      <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+        <View className="flex-1 px-5 pt-7">
+          <KitchenQueueSkeleton />
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -368,11 +369,7 @@ export default function KitchenScreen() {
           ) : null}
 
           {isLoading ? (
-            <View className="py-10">
-              <Text className="text-center text-base text-muted-foreground">
-                Loading kitchen queue...
-              </Text>
-            </View>
+            <KitchenQueueSkeleton />
           ) : (
             <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
               {visibleOrders.map((order) => (

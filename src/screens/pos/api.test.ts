@@ -118,6 +118,69 @@ describe('pos api', () => {
     });
   });
 
+  test('submitDiningOrder includes nested orderItemOptions', async () => {
+    let capturedInit: RequestInit | undefined;
+
+    restore = withMockFetch((_input, init) => {
+      capturedInit = init;
+      return jsonResponse({ id: 'order-opts', orderNo: 9 });
+    });
+
+    await submitDiningOrder(testApiClient('token'), {
+      tableId: 'table-2',
+      customerName: 'Guest',
+      totalAmountCents: 1700,
+      items: [
+        {
+          menuItemId: 'm1',
+          itemName: 'Burger',
+          quantity: 1,
+          unitPriceCents: 1200,
+          specialInstructions: 'No onion',
+          orderItemOptions: {
+            create: [
+              {
+                menuOptionId: 'opt-cheese',
+                quantity: 1,
+                name: 'Cheese',
+                priceCents: 500,
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(JSON.parse(String(capturedInit?.body))).toEqual({
+      data: {
+        tableId: 'table-2',
+        customerName: 'Guest',
+        totalAmountCents: 1700,
+        items: {
+          create: [
+            {
+              menuItemId: 'm1',
+              itemName: 'Burger',
+              quantity: 1,
+              unitPriceCents: 1200,
+              specialInstructions: 'No onion',
+              orderItemOptions: {
+                create: [
+                  {
+                    menuOptionId: 'opt-cheese',
+                    quantity: 1,
+                    name: 'Cheese',
+                    priceCents: 500,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    });
+  });
+
   test('submitTakeawayOrder posts takeaway payload', async () => {
     let capturedInit: RequestInit | undefined;
 
@@ -156,5 +219,26 @@ describe('pos api', () => {
         },
       },
     });
+  });
+
+  test('fetchPosTables maps free tables with null activeSessionId', async () => {
+    restore = withMockFetch(() =>
+      jsonResponse([
+        { id: 't1', number: '1', capacity: 2, sessions: [] },
+        {
+          id: 't2',
+          number: '2',
+          capacity: 4,
+          sessions: [{ id: 's-live', status: 'ACTIVE' }],
+        },
+      ])
+    );
+
+    const tables = await fetchPosTables(testApiClient('pos-token'));
+
+    expect(tables).toEqual([
+      { id: 't1', number: '1', capacity: 2, activeSessionId: null },
+      { id: 't2', number: '2', capacity: 4, activeSessionId: 's-live' },
+    ]);
   });
 });

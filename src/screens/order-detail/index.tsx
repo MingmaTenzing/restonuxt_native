@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ScreenScroll } from '@/components/screen-scroll';
+import { DetailScreenSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { formatMoney } from '@/utils/format-money';
@@ -137,7 +138,7 @@ export default function OrderDetailScreen() {
     isError,
     error,
     refetch,
-    isFetching,
+    isRefetching,
   } = useQuery({
     queryKey: ['order', id],
     enabled: isReady && !!id,
@@ -155,14 +156,8 @@ export default function OrderDetailScreen() {
           headerBackTitle: 'Orders',
         }}
       />
-      <ScreenScroll refreshing={isFetching} onRefresh={() => refetch()}>
-        {isLoading ? (
-          <View className="items-center justify-center py-16">
-            <Text className="text-base font-medium text-muted-foreground">
-              Loading order...
-            </Text>
-          </View>
-        ) : null}
+      <ScreenScroll refreshing={isRefetching} onRefresh={() => refetch()}>
+        {isLoading ? <DetailScreenSkeleton /> : null}
 
         {isError ? (
           <View

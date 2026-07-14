@@ -14,7 +14,6 @@ interface PosCartSheetProps {
   onSubmit: () => void;
   isSubmitting: boolean;
   errorMessage: string | null;
-  canSubmit: boolean;
   submitLabel: string;
 }
 
@@ -29,7 +28,6 @@ export function PosCartSheet({
   onSubmit,
   isSubmitting,
   errorMessage,
-  canSubmit,
   submitLabel,
 }: PosCartSheetProps) {
   return (
@@ -58,7 +56,6 @@ export function PosCartSheet({
           onSubmit={onSubmit}
           isSubmitting={isSubmitting}
           errorMessage={errorMessage}
-          canSubmit={canSubmit}
           submitLabel={submitLabel}
         />
       </View>

@@ -4,6 +4,7 @@ import { Text, useColorScheme, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ScreenScroll } from '@/components/screen-scroll';
+import { DashboardSkeleton } from '@/components/skeleton';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
@@ -401,7 +402,7 @@ export function DashboardContent() {
   const metricColumns = isLargeTablet ? 4 : 2;
   const metricCardWidth =
     (contentWidth - horizontalPadding * 2 - gridGap * (metricColumns - 1)) / metricColumns;
-  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
+  const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: () => fetchDashboardStats(api),
   });
@@ -416,7 +417,7 @@ export function DashboardContent() {
   };
 
   return (
-    <ScreenScroll refreshing={isFetching} onRefresh={() => refetch()}>
+    <ScreenScroll refreshing={isRefetching} onRefresh={() => refetch()}>
       <View className="gap-3">
         <View className="flex-row items-start justify-between gap-4">
           <View className="flex-1 gap-2">
@@ -459,86 +460,92 @@ export function DashboardContent() {
         </View>
       ) : null}
 
-      <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
-        <MetricCard
-          label="Revenue"
-          value={formatMoney(stats.weeklyKpi.revenueCents)}
-          detail={isLoading ? 'Loading...' : 'This week'}
-          iconName="cash-outline"
-          width={metricCardWidth}
-        />
-        <MetricCard
-          label="Orders"
-          value={compactNumber(stats.weeklyKpi.weeklyOrderCount)}
-          detail="This week"
-          iconName="receipt-outline"
-          width={metricCardWidth}
-        />
-        <MetricCard
-          label="Bookings"
-          value={compactNumber(stats.weeklyKpi.todayBookingsCount)}
-          detail="Today"
-          iconName="calendar-outline"
-          width={metricCardWidth}
-        />
-        <MetricCard
-          label="Shift cost"
-          value={formatMoney(stats.weeklyKpi.weeklyShiftCostCents)}
-          detail="Scheduled week"
-          iconName="people-outline"
-          width={metricCardWidth}
-        />
-      </View>
-
-      {isTablet ? (
-        <View className="flex-row gap-4">
-          <View className="flex-1">
-            <Section title="Revenue trend" action={isFetching ? 'Refreshing' : 'Last 7 points'}>
-              <RevenueTrendCard points={stats.revenueTrend} />
-            </Section>
-          </View>
-          <View className="flex-1">
-            <Section title="Sales by category">
-              <CategoryShare categories={stats.soldByCategory} />
-            </Section>
-          </View>
-        </View>
+      {isLoading ? (
+        <DashboardSkeleton />
       ) : (
         <>
-          <Section title="Revenue trend" action={isFetching ? 'Refreshing' : 'Last 7 points'}>
-            <RevenueTrendCard points={stats.revenueTrend} />
-          </Section>
-          <Section title="Sales by category">
-            <CategoryShare categories={stats.soldByCategory} />
-          </Section>
-        </>
-      )}
-
-      <Section title="Operations">
-        <RosterCard roster={stats.rosterOverview} />
-      </Section>
-
-      {isTablet ? (
-        <View className="flex-row gap-4">
-          <View className="flex-1">
-            <Section title="Popular items">
-              <PopularItems items={stats.popularItems} />
-            </Section>
+          <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
+            <MetricCard
+              label="Revenue"
+              value={formatMoney(stats.weeklyKpi.revenueCents)}
+              detail="This week"
+              iconName="cash-outline"
+              width={metricCardWidth}
+            />
+            <MetricCard
+              label="Orders"
+              value={compactNumber(stats.weeklyKpi.weeklyOrderCount)}
+              detail="This week"
+              iconName="receipt-outline"
+              width={metricCardWidth}
+            />
+            <MetricCard
+              label="Bookings"
+              value={compactNumber(stats.weeklyKpi.todayBookingsCount)}
+              detail="Today"
+              iconName="calendar-outline"
+              width={metricCardWidth}
+            />
+            <MetricCard
+              label="Shift cost"
+              value={formatMoney(stats.weeklyKpi.weeklyShiftCostCents)}
+              detail="Scheduled week"
+              iconName="people-outline"
+              width={metricCardWidth}
+            />
           </View>
-          <View className="flex-1">
-            <Section title="Recent orders">
-              <RecentOrders orders={stats.recentOrders} />
-            </Section>
-          </View>
-        </View>
-      ) : (
-        <>
-          <Section title="Popular items">
-            <PopularItems items={stats.popularItems} />
+
+          {isTablet ? (
+            <View className="flex-row gap-4">
+              <View className="flex-1">
+                <Section title="Revenue trend" action={isRefetching ? 'Refreshing' : 'Last 7 points'}>
+                  <RevenueTrendCard points={stats.revenueTrend} />
+                </Section>
+              </View>
+              <View className="flex-1">
+                <Section title="Sales by category">
+                  <CategoryShare categories={stats.soldByCategory} />
+                </Section>
+              </View>
+            </View>
+          ) : (
+            <>
+              <Section title="Revenue trend" action={isRefetching ? 'Refreshing' : 'Last 7 points'}>
+                <RevenueTrendCard points={stats.revenueTrend} />
+              </Section>
+              <Section title="Sales by category">
+                <CategoryShare categories={stats.soldByCategory} />
+              </Section>
+            </>
+          )}
+
+          <Section title="Operations">
+            <RosterCard roster={stats.rosterOverview} />
           </Section>
-          <Section title="Recent orders">
-            <RecentOrders orders={stats.recentOrders} />
-          </Section>
+
+          {isTablet ? (
+            <View className="flex-row gap-4">
+              <View className="flex-1">
+                <Section title="Popular items">
+                  <PopularItems items={stats.popularItems} />
+                </Section>
+              </View>
+              <View className="flex-1">
+                <Section title="Recent orders">
+                  <RecentOrders orders={stats.recentOrders} />
+                </Section>
+              </View>
+            </View>
+          ) : (
+            <>
+              <Section title="Popular items">
+                <PopularItems items={stats.popularItems} />
+              </Section>
+              <Section title="Recent orders">
+                <RecentOrders orders={stats.recentOrders} />
+              </Section>
+            </>
+          )}
         </>
       )}
     </ScreenScroll>

@@ -127,7 +127,7 @@ export function CashierCheckoutScreen({
   const isLoading = kind === 'table' ? tableQuery.isLoading : takeawayQuery.isLoading;
   const isError = kind === 'table' ? tableQuery.isError : takeawayQuery.isError;
   const error = kind === 'table' ? tableQuery.error : takeawayQuery.error;
-  const isFetching = kind === 'table' ? tableQuery.isFetching : takeawayQuery.isFetching;
+  const isRefetching = kind === 'table' ? tableQuery.isRefetching : takeawayQuery.isRefetching;
 
   const checkout = kind === 'table' ? tableQuery.data : undefined;
   const takeawayOrder = kind === 'takeaway' ? takeawayQuery.data : undefined;
@@ -376,7 +376,7 @@ export function CashierCheckoutScreen({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={isFetching} onRefresh={handleRefresh} />
+            <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} />
           }>
           {isError ? (
             <View

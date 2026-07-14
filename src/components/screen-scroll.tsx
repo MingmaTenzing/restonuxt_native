@@ -7,6 +7,7 @@ type ScreenScrollProps = PropsWithChildren<
   ScrollViewProps & {
     bottomInset?: number;
     /** Pass with `onRefresh` to enable pull-to-refresh. */
+    /** Use React Query `isRefetching` here — not `isFetching`, which is also true on first load. */
     refreshing?: boolean;
     onRefresh?: () => void;
   }

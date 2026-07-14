@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { CardGridSkeleton, ListScreenSkeleton, StatsRowSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { unwrapList, type ApiClient } from '@/utils/api';
@@ -39,7 +40,7 @@ export default function BookingsScreen() {
     isError,
     error,
     refetch,
-    isFetching,
+    isRefetching,
   } = useQuery({
     queryKey: ['bookings'],
     enabled: isReady,
@@ -59,10 +60,10 @@ export default function BookingsScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-base font-medium text-muted-foreground">
-          Loading...
-        </Text>
+      <View className="flex-1 bg-background">
+        <ScreenScroll bottomInset={72}>
+          <ListScreenSkeleton statsCount={4} cards={4} />
+        </ScreenScroll>
       </View>
     );
   }
@@ -82,7 +83,7 @@ export default function BookingsScreen() {
 
   return (
     <>
-      <ScreenScroll bottomInset={72} refreshing={isFetching} onRefresh={() => refetch()}>
+      <ScreenScroll bottomInset={72} refreshing={isRefetching} onRefresh={() => refetch()}>
         <View className="gap-2">
           <Text
             className={`font-bold tracking-tight text-foreground ${
@@ -95,9 +96,10 @@ export default function BookingsScreen() {
           </Text>
         </View>
 
-        {!isError && bookings.length > 0 ? <BookingStatsRow stats={stats} /> : null}
+        {!isError && isLoading ? <StatsRowSkeleton count={4} /> : null}
+        {!isError && !isLoading && bookings.length > 0 ? <BookingStatsRow stats={stats} /> : null}
 
-        {!isError && bookings.length > 0 ? (
+        {!isError && !isLoading && bookings.length > 0 ? (
           <BookingFilterToggle value={filter} onChange={setFilter} />
         ) : null}
 
@@ -137,11 +139,15 @@ export default function BookingsScreen() {
           </View>
         ) : null}
 
-        <ResponsiveCardGrid>
-          {visibleBookings.map((booking) => (
-            <BookingCard key={booking.id} booking={booking} />
-          ))}
-        </ResponsiveCardGrid>
+        {isLoading ? (
+          <CardGridSkeleton />
+        ) : (
+          <ResponsiveCardGrid>
+            {visibleBookings.map((booking) => (
+              <BookingCard key={booking.id} booking={booking} />
+            ))}
+          </ResponsiveCardGrid>
+        )}
       </ScreenScroll>
 
       <Pressable

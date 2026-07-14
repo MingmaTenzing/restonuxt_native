@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, TextInput, useColorScheme, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Alert, Pressable, Text, TextInput, useColorScheme, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
@@ -9,134 +9,100 @@ import { CardGridSkeleton, ListScreenSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 
-import { TableCard } from './table-card';
-import { TableFormModal } from './table-form-modal';
-import type { Table, TableInput, TableUpdateInput } from './types';
+import { createStaff, deleteStaff, fetchStaff, updateStaff } from './api';
+import { StaffCard } from './staff-card';
+import { StaffFormModal } from './staff-form-modal';
+import type { StaffInput, StaffMember, StaffUpdateInput } from './types';
 
-function getTableLetter(tableNumber: string) {
-  const first = tableNumber.trim().charAt(0).toUpperCase();
-  return /[A-Z]/.test(first) ? first : '#';
-}
-
-function letterLabel(letter: string) {
-  return letter === '#' ? '0–9' : letter;
-}
-
-function searchTables(tables: Table[], query: string) {
+function filterStaffLocally(staff: StaffMember[], query: string) {
   const q = query.trim().toLowerCase();
-  if (!q) return tables;
-  return tables.filter((table) => table.number.toLowerCase().includes(q));
+  if (!q) return staff;
+  return staff.filter((member) => {
+    const fullName = `${member.firstname} ${member.lastName}`.toLowerCase();
+    return (
+      fullName.includes(q) ||
+      member.email.toLowerCase().includes(q) ||
+      member.phone.toLowerCase().includes(q) ||
+      member.role.toLowerCase().includes(q)
+    );
+  });
 }
 
-function groupByLetter(tables: Table[]) {
-  const groups = new Map<string, Table[]>();
-  for (const table of tables) {
-    const letter = getTableLetter(table.number);
-    const list = groups.get(letter) ?? [];
-    list.push(table);
-    groups.set(letter, list);
-  }
-  return [...groups.entries()]
-    .sort(([a], [b]) => {
-      if (a === '#') return 1;
-      if (b === '#') return -1;
-      return a.localeCompare(b);
-    })
-    .map(([letter, groupTables]) => [
-      letter,
-      groupTables.sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true })),
-    ] as const);
-}
-
-export default function TablesScreen() {
+export default function StaffScreen() {
   const { api, isLoaded, isSignedIn, isReady } = useApi();
   const queryClient = useQueryClient();
   const isDark = useColorScheme() === 'dark';
   const { isTablet, fabStyle } = useResponsiveLayout();
+
   const [query, setQuery] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
-  const [editingTable, setEditingTable] = useState<Table | null>(null);
+  const [editingMember, setEditingMember] = useState<StaffMember | null>(null);
 
   const {
-    data: tables = [],
+    data: staff = [],
     isLoading,
     isError,
     error,
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: ['tables'],
+    queryKey: ['staff'],
     enabled: isReady,
-    queryFn: async () => {
-      const tables = await api<Table[]>('/api/tables');
-      return tables.sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true }));
-    },
+    queryFn: () => fetchStaff(api),
   });
 
-  const invalidateTables = () => queryClient.invalidateQueries({ queryKey: ['tables'] });
+  const invalidateStaff = () => queryClient.invalidateQueries({ queryKey: ['staff'] });
 
   const saveMutation = useMutation({
-    mutationFn: async (input: TableInput | TableUpdateInput) => {
-      if (editingTable) {
-        return api<Table>('/api/tables', {
-          method: 'PUT',
-          body: JSON.stringify({
-            table_id: editingTable.id,
-            capacity: (input as TableUpdateInput).capacity,
-          }),
-        });
+    mutationFn: async (input: StaffInput | StaffUpdateInput) => {
+      if (editingMember) {
+        return updateStaff(api, editingMember.id, input as StaffUpdateInput);
       }
-      const createInput = input as TableInput;
-      return api<Table>('/api/tables', {
-        method: 'POST',
-        body: JSON.stringify({
-          table_number: createInput.number,
-          capacity: createInput.capacity,
-        }),
-      });
+      return createStaff(api, input as StaffInput);
     },
     onSuccess: () => {
-      invalidateTables();
+      invalidateStaff();
       setModalVisible(false);
-      setEditingTable(null);
+      setEditingMember(null);
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (table: Table) => api(`/api/tables/${table.id}`, { method: 'DELETE' }),
+    mutationFn: (member: StaffMember) => deleteStaff(api, member.id),
     onSuccess: () => {
-      invalidateTables();
+      invalidateStaff();
       setModalVisible(false);
-      setEditingTable(null);
+      setEditingMember(null);
     },
   });
 
-  const filteredTables = searchTables(tables, query);
-  const sections = groupByLetter(filteredTables);
-  const totalCapacity = tables.reduce((sum, table) => sum + table.capacity, 0);
-  const occupiedCount = tables.filter((table) => (table.sessions?.length ?? 0) > 0).length;
+  const visibleStaff = useMemo(() => filterStaffLocally(staff, query), [staff, query]);
 
   const openAdd = () => {
-    setEditingTable(null);
+    setEditingMember(null);
     saveMutation.reset();
     deleteMutation.reset();
     setModalVisible(true);
   };
 
-  const openEdit = (table: Table) => {
-    setEditingTable(table);
+  const openEdit = (member: StaffMember) => {
+    setEditingMember(member);
     saveMutation.reset();
     deleteMutation.reset();
     setModalVisible(true);
   };
 
-  const confirmDelete = (table: Table) => {
+  const confirmDelete = (member: StaffMember) => {
     Alert.alert(
-      'Delete table',
-      `Remove table “${table.number}”? This cannot be undone.`,
+      'Delete staff member',
+      `Remove ${member.firstname} ${member.lastName}? This cannot be undone.`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(table) },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteMutation.mutate(member),
+        },
       ]
     );
   };
@@ -145,7 +111,7 @@ export default function TablesScreen() {
     return (
       <View className="flex-1 bg-background">
         <ScreenScroll bottomInset={72}>
-          <ListScreenSkeleton cards={6} />
+          <ListScreenSkeleton cards={4} />
         </ScreenScroll>
       </View>
     );
@@ -154,11 +120,9 @@ export default function TablesScreen() {
   if (!isSignedIn) {
     return (
       <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-center text-xl font-semibold text-foreground">
-          Sign in required
-        </Text>
+        <Text className="text-center text-xl font-semibold text-foreground">Sign in required</Text>
         <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
-          Sign in from the Home tab to manage tables.
+          Sign in from the Home tab to manage staff.
         </Text>
       </View>
     );
@@ -172,12 +136,12 @@ export default function TablesScreen() {
             className={`font-bold tracking-tight text-foreground ${
               isTablet ? 'text-3xl' : 'text-4xl'
             }`}>
-            Tables
+            Staff
           </Text>
           <Text className="text-base leading-6 text-muted-foreground">
             {isLoading
-              ? 'Loading tables...'
-              : `${tables.length} ${tables.length === 1 ? 'table' : 'tables'} · ${totalCapacity} seats · ${occupiedCount} active`}
+              ? 'Loading staff members...'
+              : `${staff.length} ${staff.length === 1 ? 'member' : 'members'}`}
           </Text>
         </View>
 
@@ -189,7 +153,7 @@ export default function TablesScreen() {
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Search by table number"
+              placeholder="Search by name"
               placeholderTextColor="#8E8E93"
               autoCapitalize="none"
               autoCorrect={false}
@@ -206,63 +170,51 @@ export default function TablesScreen() {
             style={{ borderCurve: 'continuous' }}>
             <View className="gap-2">
               <Text className="text-lg font-semibold text-red-950 dark:text-red-200">
-                Could not load tables
+                Could not load staff
               </Text>
               <Text className="text-base leading-6 text-red-700 dark:text-red-300">
-                {error instanceof Error ? error.message : 'Unable to load tables.'}
+                {error instanceof Error ? error.message : 'Unable to load staff.'}
               </Text>
             </View>
             <Button onPress={() => refetch()}>Try again</Button>
           </View>
         ) : null}
 
-        {!isLoading && !isError && tables.length === 0 ? (
+        {!isLoading && !isError && staff.length === 0 ? (
           <View
             className="rounded-3xl border border-border bg-card p-5"
             style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
             <Text className="text-base leading-6 text-muted-foreground">
-              No tables yet. Tap the + button to add your first table.
+              No staff members yet. Tap + to add your first team member.
             </Text>
           </View>
         ) : null}
 
-        {!isLoading && !isError && tables.length > 0 && filteredTables.length === 0 ? (
+        {!isLoading && !isError && staff.length > 0 && visibleStaff.length === 0 ? (
           <View
             className="rounded-3xl border border-border bg-card p-5"
             style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
             <Text className="text-base leading-6 text-muted-foreground">
-              No tables match your search.
+              No staff members match your search.
             </Text>
           </View>
         ) : null}
 
         {isLoading ? (
-          <CardGridSkeleton count={6} />
+          <CardGridSkeleton />
         ) : (
-          sections.map(([letter, letterTables]) => (
-            <View key={letter} className="gap-3">
-              <View className="flex-row items-baseline justify-between">
-                <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  {letterLabel(letter)}
-                </Text>
-                <Text className="text-xs font-medium text-muted-foreground">
-                  {letterTables.length}
-                </Text>
-              </View>
-              <ResponsiveCardGrid>
-                {letterTables.map((table) => (
-                  <TableCard key={table.id} table={table} onPress={() => openEdit(table)} />
-                ))}
-              </ResponsiveCardGrid>
-            </View>
-          ))
+          <ResponsiveCardGrid>
+            {visibleStaff.map((member) => (
+              <StaffCard key={member.id} member={member} onPress={() => openEdit(member)} />
+            ))}
+          </ResponsiveCardGrid>
         )}
       </ScreenScroll>
 
       <Pressable
         onPress={openAdd}
         accessibilityRole="button"
-        accessibilityLabel="Add table"
+        accessibilityLabel="Add staff member"
         hitSlop={8}
         className="absolute h-14 w-14 items-center justify-center rounded-full bg-primary active:opacity-80"
         style={{
@@ -272,12 +224,12 @@ export default function TablesScreen() {
         <Ionicons name="add" size={30} color={isDark ? '#18181B' : '#FAFAFA'} />
       </Pressable>
 
-      <TableFormModal
+      <StaffFormModal
         visible={isModalVisible}
-        table={editingTable}
+        member={editingMember}
         onClose={() => {
           setModalVisible(false);
-          setEditingTable(null);
+          setEditingMember(null);
         }}
         onSubmit={(input) => saveMutation.mutate(input)}
         onDelete={confirmDelete}

@@ -5,6 +5,7 @@ import { Alert, Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { CardGridSkeleton, ListScreenSkeleton, StatsRowSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 
@@ -106,7 +107,10 @@ export default function RosterScreen() {
 
   const pendingLeave = filterLeaveRequests(leaveQuery.data ?? [], 'pending');
   const isRefreshing =
-    shiftsQuery.isFetching || leaveQuery.isFetching || overviewQuery.isFetching || staffQuery.isFetching;
+    shiftsQuery.isRefetching ||
+    leaveQuery.isRefetching ||
+    overviewQuery.isRefetching ||
+    staffQuery.isRefetching;
 
   const openCreateShift = () => {
     setEditingShift(null);
@@ -142,8 +146,10 @@ export default function RosterScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-base font-medium text-muted-foreground">Loading...</Text>
+      <View className="flex-1 bg-background">
+        <ScreenScroll bottomInset={72}>
+          <ListScreenSkeleton statsCount={3} cards={4} />
+        </ScreenScroll>
       </View>
     );
   }
@@ -215,7 +221,11 @@ export default function RosterScreen() {
           </Pressable>
         </View>
 
-        {overviewQuery.data ? <RosterStatsRow overview={overviewQuery.data} /> : null}
+        {overviewQuery.isLoading ? (
+          <StatsRowSkeleton count={3} />
+        ) : overviewQuery.data ? (
+          <RosterStatsRow overview={overviewQuery.data} />
+        ) : null}
 
         <RosterViewToggle value={view} onChange={setView} />
 
@@ -245,7 +255,7 @@ export default function RosterScreen() {
         {view === 'shifts' ? (
           <View className="gap-5">
             {shiftsQuery.isLoading ? (
-              <Text className="text-base text-muted-foreground">Loading shifts...</Text>
+              <CardGridSkeleton />
             ) : (
               shiftGroups.map((group) => (
                 <RosterDaySection
@@ -260,7 +270,7 @@ export default function RosterScreen() {
         ) : (
           <View className="gap-4">
             {leaveQuery.isLoading ? (
-              <Text className="text-base text-muted-foreground">Loading leave requests...</Text>
+              <CardGridSkeleton count={2} />
             ) : pendingLeave.length === 0 ? (
               <View
                 className="rounded-3xl border border-border bg-card p-5"

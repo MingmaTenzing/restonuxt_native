@@ -5,6 +5,7 @@ import { Alert, Pressable, ScrollView, Text, TextInput, useColorScheme, View } f
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
+import { CardGridSkeleton, ListScreenSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import type { PaymentMethod } from '@/screens/orders/types';
@@ -63,7 +64,7 @@ export default function SessionsScreen() {
     isError,
     error,
     refetch,
-    isFetching,
+    isRefetching,
   } = useQuery({
     queryKey: ['sessions', statusFilter],
     enabled: isReady,
@@ -175,10 +176,10 @@ export default function SessionsScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-base font-medium text-muted-foreground">
-          Loading...
-        </Text>
+      <View className="flex-1 bg-background">
+        <ScreenScroll bottomInset={72}>
+          <ListScreenSkeleton filters cards={4} />
+        </ScreenScroll>
       </View>
     );
   }
@@ -198,7 +199,7 @@ export default function SessionsScreen() {
 
   return (
     <>
-      <ScreenScroll bottomInset={72} refreshing={isFetching} onRefresh={() => refetch()}>
+      <ScreenScroll bottomInset={72} refreshing={isRefetching} onRefresh={() => refetch()}>
         <View className="gap-2">
           <Text
             className={`font-bold tracking-tight text-foreground ${
@@ -300,11 +301,15 @@ export default function SessionsScreen() {
           </View>
         ) : null}
 
-        <ResponsiveCardGrid>
-          {filteredSessions.map((session) => (
-            <SessionCard key={session.id} session={session} onPress={() => openDetail(session)} />
-          ))}
-        </ResponsiveCardGrid>
+        {isLoading ? (
+          <CardGridSkeleton />
+        ) : (
+          <ResponsiveCardGrid>
+            {filteredSessions.map((session) => (
+              <SessionCard key={session.id} session={session} onPress={() => openDetail(session)} />
+            ))}
+          </ResponsiveCardGrid>
+        )}
       </ScreenScroll>
 
       <Pressable

@@ -2,6 +2,9 @@ import { useAuth } from '@clerk/expo';
 import { AuthView } from '@clerk/expo/native';
 import { Text, View } from 'react-native';
 
+import { ScreenScroll } from '@/components/screen-scroll';
+import { DashboardSkeleton } from '@/components/skeleton';
+
 import { DashboardContent } from './content';
 
 export default function DashboardScreen() {
@@ -9,10 +12,10 @@ export default function DashboardScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-base font-medium text-muted-foreground">
-          Loading...
-        </Text>
+      <View className="flex-1 bg-background">
+        <ScreenScroll>
+          <DashboardSkeleton />
+        </ScreenScroll>
       </View>
     );
   }

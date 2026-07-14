@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScreenHeaderSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -139,8 +140,8 @@ export default function AgentScreen() {
 
   if (!isLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-base font-medium text-muted-foreground">Loading…</Text>
+      <View className="flex-1 bg-background px-5 pt-7">
+        <ScreenHeaderSkeleton />
       </View>
     );
   }

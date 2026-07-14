@@ -10,6 +10,7 @@ export function mapPosTables(tables: TableWithStatus[]): PosTable[] {
   return tables
     .map((table) => {
       const sessions = table.sessions ?? [];
+      // GET /api/tables only includes ACTIVE sessions; keep the status check for tests/mocks.
       const active =
         sessions.find((session) => session.status === 'ACTIVE') ?? sessions[0] ?? null;
 
