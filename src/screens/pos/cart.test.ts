@@ -7,8 +7,13 @@ import {
   cartItemCount,
   cartLineMergeKey,
   cartTotalCents,
+  decreaseCartLineQuantity,
+  findCartLine,
+  increaseCartLineQuantity,
   lineTotalCents,
+  quantityForMenuItem,
   removeCartLine,
+  removeCartLineByVariant,
   updateCartLineQuantity,
   clearCart,
 } from './cart';
@@ -282,5 +287,79 @@ describe('cartLineMergeKey', () => {
     const b: CartLine = { ...sampleLine, id: 'b', quantity: 5 };
 
     expect(areCartLinesMergeable(a, b)).toBe(true);
+  });
+});
+
+describe('findCartLine / quantityForMenuItem', () => {
+  const plainBurger: CartLine = {
+    id: 'line-a',
+    menuItemId: 'menu-burger',
+    itemName: 'Burger',
+    unitPriceCents: 1200,
+    quantity: 2,
+    specialInstructions: null,
+    options: [],
+  };
+
+  const burgerWithCheese: CartLine = {
+    ...plainBurger,
+    id: 'line-b',
+    quantity: 1,
+    options: [{ menuOptionId: 'opt-cheese', name: 'Cheese', priceCents: 100, quantity: 1 }],
+  };
+
+  test('findCartLine matches by variant, not id', () => {
+    const probe = { ...plainBurger, id: 'other', quantity: 99 };
+    expect(findCartLine([plainBurger, burgerWithCheese], probe)).toEqual(plainBurger);
+  });
+
+  test('quantityForMenuItem sums all variants of the same menu item', () => {
+    expect(quantityForMenuItem([plainBurger, burgerWithCheese], 'menu-burger')).toBe(3);
+    expect(quantityForMenuItem([plainBurger], 'menu-missing')).toBe(0);
+  });
+});
+
+describe('variant-based quantity changes', () => {
+  const line: CartLine = {
+    id: 'line-1',
+    menuItemId: 'menu-1',
+    itemName: 'Pasta',
+    unitPriceCents: 1000,
+    quantity: 2,
+    specialInstructions: null,
+    options: [],
+  };
+
+  test('increaseCartLineQuantity bumps the matching variant', () => {
+    const probe = { ...line, id: 'probe' };
+    const next = increaseCartLineQuantity([line], probe);
+    expect(next[0]?.quantity).toBe(3);
+  });
+
+  test('decreaseCartLineQuantity drops the row at quantity 1', () => {
+    const single = { ...line, quantity: 1 };
+    const probe = { ...single, id: 'probe' };
+    expect(decreaseCartLineQuantity([single], probe)).toEqual([]);
+  });
+
+  test('decreaseCartLineQuantity decrements above 1', () => {
+    const probe = { ...line, id: 'probe' };
+    const next = decreaseCartLineQuantity([line], probe);
+    expect(next[0]?.quantity).toBe(1);
+  });
+
+  test('removeCartLineByVariant removes only the matching variant', () => {
+    const other: CartLine = {
+      ...line,
+      id: 'line-2',
+      specialInstructions: 'No salt',
+    };
+    const probe = { ...line, id: 'probe' };
+    expect(removeCartLineByVariant([line, other], probe)).toEqual([other]);
+  });
+
+  test('increaseCartLineQuantity is a no-op when variant is missing', () => {
+    const probe = { ...line, menuItemId: 'missing' };
+    expect(increaseCartLineQuantity([line], probe)).toEqual([line]);
   });
 });

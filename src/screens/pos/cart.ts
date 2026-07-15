@@ -60,8 +60,26 @@ export function cartLineMergeKey(
   return `${line.menuItemId}::${instructions}::${normalizedOptions}`;
 }
 
-export function areCartLinesMergeable(a: CartLine, b: CartLine) {
+export function areCartLinesMergeable(
+  a: Pick<CartLine, 'menuItemId' | 'specialInstructions' | 'options'>,
+  b: Pick<CartLine, 'menuItemId' | 'specialInstructions' | 'options'>
+) {
   return cartLineMergeKey(a) === cartLineMergeKey(b);
+}
+
+/** Find a cart line with the same menu item, options, and instructions (value-based). */
+export function findCartLine(
+  lines: CartLine[],
+  line: Pick<CartLine, 'menuItemId' | 'specialInstructions' | 'options'>
+) {
+  return lines.find((existing) => areCartLinesMergeable(existing, line));
+}
+
+/** Sum quantities for a menu item across all variant rows (matches web quantity_for_menu_item). */
+export function quantityForMenuItem(lines: CartLine[], menuItemId: string) {
+  return lines
+    .filter((line) => line.menuItemId === menuItemId)
+    .reduce((sum, line) => sum + line.quantity, 0);
 }
 
 export function addCartLine(lines: CartLine[], line: CartLine) {
@@ -80,8 +98,36 @@ export function updateCartLineQuantity(lines: CartLine[], lineId: string, quanti
   return lines.map((line) => (line.id === lineId ? { ...line, quantity } : line));
 }
 
+/** Increase quantity for the matching variant; no-op if not found (matches web increase_quantity). */
+export function increaseCartLineQuantity(
+  lines: CartLine[],
+  line: Pick<CartLine, 'menuItemId' | 'specialInstructions' | 'options'>
+) {
+  const match = findCartLine(lines, line);
+  if (!match) return lines;
+  return updateCartLineQuantity(lines, match.id, match.quantity + 1);
+}
+
+/** Decrease quantity for the matching variant; removes the row at 1 (matches web decrease_quantity). */
+export function decreaseCartLineQuantity(
+  lines: CartLine[],
+  line: Pick<CartLine, 'menuItemId' | 'specialInstructions' | 'options'>
+) {
+  const match = findCartLine(lines, line);
+  if (!match) return lines;
+  return updateCartLineQuantity(lines, match.id, match.quantity - 1);
+}
+
 export function removeCartLine(lines: CartLine[], lineId: string) {
   return lines.filter((line) => line.id !== lineId);
+}
+
+/** Remove the exact variant from the cart (matches web remove_from_cart). */
+export function removeCartLineByVariant(
+  lines: CartLine[],
+  line: Pick<CartLine, 'menuItemId' | 'specialInstructions' | 'options'>
+) {
+  return lines.filter((existing) => !areCartLinesMergeable(existing, line));
 }
 
 export function clearCart(): CartLine[] {

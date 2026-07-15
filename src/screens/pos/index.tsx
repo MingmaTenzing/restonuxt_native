@@ -17,11 +17,7 @@ import {
   submitTakeawayOrder,
 } from './api';
 import {
-  addCartLine,
   buildOrderItemCreates,
-  cartItemCount,
-  cartTotalCents,
-  clearCart,
   createCartLineId,
 } from './cart';
 import { PosCartBar } from './pos-cart-bar';
@@ -44,7 +40,8 @@ import { PosItemSheet } from './pos-item-sheet';
 import { PosMenuCard } from './pos-menu-card';
 import { getPosSubmitBlocker } from './pos-order';
 import { PosTableSelect } from './pos-table-select';
-import type { CartLine, PosMenuItem, PosMode, PosTable } from './types';
+import { usePosCart } from './use-pos-cart';
+import type { PosMenuItem, PosMode, PosTable } from './types';
 
 const MODES: { value: PosMode; label: string; hint: string }[] = [
   { value: 'DINING', label: 'Dining', hint: 'Pick a table first' },
@@ -107,7 +104,17 @@ export default function PosScreen() {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState('Guest');
-  const [cartLines, setCartLines] = useState<CartLine[]>([]);
+  const {
+    lines: cartLines,
+    addToCart,
+    increaseQuantity,
+    decreaseQuantity,
+    removeFromCart,
+    emptyCart,
+    quantityForMenuItem,
+    itemCount,
+    subtotalCents: totalCents,
+  } = usePosCart();
   const [isCartVisible, setCartVisible] = useState(false);
   const [customizingItem, setCustomizingItem] = useState<PosMenuItem | null>(null);
 
@@ -175,7 +182,7 @@ export default function PosScreen() {
       });
     },
     onSuccess: (order) => {
-      setCartLines([]);
+      emptyCart();
       setCartVisible(false);
       submitMutation.reset();
       queryClient.invalidateQueries({ queryKey: ['orders'] });
@@ -195,9 +202,6 @@ export default function PosScreen() {
   );
   const sections = groupByCategory(filteredItems);
   const selectedTable = tables.find((table) => table.id === selectedTableId) ?? null;
-  const itemCount = cartItemCount(cartLines);
-  const totalCents = cartTotalCents(cartLines);
-
   const destinationLabel = mode === 'DINING' ? (selectedTable?.number ?? null) : null;
 
   const submitLabel =
@@ -206,7 +210,7 @@ export default function PosScreen() {
       : `Send takeaway · ${formatMoney(totalCents)}`;
 
   const resetTicket = () => {
-    setCartLines([]);
+    emptyCart();
     setCartVisible(false);
     setCategoryFilter(null);
     setQuery('');
@@ -304,17 +308,15 @@ export default function PosScreen() {
       return;
     }
 
-    setCartLines((lines) =>
-      addCartLine(lines, {
-        id: createCartLineId(),
-        menuItemId: item.id,
-        itemName: item.name,
-        unitPriceCents: item.priceCents,
-        quantity: 1,
-        specialInstructions: null,
-        options: [],
-      })
-    );
+    addToCart({
+      id: createCartLineId(),
+      menuItemId: item.id,
+      itemName: item.name,
+      unitPriceCents: item.priceCents,
+      quantity: 1,
+      specialInstructions: null,
+      options: [],
+    });
   };
 
   const handleSubmitOrder = () => {
@@ -351,8 +353,10 @@ export default function PosScreen() {
     lines: cartLines,
     customerName,
     onCustomerNameChange: setCustomerName,
-    onUpdateLines: setCartLines,
-    onClearCart: () => setCartLines(clearCart()),
+    onIncrease: increaseQuantity,
+    onDecrease: decreaseQuantity,
+    onRemove: removeFromCart,
+    onClearCart: emptyCart,
     onSubmit: handleSubmitOrder,
     isSubmitting: submitMutation.isPending,
     errorMessage: submitMutation.isError ? (submitMutation.error as Error).message : null,
@@ -611,6 +615,7 @@ export default function PosScreen() {
                 <PosMenuCard
                   key={item.id}
                   item={item}
+                  quantityInCart={quantityForMenuItem(item.id)}
                   width={posProductCardWidth}
                   onPress={() => handleMenuPress(item)}
                 />
@@ -662,7 +667,7 @@ export default function PosScreen() {
           visible={!!customizingItem}
           item={customizingItem}
           onClose={() => setCustomizingItem(null)}
-          onAdd={(line) => setCartLines((lines) => addCartLine(lines, line))}
+          onAdd={addToCart}
         />
       ) : null}
     </View>

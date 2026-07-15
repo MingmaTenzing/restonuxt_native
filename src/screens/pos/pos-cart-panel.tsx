@@ -5,7 +5,7 @@ import { Button } from '@/components/button';
 import { TextField } from '@/components/text-field';
 import { formatMoney } from '@/utils/format-money';
 
-import { cartTotalCents, removeCartLine, updateCartLineQuantity } from './cart';
+import { cartTotalCents } from './cart';
 import type { CartLine } from './types';
 import { PosCartLineRow } from './pos-cart-line-row';
 
@@ -13,7 +13,9 @@ interface PosCartPanelProps {
   lines: CartLine[];
   customerName: string;
   onCustomerNameChange: (value: string) => void;
-  onUpdateLines: (lines: CartLine[]) => void;
+  onIncrease: (line: CartLine) => void;
+  onDecrease: (line: CartLine) => void;
+  onRemove: (line: CartLine) => void;
   onClearCart: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
@@ -29,7 +31,9 @@ export function PosCartPanel({
   lines,
   customerName,
   onCustomerNameChange,
-  onUpdateLines,
+  onIncrease,
+  onDecrease,
+  onRemove,
   onClearCart,
   onSubmit,
   isSubmitting,
@@ -141,13 +145,9 @@ export function PosCartPanel({
             <PosCartLineRow
               key={line.id}
               line={line}
-              onDecrement={() =>
-                onUpdateLines(updateCartLineQuantity(lines, line.id, line.quantity - 1))
-              }
-              onIncrement={() =>
-                onUpdateLines(updateCartLineQuantity(lines, line.id, line.quantity + 1))
-              }
-              onRemove={() => onUpdateLines(removeCartLine(lines, line.id))}
+              onDecrement={() => onDecrease(line)}
+              onIncrement={() => onIncrease(line)}
+              onRemove={() => onRemove(line)}
             />
           ))
         )}

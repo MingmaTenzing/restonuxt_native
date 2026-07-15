@@ -9,7 +9,9 @@ interface PosCartSheetProps {
   customerName: string;
   onCustomerNameChange: (value: string) => void;
   onClose: () => void;
-  onUpdateLines: (lines: CartLine[]) => void;
+  onIncrease: (line: CartLine) => void;
+  onDecrease: (line: CartLine) => void;
+  onRemove: (line: CartLine) => void;
   onClearCart: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
@@ -23,7 +25,9 @@ export function PosCartSheet({
   customerName,
   onCustomerNameChange,
   onClose,
-  onUpdateLines,
+  onIncrease,
+  onDecrease,
+  onRemove,
   onClearCart,
   onSubmit,
   isSubmitting,
@@ -51,7 +55,9 @@ export function PosCartSheet({
           lines={lines}
           customerName={customerName}
           onCustomerNameChange={onCustomerNameChange}
-          onUpdateLines={onUpdateLines}
+          onIncrease={onIncrease}
+          onDecrease={onDecrease}
+          onRemove={onRemove}
           onClearCart={onClearCart}
           onSubmit={onSubmit}
           isSubmitting={isSubmitting}

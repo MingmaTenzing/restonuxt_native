@@ -8,12 +8,13 @@ import type { PosMenuItem } from './types';
 
 interface PosMenuCardProps {
   item: PosMenuItem;
+  quantityInCart?: number;
   onPress: () => void;
   width?: number;
   style?: ViewStyle;
 }
 
-export function PosMenuCard({ item, onPress, width, style }: PosMenuCardProps) {
+export function PosMenuCard({ item, quantityInCart = 0, onPress, width, style }: PosMenuCardProps) {
   const { isDark, colors } = useTheme();
   const optionCount = item.options?.length ?? 0;
 
@@ -51,10 +52,23 @@ export function PosMenuCard({ item, onPress, width, style }: PosMenuCardProps) {
           <Text className="text-base font-bold tracking-tight text-foreground">
             {formatMoney(item.priceCents)}
           </Text>
-          <View
-            className="h-8 w-8 items-center justify-center rounded-full"
-            style={{ backgroundColor: isDark ? colors.accent : colors.primary }}>
-            <Ionicons name="add" size={18} color={isDark ? colors.text : colors.primaryForeground} />
+          <View className="flex-row items-center gap-2">
+            {quantityInCart > 0 ? (
+              <View
+                className="min-w-7 items-center justify-center rounded-full px-2 py-1"
+                style={{ backgroundColor: isDark ? colors.accent : colors.primary }}>
+                <Text
+                  className="text-xs font-bold"
+                  style={{ color: isDark ? colors.text : colors.primaryForeground }}>
+                  {quantityInCart}
+                </Text>
+              </View>
+            ) : null}
+            <View
+              className="h-8 w-8 items-center justify-center rounded-full"
+              style={{ backgroundColor: isDark ? colors.accent : colors.primary }}>
+              <Ionicons name="add" size={18} color={isDark ? colors.text : colors.primaryForeground} />
+            </View>
           </View>
         </View>
         {optionCount > 0 ? (
