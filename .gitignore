@@ -13,6 +13,7 @@ web-build/
 .env
 
 # Local Nuxt web app — reference only, not committed (see AGENTS.md)
+RestoQuick_Nuxt_Web
 web-app-reference
 
 ios
