@@ -9,7 +9,9 @@ import { Button } from '@/components/button';
 import { CardGridSkeleton, ListScreenSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
+import { ReceiptPrintPanel } from '@/screens/receipt/receipt-print-panel';
 import { formatMoney } from '@/utils/format-money';
+
 import {
   createTableSession,
   fetchPosMenu,
@@ -588,6 +590,10 @@ export default function PosScreen() {
 
       {mode === 'DINING' && selectedTable ? (
         <PosDiningHeader tableNumber={selectedTable.number} onChangeTable={handleChangeTable} />
+      ) : null}
+
+      {mode === 'DINING' && selectedTable?.activeSessionId ? (
+        <ReceiptPrintPanel sessionId={selectedTable.activeSessionId} compact />
       ) : null}
 
       {!isMenuError ? (
