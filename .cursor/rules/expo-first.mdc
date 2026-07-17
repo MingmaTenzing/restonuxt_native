@@ -7,6 +7,8 @@ alwaysApply: true
 
 Read **`AGENTS.md`** for project commands, structure, and boundaries. Use **`.agents/skills/README.md`** for the full skill catalog.
 
+**Simpler is better for all logic** — screens, flows, cart/CRUD, session guards, helpers, not only fetching. Match the Nuxt web app and Expo skill patterns; do not invent layers, state machines, or speculative helpers. Prefer the shortest clear solution.
+
 Before implementing, debugging, or advising on anything in this Expo project:
 
 1. **Check Expo skills** — read the relevant `SKILL.md` from `.agents/skills/`.

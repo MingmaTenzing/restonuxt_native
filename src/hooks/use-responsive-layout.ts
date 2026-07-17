@@ -38,10 +38,12 @@ export function useResponsiveLayout() {
     const posMenuPaneWidth = getPosMenuPaneWidth(width, isTablet);
     const posSidebarWidth = getPosSidebarWidth(width);
     const posProductColumns = getProductGridColumns(posMenuPaneWidth);
+    // Match getPosMenuScrollContentStyle horizontal padding (tighter than list screens).
+    const posHorizontalPadding = isTablet ? 20 : 16;
     const posProductCardWidth = getGridCardWidthForPane(
       posMenuPaneWidth,
       posProductColumns,
-      horizontalPadding,
+      posHorizontalPadding,
       RESPONSIVE.GRID_GAP
     );
 

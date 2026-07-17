@@ -1,7 +1,26 @@
 import { describe, expect, test } from 'bun:test';
 
-import { mapPosTables } from './pos-tables';
+import { mapPosTables, pickActiveSessionId } from './pos-tables';
 import { partitionTablesBySession, tableHasLiveSession } from './pos-flow';
+
+describe('pickActiveSessionId', () => {
+  test('prefers explicit ACTIVE', () => {
+    expect(
+      pickActiveSessionId([
+        { id: 'closed', status: 'CLOSED' },
+        { id: 'active', status: 'ACTIVE' },
+      ])
+    ).toBe('active');
+  });
+
+  test('accepts production rows without status', () => {
+    expect(pickActiveSessionId([{ id: 's1' }])).toBe('s1');
+  });
+
+  test('rejects CLOSED-only lists', () => {
+    expect(pickActiveSessionId([{ id: 's1', status: 'CLOSED' }])).toBeNull();
+  });
+});
 
 describe('mapPosTables', () => {
   test('prefers ACTIVE session over first session', () => {
@@ -20,8 +39,8 @@ describe('mapPosTables', () => {
     expect(result[0]?.activeSessionId).toBe('active-1');
   });
 
-  test('falls back to first session when none are ACTIVE', () => {
-    // Production GET /api/tables only returns ACTIVE sessions, but mocks/tests may include others.
+  test('ignores CLOSED / non-ACTIVE sessions (not live)', () => {
+    // GET /api/tables never returns CLOSED rows; if a mock does, the table must stay free.
     const result = mapPosTables([
       {
         id: 't1',
@@ -31,7 +50,7 @@ describe('mapPosTables', () => {
       },
     ]);
 
-    expect(result[0]?.activeSessionId).toBe('only-1');
+    expect(result[0]?.activeSessionId).toBeNull();
   });
 
   test('returns null activeSessionId when no sessions (free table)', () => {

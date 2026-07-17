@@ -2,6 +2,15 @@
 
 Conventions for routes, screens, and feature code in this Expo Router app.
 
+## Simpler is better
+
+Apply this to **all** feature logic (UI flows, cart, CRUD, sessions, guards, helpers) — not only fetch code.
+
+- Prefer the shortest clear path that matches **`RestoQuick_Nuxt_Web/`** and Expo skill patterns.
+- Inline guards and handlers in the screen until reuse or tests need a small pure helper.
+- Do not add resolve/apply/state-machine modules, sync loops, or adapters “just in case.”
+- When two solutions work, choose the obvious one.
+
 ## Layering
 
 | Layer     | Location                                      | Responsibility                                                    |
@@ -42,6 +51,7 @@ Conventions for routes, screens, and feature code in this Expo Router app.
 - **API responses are camelCase** (Prisma/Nitro) — type them and use them directly, like the Nuxt web app in **`RestoQuick_Nuxt_Web/`** does with `useFetch<T>`. Prefer `api<Order[]>(...)` or `unwrapList<T>(payload)` over `normalize*` helpers. Map to a display shape inline only when the UI needs it (e.g. chart labels).
 - When adding a feature, read the Nuxt page (`RestoQuick_Nuxt_Web/app/pages/Dashboard/`), composable (`app/composables/`), and API handler (`server/api/`) first — mirror data flow, cart/CRUD logic, and state patterns before writing native code.
 - Kitchen WebSocket: `src/hooks/kitchen-websocket-client.ts` + `src/utils/websocket-url.ts` (see `RESTOQUICK_DOC.md` → Kitchen display flow)
+- Fetching stays simple too: `useQuery` + optional `useFocusEffect` + `refetch()` with stable deps — see root `AGENTS.md`.
 
 ## Testing
 

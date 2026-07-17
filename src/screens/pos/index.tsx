@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,6 +14,7 @@ import {
   createTableSession,
   fetchPosMenu,
   fetchPosTables,
+  lookupActiveTableSession,
   submitDiningOrder,
   submitTakeawayOrder,
 } from './api';
@@ -39,6 +41,12 @@ import {
 import { PosItemSheet } from './pos-item-sheet';
 import { PosMenuCard } from './pos-menu-card';
 import { getPosSubmitBlocker } from './pos-order';
+import {
+  diningCustomerName,
+  resolveDiningSubmitSessionError,
+  resolveVerifiedTableEntry,
+  takeawayCustomerName,
+} from './pos-session';
 import { PosTableSelect } from './pos-table-select';
 import { usePosCart } from './use-pos-cart';
 import type { PosMenuItem, PosMode, PosTable } from './types';
@@ -104,6 +112,7 @@ export default function PosScreen() {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState('Guest');
+  const [verifyingTableId, setVerifyingTableId] = useState<string | null>(null);
   const {
     lines: cartLines,
     addToCart,
@@ -145,6 +154,14 @@ export default function PosScreen() {
     queryFn: () => fetchPosTables(api),
   });
 
+  // Refresh floor sessions when the POS tab is focused — not on every local state change.
+  useFocusEffect(
+    useCallback(() => {
+      if (!isReady || !isSignedIn) return;
+      void refetchTables();
+    }, [isReady, isSignedIn, refetchTables])
+  );
+
   const openSessionMutation = useMutation({
     mutationFn: async (tableId: string) => createTableSession(api, tableId),
     onSuccess: (session, tableId) => {
@@ -159,24 +176,23 @@ export default function PosScreen() {
   const submitMutation = useMutation({
     mutationFn: async () => {
       const items = buildOrderItemCreates(cartLines);
-      const name = customerName.trim() || 'Guest';
 
       if (mode === 'DINING') {
         if (!selectedTableId) throw new Error('Select a table before submitting.');
         const table = tables.find((entry) => entry.id === selectedTableId);
         if (!table?.activeSessionId) {
-          throw new Error('Open a table session before submitting a dining order.');
+          throw new Error('No active session found for this table');
         }
         return submitDiningOrder(api, {
           tableId: selectedTableId,
-          customerName: name,
+          customerName: diningCustomerName(customerName),
           totalAmountCents: totalCents,
           items,
         });
       }
 
       return submitTakeawayOrder(api, {
-        customerName: name,
+        customerName: takeawayCustomerName(customerName),
         totalAmountCents: totalCents,
         items,
       });
@@ -192,6 +208,19 @@ export default function PosScreen() {
         `Order #${order.orderNo} is on its way to the kitchen.`,
         [{ text: 'OK' }]
       );
+    },
+    onError: (error) => {
+      const resolved = resolveDiningSubmitSessionError(error);
+      if (mode !== 'DINING' || resolved.kind !== 'session-closed') return;
+
+      emptyCart();
+      setCartVisible(false);
+      const next = applyReturnToTableSelect();
+      setSelectedTableId(next.selectedTableId);
+      setDiningStep(next.diningStep);
+      queryClient.invalidateQueries({ queryKey: ['pos-tables'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      Alert.alert('Session closed', resolved.message);
     },
   });
 
@@ -217,7 +246,12 @@ export default function PosScreen() {
     setCustomizingItem(null);
   };
 
-  const enterDiningOrder = (tableId: string) => {
+  const enterDiningOrder = (tableId: string, sessionId?: string) => {
+    if (sessionId) {
+      queryClient.setQueryData<PosTable[]>(['pos-tables'], (current) =>
+        current ? applyOpenedSession(current, tableId, sessionId) : current
+      );
+    }
     const next = applyEnterDiningOrder(tableId);
     setSelectedTableId(next.selectedTableId);
     setDiningStep(next.diningStep);
@@ -228,6 +262,21 @@ export default function PosScreen() {
     const next = applyReturnToTableSelect();
     setSelectedTableId(next.selectedTableId);
     setDiningStep(next.diningStep);
+  };
+
+  const promptOpenSession = (tableId: string, tableNumber: string) => {
+    const copy = openSessionConfirmCopy(tableNumber);
+    Alert.alert(copy.title, copy.message, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: copy.confirmLabel,
+        onPress: () => {
+          openSessionMutation.mutate(tableId, {
+            onSuccess: (session) => enterDiningOrder(tableId, session.id),
+          });
+        },
+      },
+    ]);
   };
 
   const commitModeChange = (nextMode: PosMode) => {
@@ -263,28 +312,44 @@ export default function PosScreen() {
   const handleTablePress = (table: PosTable) => {
     const action = resolveTablePress({
       table,
-      isOpeningSession: openSessionMutation.isPending,
+      isOpeningSession: openSessionMutation.isPending || verifyingTableId !== null,
     });
 
     if (action.kind === 'ignore') return;
 
-    if (action.kind === 'enter-order') {
-      enterDiningOrder(action.tableId);
+    if (action.kind === 'confirm-open-session') {
+      promptOpenSession(action.tableId, action.tableNumber);
       return;
     }
 
-    const copy = openSessionConfirmCopy(action.tableNumber);
-    Alert.alert(copy.title, copy.message, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: copy.confirmLabel,
-        onPress: () => {
-          openSessionMutation.mutate(action.tableId, {
-            onSuccess: () => enterDiningOrder(action.tableId),
-          });
-        },
-      },
-    ]);
+    // Live table — verify ACTIVE session still exists (web require-active-table-session).
+    void (async () => {
+      setVerifyingTableId(action.tableId);
+      try {
+        const lookup = await lookupActiveTableSession(api, action.tableId);
+        const decision = resolveVerifiedTableEntry({
+          tableId: action.tableId,
+          tableNumber: table.number,
+          lookup,
+        });
+
+        if (decision.kind === 'enter-order') {
+          enterDiningOrder(decision.tableId, decision.sessionId);
+          return;
+        }
+
+        await queryClient.invalidateQueries({ queryKey: ['pos-tables'] });
+
+        if (decision.kind === 'confirm-open-session') {
+          promptOpenSession(decision.tableId, decision.tableNumber);
+          return;
+        }
+
+        Alert.alert('Could not open table', decision.message);
+      } finally {
+        setVerifyingTableId(null);
+      }
+    })();
   };
 
   const handleChangeTable = () => {
@@ -341,8 +406,19 @@ export default function PosScreen() {
       return;
     }
 
-    if (blocker?.kind === 'missing-table' || blocker?.kind === 'missing-session') {
+    if (blocker?.kind === 'missing-table') {
+      Alert.alert('Select a table', 'Pick a table with an open session before sending.');
       returnToTableSelect();
+      return;
+    }
+
+    if (blocker?.kind === 'missing-session') {
+      Alert.alert(
+        'Session closed',
+        `Table ${blocker.tableNumber} has no active session. Open it again to take orders.`
+      );
+      returnToTableSelect();
+      void queryClient.invalidateQueries({ queryKey: ['pos-tables'] });
       return;
     }
 
@@ -424,9 +500,10 @@ export default function PosScreen() {
       className="flex-1 bg-background"
       contentContainerStyle={{
         ...posScrollContentStyle,
-        paddingTop: Math.max(insets.top, 12) + 16,
-        paddingBottom: Math.max((posScrollContentStyle.paddingBottom as number) ?? 28, insets.bottom + 16),
-        gap: 24,
+        paddingBottom: Math.max(
+          (posScrollContentStyle.paddingBottom as number) ?? 12,
+          insets.bottom + 12
+        ),
       }}
       contentInsetAdjustmentBehavior="automatic"
       keyboardDismissMode="on-drag"
@@ -453,8 +530,8 @@ export default function PosScreen() {
         <PosTableSelect
           tables={tables}
           onTablePress={handleTablePress}
-          isOpeningSession={openSessionMutation.isPending}
-          openingTableId={openSessionMutation.variables ?? null}
+          isOpeningSession={openSessionMutation.isPending || verifyingTableId !== null}
+          openingTableId={openSessionMutation.variables ?? verifyingTableId}
           cardWidth={tableCardWidth}
           gap={gridGap}
         />
@@ -474,14 +551,14 @@ export default function PosScreen() {
       style={{ flex: 1 }}
       contentContainerStyle={{
         ...posScrollContentStyle,
+        // Tablet uses `never` inset adjustment — only then add a small top inset.
         paddingTop: isTablet
-          ? Math.max(insets.top, 12) + 16
+          ? insets.top + 8
           : (posScrollContentStyle.paddingTop as number),
         paddingBottom:
           !isTablet && itemCount > 0
-            ? 160
-            : Math.max((posScrollContentStyle.paddingBottom as number) ?? 28, insets.bottom + 16),
-        gap: 20,
+            ? 140
+            : Math.max((posScrollContentStyle.paddingBottom as number) ?? 12, insets.bottom + 12),
       }}
       contentInsetAdjustmentBehavior={isTablet ? 'never' : 'automatic'}
       keyboardDismissMode="on-drag"

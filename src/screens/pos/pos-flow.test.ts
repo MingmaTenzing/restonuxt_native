@@ -260,4 +260,21 @@ describe('table-first dining journey', () => {
       selectedTableId: null,
     });
   });
+
+  test('dining never reaches order without a selected table id', () => {
+    const entered = applyEnterDiningOrder(liveTable.id);
+    expect(entered.selectedTableId).toBe(liveTable.id);
+    expect(isPosOrdering({ mode: 'DINING', diningStep: 'pick-table' })).toBe(false);
+    expect(
+      isPosOrdering({ mode: 'DINING', diningStep: entered.diningStep })
+    ).toBe(true);
+  });
+
+  test('takeaway skips table sessions entirely', () => {
+    expect(applyModeChange('TAKEAWAY').selectedTableId).toBeNull();
+    expect(isPosOrdering({ mode: 'TAKEAWAY', diningStep: 'order' })).toBe(true);
+    expect(
+      resolveTablePress({ table: freeTable, isOpeningSession: false }).kind
+    ).toBe('confirm-open-session');
+  });
 });

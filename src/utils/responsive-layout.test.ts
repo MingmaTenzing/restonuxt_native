@@ -5,6 +5,7 @@ import {
   getGridCardWidthForPane,
   getListColumns,
   getPosMenuPaneWidth,
+  getPosMenuScrollContentStyle,
   getPosSidebarWidth,
   getProductGridColumns,
   isTabletWidth,
@@ -56,7 +57,19 @@ describe('responsive-layout', () => {
   test('computes POS product card width from pane width', () => {
     const paneWidth = getPosMenuPaneWidth(900, true);
     const columns = getProductGridColumns(paneWidth);
-    const cardWidth = getGridCardWidthForPane(paneWidth, columns, 28, 16);
+    const cardWidth = getGridCardWidthForPane(paneWidth, columns, 20, 16);
     expect(cardWidth).toBeGreaterThan(120);
+  });
+
+  test('POS scroll content uses tighter padding than general screens', () => {
+    const phone = getPosMenuScrollContentStyle(390, false);
+    expect(phone.paddingHorizontal).toBe(16);
+    expect(phone.paddingTop).toBe(12);
+    expect(phone.gap).toBe(16);
+
+    const tablet = getPosMenuScrollContentStyle(900, true);
+    expect(tablet.paddingHorizontal).toBe(20);
+    expect(tablet.paddingTop).toBe(12);
+    expect(tablet.gap).toBe(16);
   });
 });

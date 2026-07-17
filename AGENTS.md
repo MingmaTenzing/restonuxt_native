@@ -88,14 +88,28 @@ Port UI to React Native; copy API contracts and business rules as-is (`useFetch<
 
 ## Code conventions
 
-- **Keep it simple** — match the RestoQuick Nuxt app and API: use typed responses directly (`api<TableSession[]>(...)`), `unwrapList` only when an endpoint may wrap an array, and small inline maps for UI-only shapes. Do not add normalization layers, snake_case/camelCase adapters, or defensive reshaping unless the API contract is genuinely inconsistent. Simpler is better; never overcomplicate straightforward data fetching.
+### Simpler is better (all logic)
+
+This applies to **everything you write** — screens, flows, cart/CRUD, session guards, helpers, hooks, UI state — not just networking.
+
+1. **Do the easy thing first.** If the Nuxt web app or an existing native screen does it in a few lines, match that. Do not design a framework for a one-screen problem.
+2. **Inline before abstracting.** Prefer a clear `if` / early return in the screen over new `resolveX` / `applyY` / state-machine helpers unless the same rule is reused or unit-tested in multiple places.
+3. **No speculative architecture.** No extra layers, adapters, sync engines, or “future-proof” indirection. Add a helper only when duplication or a test genuinely needs it.
+4. **Mirror the web app’s shape.** Port the same steps and API calls; do not invent a more complex native lifecycle around them.
+5. **Follow Expo skills / MCP patterns** for Router, React Query, Clerk, and UI — official simple patterns beat custom machinery.
+
+When choosing between two correct approaches, pick the shorter, more obvious one.
+
+### Practical rules
+
+- **API data** — use typed responses directly (`api<TableSession[]>(...)`), `unwrapList` only when an endpoint may wrap an array, small inline maps for UI-only shapes. No normalization layers or case adapters unless the API is inconsistent.
+- **Data fetching** — React Query (`useQuery` / `useMutation` / `invalidateQueries`). Screen refresh: `useFocusEffect` + `refetch()` with **stable deps** (`isReady`, `refetch`) — do not put changing UI state in those deps.
 - **Minimize scope** — smallest correct diff; no drive-by refactors.
-- **Match existing patterns** in the file and feature folder before inventing new abstractions. When in doubt, read the equivalent feature in **`RestoQuick_Nuxt_Web/`** (page, composable, and `server/api/` handler) and existing simple native screens like `orders/` and `cashier/api.ts`.
-- **Routes vs screens** — `src/app/*.tsx` should re-export or thinly compose `src/screens/*`; keep business logic out of `app/`.
-- **Data fetching** — React Query for server state; read `native-data-fetching` skill for fetch/auth/error patterns.
-- **UI** — NativeWind (`className`); read `building-native-ui` for navigation, tabs, scroll views, and platform patterns.
+- **Match existing patterns** in the feature folder and **`RestoQuick_Nuxt_Web/`** (see simple screens like `orders/`, `cashier/api.ts`).
+- **Routes vs screens** — `src/app/*.tsx` re-exports `src/screens/*`; keep business logic out of `app/`.
+- **UI** — NativeWind (`className`); `building-native-ui` for navigation / tabs / scroll.
 - **Auth** — Clerk via `@clerk/expo`; token cache in `expo-secure-store`.
-- **Env** — `EXPO_PUBLIC_*` for client config (Clerk key, API base URL). Never commit secrets.
+- **Env** — `EXPO_PUBLIC_*` for client config. Never commit secrets.
 
 ## Testing (required on every change)
 

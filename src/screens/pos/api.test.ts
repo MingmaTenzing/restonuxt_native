@@ -6,11 +6,14 @@ import { testApiClient } from '@/test/test-api-client';
 
 import {
   createTableSession,
+  fetchActiveTableSession,
   fetchPosMenu,
   fetchPosTables,
+  lookupActiveTableSession,
   submitDiningOrder,
   submitTakeawayOrder,
 } from './api';
+import { NO_ACTIVE_SESSION_MESSAGE } from './pos-session';
 
 describe('pos api', () => {
   let restore: (() => void) | undefined;
@@ -72,7 +75,63 @@ describe('pos api', () => {
     const session = await createTableSession(testApiClient('token'), 'table-3');
 
     expect(session.id).toBe('session-new');
+    expect(session.status).toBe('ACTIVE');
     expect(JSON.parse(String(capturedInit?.body))).toEqual({ tableId: 'table-3' });
+  });
+
+  test('createTableSession is get-or-create (existing ACTIVE session is returned)', async () => {
+    restore = withMockFetch(() =>
+      jsonResponse({ id: 'session-existing', tableId: 'table-3', status: 'ACTIVE' })
+    );
+
+    const session = await createTableSession(testApiClient('token'), 'table-3');
+    expect(session).toEqual({
+      id: 'session-existing',
+      tableId: 'table-3',
+      status: 'ACTIVE',
+    });
+  });
+
+  test('fetchActiveTableSession hits /api/table-sessions/active/{tableId}', async () => {
+    restore = withMockFetch((input) => {
+      expect(String(input)).toBe(apiUrl('/api/table-sessions/active/table-9'));
+      return jsonResponse({ id: 'session-9', tableId: 'table-9', status: 'ACTIVE' });
+    });
+
+    const session = await fetchActiveTableSession(testApiClient('token'), 'table-9');
+    expect(session.id).toBe('session-9');
+  });
+
+  test('lookupActiveTableSession returns active when session exists', async () => {
+    restore = withMockFetch(() =>
+      jsonResponse({ id: 'session-ok', tableId: 'table-1', status: 'ACTIVE' })
+    );
+
+    await expect(lookupActiveTableSession(testApiClient('token'), 'table-1')).resolves.toEqual({
+      kind: 'active',
+      sessionId: 'session-ok',
+    });
+  });
+
+  test('lookupActiveTableSession maps 404 no-session to missing', async () => {
+    restore = withMockFetch(() =>
+      jsonResponse({ statusMessage: NO_ACTIVE_SESSION_MESSAGE }, 404)
+    );
+
+    await expect(lookupActiveTableSession(testApiClient('token'), 'table-1')).resolves.toEqual({
+      kind: 'missing',
+    });
+  });
+
+  test('lookupActiveTableSession preserves unrelated errors', async () => {
+    restore = withMockFetch(() =>
+      jsonResponse({ statusMessage: 'Sign in again to continue.' }, 401)
+    );
+
+    await expect(lookupActiveTableSession(testApiClient('token'), 'table-1')).resolves.toEqual({
+      kind: 'error',
+      message: 'Sign in again to continue.',
+    });
   });
 
   test('submitDiningOrder wraps items in Prisma-style create payload', async () => {

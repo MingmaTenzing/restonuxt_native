@@ -107,22 +107,30 @@ export function getPosMenuPaneWidth(width: number, isTablet: boolean) {
   );
 }
 
+/** Tighter padding than general list screens — POS needs density for menu grids. */
 export function getPosMenuScrollContentStyle(
   screenWidth: number,
   isTablet: boolean,
   extra?: Record<string, unknown>
 ) {
-  const horizontalPadding = getHorizontalPadding(screenWidth);
+  const horizontalPadding = isTablet ? 20 : 16;
+  const verticalPadding = 12;
 
   if (!isTablet) {
-    return getScrollContentStyle(screenWidth, extra);
+    return getScrollContentStyle(screenWidth, {
+      gap: 16,
+      paddingHorizontal: horizontalPadding,
+      paddingTop: verticalPadding,
+      paddingBottom: verticalPadding,
+      ...extra,
+    });
   }
 
   return {
-    gap: 24,
+    gap: 16,
     paddingHorizontal: horizontalPadding,
-    paddingTop: RESPONSIVE.VERTICAL_PADDING,
-    paddingBottom: RESPONSIVE.VERTICAL_PADDING,
+    paddingTop: verticalPadding,
+    paddingBottom: verticalPadding,
     ...extra,
   };
 }
