@@ -95,8 +95,18 @@ Port UI to React Native; copy API contracts and business rules as-is (`useFetch<
 - **Data fetching** — React Query for server state; read `native-data-fetching` skill for fetch/auth/error patterns.
 - **UI** — NativeWind (`className`); read `building-native-ui` for navigation, tabs, scroll views, and platform patterns.
 - **Auth** — Clerk via `@clerk/expo`; token cache in `expo-secure-store`.
-- **Tests** — Bun test runner; colocate `*.test.ts` next to the module. Run `bun test` after logic changes.
 - **Env** — `EXPO_PUBLIC_*` for client config (Clerk key, API base URL). Never commit secrets.
+
+## Testing (required on every change)
+
+**Write and run tests for everything you implement, fix, or change.** Do not consider a task done until tests cover the new behavior and `bun test` passes.
+
+- **Always** — for new modules, helpers, API mappers, cart/CRUD logic, flow guards, hooks with pure logic, and bug fixes: add or update colocated `*.test.ts` next to the module (e.g. `cart.test.ts`, `pos-flow.test.ts`, `api.test.ts`).
+- **What to cover** — happy path, edge cases, and regressions that match the web app’s rules (merge keys, totals, submit blockers, session/table guards, payload shapes).
+- **Fixtures** — put shared fixtures under `src/test/`; keep feature-specific samples in the feature’s test file when small.
+- **Run** — after every logic change, run at least the affected suite (`bun test src/screens/<feature>/`) and prefer `bun test` before finishing.
+- **UI-only tweaks** — pure layout/className changes need no new tests; if behavior or data flow changes, tests are required.
+- **Do not skip** — do not ship untested business logic, API contracts, or state mutations. Prefer extracting pure functions so they are easy to unit test.
 
 ## Key files
 

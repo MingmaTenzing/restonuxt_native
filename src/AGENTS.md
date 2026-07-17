@@ -45,9 +45,11 @@ Conventions for routes, screens, and feature code in this Expo Router app.
 
 ## Testing
 
+**Required on every change** that adds or alters behavior — see root [`AGENTS.md`](../AGENTS.md) → Testing.
+
 - Pure logic: `*.test.ts` next to the module (`kitchen/apply-kitchen-event.test.ts`, `utils/format-date.test.ts`).
 - Fixtures: `src/test/`
-- Run: `bun test` from repo root
+- Run: `bun test` (or the feature folder) before considering work done
 
 ## Styling
 
