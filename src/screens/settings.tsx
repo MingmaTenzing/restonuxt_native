@@ -1,35 +1,42 @@
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
+import { ScreenScroll } from '@/components/screen-scroll';
 import { Table, TableCell, TableRow } from '@/components/table';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { useAppState } from '@/hooks/use-app-state';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function SettingsScreen() {
   const appState = useAppState();
   const theme = useTheme();
+  const { isTablet } = useResponsiveLayout();
 
   return (
-    <ScrollView
-      className="flex-1 bg-zinc-50"
-      contentContainerClassName="gap-6 px-5 py-6"
-      contentInsetAdjustmentBehavior="automatic">
+    <ScreenScroll>
       <View className="gap-2">
-        <Text className="text-3xl font-bold text-zinc-950">Settings</Text>
-        <Text className="text-base leading-6 text-zinc-600">
-          App-level hooks and reusable rows are separated from route files.
+        <Text
+          className={`font-bold tracking-tight text-foreground ${
+            isTablet ? 'text-3xl' : 'text-4xl'
+          }`}>
+          Settings
+        </Text>
+        <Text className="text-base leading-6 text-muted-foreground">
+          App preferences and appearance.
         </Text>
       </View>
 
       <Table>
+        <ThemeToggle />
         <TableRow>
           <TableCell label="App state">{appState}</TableCell>
           <TableCell label="Theme">{theme.colorScheme}</TableCell>
         </TableRow>
         <TableRow>
-          <TableCell label="Primary">{theme.colors.primary}</TableCell>
+          <TableCell label="Accent">{theme.colors.accent}</TableCell>
           <TableCell label="Surface">{theme.colors.surface}</TableCell>
         </TableRow>
       </Table>
-    </ScrollView>
+    </ScreenScroll>
   );
 }

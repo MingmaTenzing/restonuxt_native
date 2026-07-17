@@ -1,0 +1,28 @@
+---
+description: Consult Expo MCP, Expo skills, and RESTOQUICK_DOC.md before taking action
+alwaysApply: true
+---
+
+# Expo-First Workflow
+
+Read **`AGENTS.md`** for project commands, structure, and boundaries. Use **`.agents/skills/README.md`** for the full skill catalog.
+
+**Simpler is better for all logic** — screens, flows, cart/CRUD, session guards, helpers, not only fetching. Match the Nuxt web app and Expo skill patterns; do not invent layers, state machines, or speculative helpers. Prefer the shortest clear solution.
+
+Before implementing, debugging, or advising on anything in this Expo project:
+
+1. **Check Expo skills** — read the relevant `SKILL.md` from `.agents/skills/`.
+2. **Check Expo MCP** (`user-expo`) — `GetMcpTools` then `CallMcpTool` for docs, installs, builds.
+3. **Prefer official patterns** from skills and MCP over improvising.
+4. **Check `RESTOQUICK_DOC.md`** for architecture, data flows, APIs, WebSockets, enums, and auth.
+5. **Check `RestoQuick_Nuxt_Web/`** (local gitignored Nuxt repo) for how the web app implements each feature — data flow, cart, CRUD, state management, API usage. Port behavior, not Vue/Nuxt internals.
+
+## Quick skill map
+
+- UI/navigation: `building-native-ui`, `expo-ui`, `frontend-design`
+- Data/network: `native-data-fetching`
+- Auth: `clerk`, `clerk-setup`, `clerk-custom-ui`, `clerk-cli`
+- Build/deploy: `expo-deployment`, `expo-dev-client`, `expo-cicd-workflows`, `eas-simulator`
+- Upgrades: `upgrading-expo`
+
+Do not skip this step even for small changes.
