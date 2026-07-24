@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 
 import type { Order } from '@/screens/orders/types';
 
-import { selectPaidTakeawayOrders, sessionCollectedCents } from './cashier-paid';
+import { selectPaidTakeawayOrders, sessionCollectedCents, closedSessionHasUnpaid } from './cashier-paid';
 
 function makeOrder(overrides: Partial<Order> = {}): Order {
   return {
@@ -64,5 +64,11 @@ describe('cashier paid history', () => {
     ).toBe(1250);
 
     expect(sessionCollectedCents({ orders: null })).toBe(0);
+  });
+
+  test('closedSessionHasUnpaid flags closed sales that still need collection', () => {
+    expect(closedSessionHasUnpaid({ unpaidOrderCount: 0 })).toBe(false);
+    expect(closedSessionHasUnpaid({ unpaidOrderCount: 1 })).toBe(true);
+    expect(closedSessionHasUnpaid({ unpaidOrderCount: 3 })).toBe(true);
   });
 });

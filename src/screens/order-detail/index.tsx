@@ -192,12 +192,12 @@ export default function OrderDetailScreen() {
               ) : (
                 (order.items ?? []).map((item, index) => (
                   <View key={item.id} className="gap-3">
-                    {index > 0 ? <View className="h-px bg-muted" /> : null}
+                    {index > 0 ? <View className="h-px bg-border/70" /> : null}
                     <ItemRow item={item} />
                   </View>
                 ))
               )}
-              <View className="h-px bg-muted" />
+              <View className="h-px bg-border/70" />
               <View className="flex-row items-center justify-between">
                 <Text className="text-base font-semibold text-foreground">Total</Text>
                 <Text className="text-xl font-bold tracking-tight text-foreground">
