@@ -13,6 +13,7 @@ import {
   getPosSidebarWidth,
   getProductGridColumns,
   getScrollContentStyle,
+  getTableGridColumns,
   isLargeTabletWidth,
   isTabletWidth,
   RESPONSIVE,
@@ -28,6 +29,7 @@ export function useResponsiveLayout() {
     const horizontalPadding = getHorizontalPadding(width);
     const listColumns = getListColumns(width);
     const productColumns = getProductGridColumns(width);
+    const tableColumns = getTableGridColumns(width);
     const cardWidth = getGridCardWidth(width, listColumns, horizontalPadding, RESPONSIVE.GRID_GAP);
     const productCardWidth = getGridCardWidth(
       width,
@@ -46,6 +48,12 @@ export function useResponsiveLayout() {
       posHorizontalPadding,
       RESPONSIVE.GRID_GAP
     );
+    const tableCardWidth = getGridCardWidth(
+      width,
+      tableColumns,
+      posHorizontalPadding,
+      RESPONSIVE.GRID_GAP
+    );
 
     return {
       width,
@@ -57,8 +65,10 @@ export function useResponsiveLayout() {
       gridGap: RESPONSIVE.GRID_GAP,
       listColumns,
       productColumns,
+      tableColumns,
       cardWidth,
       productCardWidth,
+      tableCardWidth,
       posMenuPaneWidth,
       posProductColumns,
       posProductCardWidth,

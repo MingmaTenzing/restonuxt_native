@@ -75,12 +75,17 @@ export function sessionTotalCents(orders: Order[]) {
   return orders.reduce((sum, order) => sum + order.totalAmountCents, 0);
 }
 
-/** Build ESC/POS bytes for a table-session receipt (80mm Epson-compatible). */
-export function buildSessionReceiptEscPos(checkout: SessionCheckout) {
-  const orders = checkout.orders ?? [];
+function buildReceiptEscPos({
+  subtitle,
+  metaLines,
+  orders,
+}: {
+  subtitle: string;
+  metaLines: string[];
+  orders: Order[];
+}) {
   const items = collectPrintableItems(orders);
   const totalCents = sessionTotalCents(orders);
-  const tableNumber = checkout.table?.number ?? '—';
   const chunks: Uint8Array[] = [];
 
   const push = (...parts: Uint8Array[]) => {
@@ -95,16 +100,15 @@ export function buildSessionReceiptEscPos(checkout: SessionCheckout) {
   push(cmd(ESC, 0x45, 1));
   push(textLine('RESTO QUICK'));
   push(cmd(ESC, 0x45, 0));
-  push(textLine('Table Session Receipt'));
+  push(textLine(subtitle));
   push(cmd(LF));
 
   // Left meta
   push(cmd(ESC, 0x61, 0));
   push(textLine('='.repeat(LINE_WIDTH)));
-  push(textLine(`Receipt No: ${checkout.id}`));
-  push(textLine(`Date: ${new Date().toLocaleString()}`));
-  push(textLine(`Table: ${tableNumber}`));
-  push(textLine(`Status: ${checkout.status}`));
+  for (const line of metaLines) {
+    push(textLine(line));
+  }
   push(textLine('='.repeat(LINE_WIDTH)));
 
   push(cmd(ESC, 0x45, 1));
@@ -150,4 +154,35 @@ export function buildSessionReceiptEscPos(checkout: SessionCheckout) {
     itemCount: items.length,
     totalCents,
   };
+}
+
+/** Build ESC/POS bytes for a table-session receipt (80mm Epson-compatible). */
+export function buildSessionReceiptEscPos(checkout: SessionCheckout) {
+  const orders = checkout.orders ?? [];
+  const tableNumber = checkout.table?.number ?? '—';
+
+  return buildReceiptEscPos({
+    subtitle: 'Table Session Receipt',
+    metaLines: [
+      `Receipt No: ${checkout.id}`,
+      `Date: ${new Date().toLocaleString()}`,
+      `Table: ${tableNumber}`,
+      `Status: ${checkout.status}`,
+    ],
+    orders,
+  });
+}
+
+/** Build ESC/POS bytes for a takeaway order receipt (matches Nuxt cashier takeaway print). */
+export function buildTakeawayReceiptEscPos(order: Order) {
+  return buildReceiptEscPos({
+    subtitle: 'Takeaway Receipt',
+    metaLines: [
+      `Order: #${order.orderNo}`,
+      `Customer: ${order.customerName?.trim() || 'Walk-in'}`,
+      `Date: ${new Date(order.createdAt).toLocaleString()}`,
+      `Status: ${order.paymentStatus}`,
+    ],
+    orders: [order],
+  });
 }

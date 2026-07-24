@@ -3,7 +3,11 @@ import { Pressable, ScrollView, Text, TextInput, useColorScheme, View } from 're
 
 import { Button } from '@/components/button';
 import type { PaymentMethod } from '@/screens/orders/types';
+import type { PrintReceiptTarget } from '@/screens/receipt/api';
+import { ReceiptPrintPanel } from '@/screens/receipt/receipt-print-panel';
 import { formatMoney } from '@/utils/format-money';
+
+import { checkoutAmountEyebrow } from './checkout';
 
 const QUICK_AMOUNTS = [10, 20, 50, 100];
 
@@ -31,6 +35,9 @@ interface CheckoutPaymentPanelProps {
   isPaid: boolean;
   errorMessage: string | null;
   onSubmit: () => void;
+  onUndoPaid?: () => void;
+  isUndoingPaid?: boolean;
+  printTarget: PrintReceiptTarget;
   controlsScrollable?: boolean;
   fillHeight?: boolean;
   variant?: 'card' | 'sheet';
@@ -38,7 +45,7 @@ interface CheckoutPaymentPanelProps {
 
 export type { CheckoutPaymentPanelProps };
 
-function BalanceDueHeader({
+function AmountHeader({
   amountDueCents,
   payableLabel,
   isPaid,
@@ -47,25 +54,31 @@ function BalanceDueHeader({
   payableLabel: string;
   isPaid: boolean;
 }) {
-  const isDark = useColorScheme() === 'dark';
-
   return (
-    <View className="gap-4 bg-neutral-950 px-5 py-5">
+    <View className={`gap-4 px-5 py-5 ${isPaid ? 'bg-emerald-950' : 'bg-neutral-950'}`}>
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 gap-1">
-          <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">
-            Balance due
+          <Text
+            className={`text-xs font-semibold uppercase tracking-[0.2em] ${
+              isPaid ? 'text-emerald-300/80' : 'text-neutral-400'
+            }`}>
+            {checkoutAmountEyebrow(isPaid)}
           </Text>
           <Text className="text-4xl font-bold tracking-tight text-white">
             {formatMoney(amountDueCents)}
           </Text>
-          <Text className="text-sm text-neutral-400">{payableLabel}</Text>
+          <Text className={`text-sm ${isPaid ? 'text-emerald-100/70' : 'text-neutral-400'}`}>
+            {payableLabel}
+          </Text>
         </View>
-        <View className="h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
+        <View
+          className={`h-11 w-11 items-center justify-center rounded-2xl ${
+            isPaid ? 'bg-emerald-400/20' : 'bg-white/10'
+          }`}>
           <Ionicons
             name={isPaid ? 'checkmark-circle' : 'wallet-outline'}
             size={22}
-            color={isPaid ? '#34D399' : isDark ? '#E4E4E7' : '#FAFAFA'}
+            color={isPaid ? '#6EE7B7' : '#FAFAFA'}
           />
         </View>
       </View>
@@ -88,6 +101,9 @@ export function CheckoutPaymentPanel({
   isPaid,
   errorMessage,
   onSubmit,
+  onUndoPaid,
+  isUndoingPaid = false,
+  printTarget,
   controlsScrollable = false,
   fillHeight = false,
   variant = 'card',
@@ -95,21 +111,51 @@ export function CheckoutPaymentPanel({
   const isDark = useColorScheme() === 'dark';
 
   const controls = (
-    <View className="gap-5 px-5 pb-5">
+    <View className="gap-5 px-5 pb-5 pt-5">
       {isPaid ? (
-        <View
-          className="bg-muted/50 items-center gap-3 rounded-2xl border border-border px-5 py-6"
-          style={{ borderCurve: 'continuous' }}>
-          <View className="h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 dark:bg-emerald-400/15">
-            <Ionicons name="checkmark-circle" size={32} color="#10B981" />
-          </View>
-          <Text className="text-lg font-semibold text-foreground">Sale closed</Text>
-          <Text className="text-center text-sm text-muted-foreground">
-            Payment recorded. You can return to the cashier queue.
-          </Text>
+        <View className="gap-5">
+          <ReceiptPrintPanel target={printTarget} embedded />
+
+          {errorMessage ? (
+            <View
+              className="rounded-2xl border border-red-200/80 bg-red-50 px-4 py-3 dark:border-red-900/50 dark:bg-red-950/40"
+              style={{ borderCurve: 'continuous' }}>
+              <Text selectable className="text-sm text-red-700 dark:text-red-300">
+                {errorMessage}
+              </Text>
+            </View>
+          ) : null}
+
+          {onUndoPaid ? (
+            <View className="gap-2 border-t border-border pt-4">
+              <Pressable
+                onPress={isUndoingPaid ? undefined : onUndoPaid}
+                disabled={isUndoingPaid}
+                accessibilityRole="button"
+                accessibilityLabel="Undo payment"
+                className={`flex-row items-center justify-center gap-2 rounded-2xl border border-border px-4 py-3.5 ${
+                  isUndoingPaid ? 'bg-muted opacity-70' : 'bg-background active:opacity-80'
+                }`}
+                style={{ borderCurve: 'continuous' }}>
+                <Ionicons
+                  name={isUndoingPaid ? 'hourglass-outline' : 'arrow-undo-outline'}
+                  size={18}
+                  color={isDark ? '#E4E4E7' : '#18181B'}
+                />
+                <Text className="text-sm font-semibold text-foreground">
+                  {isUndoingPaid ? 'Undoing…' : 'Undo payment'}
+                </Text>
+              </Pressable>
+              <Text className="text-center text-xs leading-4 text-muted-foreground">
+                Only if this sale was closed by mistake.
+              </Text>
+            </View>
+          ) : null}
         </View>
       ) : (
         <>
+          <ReceiptPrintPanel target={printTarget} compact />
+
           <View className="gap-2">
             <Text className="px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Payment method
@@ -250,7 +296,7 @@ export function CheckoutPaymentPanel({
           ? { borderCurve: 'continuous' }
           : { borderCurve: 'continuous', boxShadow: '0 12px 32px rgba(0, 0, 0, 0.08)' }
       }>
-      <BalanceDueHeader
+      <AmountHeader
         amountDueCents={amountDueCents}
         payableLabel={payableLabel}
         isPaid={isPaid}

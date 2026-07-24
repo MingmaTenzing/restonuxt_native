@@ -9,7 +9,6 @@ import { Button } from '@/components/button';
 import { CardGridSkeleton, ListScreenSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { ReceiptPrintPanel } from '@/screens/receipt/receipt-print-panel';
 import { formatMoney } from '@/utils/format-money';
 
 import {
@@ -104,8 +103,7 @@ export default function PosScreen() {
     posProductCardWidth,
     posSidebarWidth,
     posScrollContentStyle,
-    cardWidth,
-    listColumns,
+    tableCardWidth,
   } = useResponsiveLayout();
 
   const [mode, setMode] = useState<PosMode>('DINING');
@@ -130,7 +128,6 @@ export default function PosScreen() {
   const [customizingItem, setCustomizingItem] = useState<PosMenuItem | null>(null);
 
   const isOrdering = isPosOrdering({ mode, diningStep });
-  const tableCardWidth = listColumns > 1 ? cardWidth : undefined;
 
   const {
     data: menuItems = [],
@@ -527,7 +524,7 @@ export default function PosScreen() {
       {modeToggle}
 
       {isLoadingTables ? (
-        <CardGridSkeleton count={4} />
+        <CardGridSkeleton count={6} cardWidth={tableCardWidth} />
       ) : (
         <PosTableSelect
           tables={tables}
@@ -590,10 +587,6 @@ export default function PosScreen() {
 
       {mode === 'DINING' && selectedTable ? (
         <PosDiningHeader tableNumber={selectedTable.number} onChangeTable={handleChangeTable} />
-      ) : null}
-
-      {mode === 'DINING' && selectedTable?.activeSessionId ? (
-        <ReceiptPrintPanel sessionId={selectedTable.activeSessionId} compact />
       ) : null}
 
       {!isMenuError ? (

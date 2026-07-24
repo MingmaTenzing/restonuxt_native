@@ -85,14 +85,21 @@ export function OrderStatsSkeleton() {
   );
 }
 
-export function CardGridSkeleton({ count }: { count?: number }) {
+export function CardGridSkeleton({
+  count,
+  cardWidth: cardWidthOverride,
+}: {
+  count?: number;
+  cardWidth?: number;
+}) {
   const { listColumns, cardWidth, gridGap } = useResponsiveLayout();
   const items = count ?? listColumns * 2;
+  const width = cardWidthOverride ?? cardWidth;
 
   return (
     <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
       {Array.from({ length: items }, (_, index) => (
-        <Skeleton key={index} className="h-44 rounded-3xl" style={{ width: cardWidth }} />
+        <Skeleton key={index} className="h-36 rounded-3xl" style={{ width }} />
       ))}
     </View>
   );

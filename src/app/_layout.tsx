@@ -53,7 +53,7 @@ export default function RootLayout() {
               />
               <Stack.Screen
                 name="stock/scan"
-                options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+                options={{ presentation: 'card', animation: 'slide_from_bottom' }}
               />
               <Stack.Screen
                 name="stock/update/[id]"

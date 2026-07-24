@@ -8,9 +8,13 @@ import {
   closeTakeawaySale,
   fetchActiveSessions,
   fetchCheckoutOrder,
+  fetchClosedSessions,
+  fetchPaidTakeawayOrders,
   fetchSessionCheckout,
   fetchUnpaidTakeawayOrders,
   markTablePaid,
+  undoTablePaid,
+  undoTakeawayPaid,
 } from './api';
 
 describe('cashier api', () => {
@@ -95,6 +99,81 @@ describe('cashier api', () => {
 
     expect(orders).toHaveLength(1);
     expect(orders[0]?.id).toBe('order-1');
+  });
+
+  test('fetchClosedSessions requests CLOSED sessions and enriches totals', async () => {
+    restore = withMockFetch((input) => {
+      expect(String(input)).toBe(apiUrl('/api/table-sessions?status=CLOSED'));
+      return jsonResponse([
+        {
+          id: 'session-closed',
+          tableId: 'table-1',
+          status: 'CLOSED',
+          openedAt: '2026-07-12T10:00:00.000Z',
+          closedAt: '2026-07-12T11:00:00.000Z',
+          createdAt: '2026-07-12T10:00:00.000Z',
+          updatedAt: '2026-07-12T11:00:00.000Z',
+          orders: [
+            {
+              id: 'o1',
+              orderNo: 1,
+              status: 'COMPLETED',
+              paymentStatus: 'PAID',
+              totalAmountCents: 2200,
+              createdAt: '2026-07-12T10:00:00.000Z',
+              updatedAt: '2026-07-12T11:00:00.000Z',
+            },
+          ],
+        },
+      ]);
+    });
+
+    const sessions = await fetchClosedSessions(testApiClient('token'));
+
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0]?.status).toBe('CLOSED');
+    expect(sessions[0]?.outstandingCents).toBe(0);
+    expect(sessions[0]?.unpaidOrderCount).toBe(0);
+  });
+
+  test('fetchPaidTakeawayOrders filters day orders to paid takeaway', async () => {
+    restore = withMockFetch((input) => {
+      expect(String(input)).toBe(apiUrl('/api/orders?range=day'));
+      return jsonResponse([
+        {
+          id: 'dining-paid',
+          orderType: 'DINING',
+          paymentStatus: 'PAID',
+          totalAmountCents: 1000,
+          createdAt: '2026-07-24T09:00:00.000Z',
+          updatedAt: '2026-07-24T09:30:00.000Z',
+          paidAt: '2026-07-24T09:30:00.000Z',
+        },
+        {
+          id: 'takeaway-unpaid',
+          orderType: 'TAKEAWAY',
+          paymentStatus: 'UNPAID',
+          totalAmountCents: 800,
+          createdAt: '2026-07-24T09:00:00.000Z',
+          updatedAt: '2026-07-24T09:00:00.000Z',
+          paidAt: null,
+        },
+        {
+          id: 'takeaway-paid',
+          orderType: 'TAKEAWAY',
+          paymentStatus: 'PAID',
+          totalAmountCents: 1500,
+          createdAt: '2026-07-24T08:00:00.000Z',
+          updatedAt: '2026-07-24T08:30:00.000Z',
+          paidAt: '2026-07-24T08:30:00.000Z',
+        },
+      ]);
+    });
+
+    const orders = await fetchPaidTakeawayOrders(testApiClient('token'));
+
+    expect(orders).toHaveLength(1);
+    expect(orders[0]?.id).toBe('takeaway-paid');
   });
 
   test('fetchCheckoutOrder unwraps nested order payload', async () => {
@@ -230,5 +309,54 @@ describe('cashier api', () => {
       orderId: 'order-8',
       paymentMethod: 'CASH',
     });
+  });
+
+  test('undoTablePaid posts session id to undo-paid', async () => {
+    let capturedInit: RequestInit | undefined;
+
+    restore = withMockFetch((input, init) => {
+      expect(String(input)).toBe(apiUrl('/api/orders/checkout/table/undo-paid'));
+      capturedInit = init;
+      return jsonResponse({
+        tableSessionId: 'session-closed',
+        tableId: 'table-1',
+        status: 'CLOSED',
+        orderIds: ['o1', 'o2'],
+        updatedCount: 2,
+      });
+    });
+
+    const result = await undoTablePaid(testApiClient('token'), {
+      tableSessionId: 'session-closed',
+    });
+
+    expect(capturedInit?.method).toBe('POST');
+    expect(JSON.parse(String(capturedInit?.body))).toEqual({
+      tableSessionId: 'session-closed',
+    });
+    expect(result.status).toBe('CLOSED');
+    expect(result.updatedCount).toBe(2);
+    expect(result.orderIds).toEqual(['o1', 'o2']);
+  });
+
+  test('undoTakeawayPaid posts order id and returns unpaid order', async () => {
+    let capturedInit: RequestInit | undefined;
+
+    restore = withMockFetch((input, init) => {
+      expect(String(input)).toBe(apiUrl('/api/orders/checkout/takeaway/undo-paid'));
+      capturedInit = init;
+      return jsonResponse({
+        id: 'order-paid',
+        paymentStatus: 'UNPAID',
+        paidAt: null,
+        paymentMethod: null,
+      });
+    });
+
+    const order = await undoTakeawayPaid(testApiClient('token'), { orderId: 'order-paid' });
+
+    expect(capturedInit?.method).toBe('POST');
+    expect(JSON.parse(String(capturedInit?.body))).toEqual({ orderId: 'order-paid' });
+    expect(order.paymentStatus).toBe('UNPAID');
   });
 });

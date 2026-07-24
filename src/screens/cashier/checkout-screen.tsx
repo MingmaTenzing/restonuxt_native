@@ -9,6 +9,7 @@ import { Button } from '@/components/button';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { countItems } from '@/screens/orders/order-stats';
+import type { PrintReceiptTarget } from '@/screens/receipt/api';
 import { formatDate } from '@/utils/format-date';
 import { formatMoney } from '@/utils/format-money';
 
@@ -17,11 +18,14 @@ import {
   fetchCheckoutOrder,
   fetchSessionCheckout,
   markTablePaid,
+  undoTablePaid,
+  undoTakeawayPaid,
 } from './api';
 import { CheckoutOrderBlock } from './checkout-order-block';
 import { CheckoutBalanceBar } from './checkout-balance-bar';
 import {
   canAcceptCheckoutPayment,
+  checkoutSummaryAmountLabel,
   formatCheckoutPayableLabel,
   formatTenderedInput,
   getChangeDueCents,
@@ -37,6 +41,13 @@ import {
 } from './checkout';
 import { CheckoutPaymentPanel } from './checkout-payment-panel';
 import { CheckoutPaymentSheet } from './checkout-payment-sheet';
+import {
+  formatUndoTablePaidBlockMessage,
+  formatUndoTakeawayPaidBlockMessage,
+  resolveUndoTablePaid,
+  resolveUndoTakeawayPaid,
+  undoPaidConfirmMessage,
+} from './checkout-undo';
 
 type CheckoutKind = 'table' | 'takeaway';
 
@@ -160,6 +171,11 @@ export function CashierCheckoutScreen({
         ? isTakeawayCheckoutPaid(takeawayOrder)
         : false;
 
+  const displayAmountCents =
+    kind === 'table' && isPaid && checkout
+      ? checkout.summary.paidTotalCents || checkout.summary.sessionTotalCents
+      : amountDueCents;
+
   const tenderedCents = parseTenderedCents(tenderedDollars);
   const changeDueCents = getChangeDueCents(paymentMethod, tenderedCents, amountDueCents);
 
@@ -173,6 +189,8 @@ export function CashierCheckoutScreen({
   const invalidateCashier = () => {
     queryClient.invalidateQueries({ queryKey: ['cashier-sessions'] });
     queryClient.invalidateQueries({ queryKey: ['cashier-takeaway'] });
+    queryClient.invalidateQueries({ queryKey: ['cashier-closed-sessions'] });
+    queryClient.invalidateQueries({ queryKey: ['cashier-paid-takeaway'] });
     queryClient.invalidateQueries({ queryKey: ['cashier-checkout'] });
     queryClient.invalidateQueries({ queryKey: ['cashier-checkout-order'] });
     queryClient.invalidateQueries({ queryKey: ['sessions'] });
@@ -213,6 +231,57 @@ export function CashierCheckoutScreen({
     },
   });
 
+  const undoMutation = useMutation({
+    mutationFn: async () => {
+      if (kind === 'table') {
+        if (!checkout) throw new Error('Checkout details are still loading.');
+
+        const decision = resolveUndoTablePaid({
+          tableSessionId: id,
+          isPaid: isTableCheckoutPaid(checkout.summary),
+        });
+
+        if (decision.kind !== 'allow') {
+          throw new Error(formatUndoTablePaidBlockMessage(decision) ?? 'Unable to undo payment.');
+        }
+
+        return undoTablePaid(api, { tableSessionId: id });
+      }
+
+      if (!takeawayOrder) throw new Error('Checkout details are still loading.');
+
+      const decision = resolveUndoTakeawayPaid({
+        orderId: id,
+        isPaid: isTakeawayCheckoutPaid(takeawayOrder),
+      });
+      if (decision.kind !== 'allow') {
+        throw new Error(
+          formatUndoTakeawayPaidBlockMessage(decision) ?? 'Unable to undo payment.'
+        );
+      }
+
+      return undoTakeawayPaid(api, { orderId: id });
+    },
+    onSuccess: async () => {
+      setPaymentSheetVisible(false);
+      invalidateCashier();
+      if (kind === 'table') await tableQuery.refetch();
+      else await takeawayQuery.refetch();
+      Alert.alert('Payment undone', 'The sale is unpaid again and ready to collect.');
+    },
+  });
+
+  const handleUndoPaid = () => {
+    Alert.alert('Undo paid status?', undoPaidConfirmMessage(kind), [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Undo payment',
+        style: 'destructive',
+        onPress: () => undoMutation.mutate(),
+      },
+    ]);
+  };
+
   const handleAddQuickAmount = (dollars: number) => {
     const nextCents = tenderedCents + dollars * 100;
     setTenderedDollars(formatTenderedInput(nextCents));
@@ -246,7 +315,9 @@ export function CashierCheckoutScreen({
   const payableLabel = formatCheckoutPayableLabel({
     kind,
     payableOrderCount: checkout?.summary.payableOrderCount ?? 0,
+    paidOrderCount: checkout?.summary.paidOrderCount ?? (isPaid ? orders.length : 0),
     totalItems,
+    isPaid: !!isPaid,
   });
 
   const handleRefresh = () => {
@@ -254,8 +325,19 @@ export function CashierCheckoutScreen({
     else void takeawayQuery.refetch();
   };
 
+  const printTarget: PrintReceiptTarget =
+    kind === 'table'
+      ? { kind: 'table', sessionId: id }
+      : { kind: 'takeaway', orderId: id };
+
+  const paymentErrorMessage = undoMutation.isError
+    ? (undoMutation.error as Error).message
+    : settleMutation.isError
+      ? (settleMutation.error as Error).message
+      : null;
+
   const paymentPanelProps = {
-    amountDueCents,
+    amountDueCents: displayAmountCents,
     payableLabel,
     paymentMethod,
     onPaymentMethodChange: setPaymentMethod,
@@ -267,8 +349,11 @@ export function CashierCheckoutScreen({
     canPay,
     isSubmitting: settleMutation.isPending,
     isPaid: !!isPaid,
-    errorMessage: settleMutation.isError ? (settleMutation.error as Error).message : null,
+    errorMessage: paymentErrorMessage,
     onSubmit: () => settleMutation.mutate(),
+    onUndoPaid: handleUndoPaid,
+    isUndoingPaid: undoMutation.isPending,
+    printTarget,
   };
 
   const showPayment = shouldShowCheckoutPayment({
@@ -429,8 +514,8 @@ export function CashierCheckoutScreen({
                   </>
                 ) : null}
                 <SummaryChip
-                  label="Due now"
-                  value={formatMoney(amountDueCents)}
+                  label={checkoutSummaryAmountLabel(!!isPaid)}
+                  value={formatMoney(displayAmountCents)}
                   highlight={!isPaid && amountDueCents > 0}
                 />
               </View>
@@ -472,7 +557,7 @@ export function CashierCheckoutScreen({
       {paymentPresentation === 'sheet' ? (
         <>
           <CheckoutBalanceBar
-            amountDueCents={amountDueCents}
+            amountDueCents={displayAmountCents}
             payableLabel={payableLabel}
             isPaid={!!isPaid}
             onPress={() => setPaymentSheetVisible(true)}

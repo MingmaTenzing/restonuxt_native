@@ -5,7 +5,6 @@ import { Button } from '@/components/button';
 import { PaymentBadge, StatusBadge } from '@/screens/orders/order-badges';
 import { countItems } from '@/screens/orders/order-stats';
 import type { PaymentMethod } from '@/screens/orders/types';
-import { ReceiptPrintPanel } from '@/screens/receipt/receipt-print-panel';
 import { formatMoney } from '@/utils/format-money';
 
 import type { SessionCheckout, TableSession } from './types';
@@ -107,8 +106,6 @@ export function SessionDetailModal({
               </Text>
             ) : null}
           </View>
-
-          <ReceiptPrintPanel sessionId={session.id} />
 
           {isLoadingCheckout ? (
             <Text className="text-base text-muted-foreground">

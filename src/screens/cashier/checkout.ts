@@ -107,22 +107,44 @@ export function getCheckoutScrollBottomPadding({
   isTablet: boolean;
   safeBottom: number;
 }) {
-  return isTablet ? 24 : safeBottom + 112;
+  // Mobile balance bar is taller (amount + Collect payment CTA).
+  return isTablet ? 24 : safeBottom + 168;
 }
 
 export function formatCheckoutPayableLabel({
   kind,
   payableOrderCount,
   totalItems,
+  isPaid = false,
+  paidOrderCount = 0,
 }: {
   kind: 'table' | 'takeaway';
   payableOrderCount: number;
   totalItems: number;
+  isPaid?: boolean;
+  paidOrderCount?: number;
 }) {
+  if (isPaid) {
+    if (kind === 'table') {
+      return `${paidOrderCount} ${paidOrderCount === 1 ? 'order' : 'orders'} collected`;
+    }
+    return `${totalItems} ${totalItems === 1 ? 'item' : 'items'} paid`;
+  }
+
   if (kind === 'table') {
     return `${payableOrderCount} payable ${payableOrderCount === 1 ? 'order' : 'orders'}`;
   }
   return `${totalItems} ${totalItems === 1 ? 'item' : 'items'}`;
+}
+
+/** Panel / chip eyebrow for unpaid vs paid checkout. */
+export function checkoutAmountEyebrow(isPaid: boolean) {
+  return isPaid ? 'Collected' : 'Balance due';
+}
+
+/** Summary strip label for the primary money chip. */
+export function checkoutSummaryAmountLabel(isPaid: boolean) {
+  return isPaid ? 'Collected' : 'Due now';
 }
 
 /** Simulates tapping a quick-cash chip (+10 / +20 / …) on the tender field. */

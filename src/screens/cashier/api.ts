@@ -1,12 +1,24 @@
 import type { Order } from '@/screens/orders/types';
 import type { SessionCheckout, TableSession } from '@/screens/sessions/types';
-import type { ApiClient } from '@/utils/api';
+import { unwrapList, type ApiClient } from '@/utils/api';
 
+import { selectPaidTakeawayOrders } from './cashier-paid';
 import { toCashierSession } from './cashier-sessions';
-import type { CloseTakeawayInput, MarkTablePaidInput } from './types';
+import type {
+  CloseTakeawayInput,
+  MarkTablePaidInput,
+  UndoTablePaidInput,
+  UndoTablePaidResult,
+  UndoTakeawayPaidInput,
+} from './types';
 
 export async function fetchActiveSessions(api: ApiClient) {
   const sessions = await api<TableSession[]>('/api/table-sessions?status=ACTIVE');
+  return sessions.map(toCashierSession);
+}
+
+export async function fetchClosedSessions(api: ApiClient) {
+  const sessions = await api<TableSession[]>('/api/table-sessions?status=CLOSED');
   return sessions.map(toCashierSession);
 }
 
@@ -16,6 +28,12 @@ export async function fetchSessionCheckout(api: ApiClient, sessionId: string) {
 
 export async function fetchUnpaidTakeawayOrders(api: ApiClient) {
   return api<Order[]>('/api/orders/takeaway-unpaid');
+}
+
+/** Today's paid takeaway orders for reprinting receipts. */
+export async function fetchPaidTakeawayOrders(api: ApiClient) {
+  const payload = await api<unknown>('/api/orders?range=day');
+  return selectPaidTakeawayOrders(unwrapList<Order>(payload, ['orders', 'data']));
 }
 
 export async function fetchCheckoutOrder(api: ApiClient, orderId: string) {
@@ -39,6 +57,22 @@ export async function markTablePaid(api: ApiClient, input: MarkTablePaidInput) {
 
 export async function closeTakeawaySale(api: ApiClient, input: CloseTakeawayInput) {
   return api<Order>('/api/orders/checkout/takeaway/closesales', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+/** Reopen a closed table session by id and mark its paid orders unpaid. */
+export async function undoTablePaid(api: ApiClient, input: UndoTablePaidInput) {
+  return api<UndoTablePaidResult>('/api/orders/checkout/table/undo-paid', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+/** Mark a paid takeaway order unpaid again so it returns to the cashier queue. */
+export async function undoTakeawayPaid(api: ApiClient, input: UndoTakeawayPaidInput) {
+  return api<Order>('/api/orders/checkout/takeaway/undo-paid', {
     method: 'POST',
     body: JSON.stringify(input),
   });

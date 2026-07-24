@@ -6,6 +6,8 @@ import type { SessionCheckoutSummary } from '@/screens/sessions/types';
 import {
   applyQuickCashAmount,
   canAcceptCheckoutPayment,
+  checkoutAmountEyebrow,
+  checkoutSummaryAmountLabel,
   formatCheckoutPayableLabel,
   formatTenderedInput,
   getChangeDueCents,
@@ -316,8 +318,8 @@ describe('checkout payment presentation (mobile popup vs tablet sidebar)', () =>
 
   test('mobile scroll padding clears the floating balance bar; tablet does not', () => {
     expect(getCheckoutScrollBottomPadding({ isTablet: true, safeBottom: 34 })).toBe(24);
-    expect(getCheckoutScrollBottomPadding({ isTablet: false, safeBottom: 34 })).toBe(146);
-    expect(getCheckoutScrollBottomPadding({ isTablet: false, safeBottom: 0 })).toBe(112);
+    expect(getCheckoutScrollBottomPadding({ isTablet: false, safeBottom: 34 })).toBe(202);
+    expect(getCheckoutScrollBottomPadding({ isTablet: false, safeBottom: 0 })).toBe(168);
   });
 
   test('payable labels pluralize correctly for table and takeaway', () => {
@@ -333,6 +335,30 @@ describe('checkout payment presentation (mobile popup vs tablet sidebar)', () =>
     expect(
       formatCheckoutPayableLabel({ kind: 'takeaway', payableOrderCount: 0, totalItems: 5 })
     ).toBe('5 items');
+  });
+
+  test('paid checkout labels say collected, never balance due / due now', () => {
+    expect(checkoutAmountEyebrow(false)).toBe('Balance due');
+    expect(checkoutAmountEyebrow(true)).toBe('Collected');
+    expect(checkoutSummaryAmountLabel(false)).toBe('Due now');
+    expect(checkoutSummaryAmountLabel(true)).toBe('Collected');
+    expect(
+      formatCheckoutPayableLabel({
+        kind: 'table',
+        payableOrderCount: 0,
+        paidOrderCount: 2,
+        totalItems: 5,
+        isPaid: true,
+      })
+    ).toBe('2 orders collected');
+    expect(
+      formatCheckoutPayableLabel({
+        kind: 'takeaway',
+        payableOrderCount: 0,
+        totalItems: 3,
+        isPaid: true,
+      })
+    ).toBe('3 items paid');
   });
 });
 
