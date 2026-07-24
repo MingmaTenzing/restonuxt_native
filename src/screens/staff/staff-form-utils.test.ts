@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import {
+  getStaffPhotoSizeError,
   toggleWeekDay,
   validateStaffForm,
   validateStaffUpdateForm,
@@ -56,6 +57,37 @@ describe('validateStaffForm', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.input.availability).toBeUndefined();
+  });
+
+  test('includes profile photo url when set on create', () => {
+    const result = validateStaffForm({
+      ...validDraft,
+      profilePhotoUrl: 'https://cdn.example.com/jane.jpg',
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.input.profile_photo_url).toBe('https://cdn.example.com/jane.jpg');
+  });
+
+  test('omits profile photo url when blank on create', () => {
+    const result = validateStaffForm(validDraft);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.input.profile_photo_url).toBeUndefined();
+  });
+});
+
+describe('getStaffPhotoSizeError', () => {
+  test('allows images within the 300KB limit', () => {
+    expect(getStaffPhotoSizeError(300 * 1024)).toBeNull();
+    expect(getStaffPhotoSizeError(null)).toBeNull();
+    expect(getStaffPhotoSizeError(undefined)).toBeNull();
+  });
+
+  test('rejects images over the 300KB limit', () => {
+    expect(getStaffPhotoSizeError(300 * 1024 + 1)).toBe(
+      'Image upload only supports upto 300kb'
+    );
   });
 });
 

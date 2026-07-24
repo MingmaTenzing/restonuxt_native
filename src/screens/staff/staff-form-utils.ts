@@ -20,6 +20,9 @@ export type StaffUpdateFormResult =
   | { ok: true; input: StaffUpdateInput }
   | { ok: false; error: string };
 
+/** Matches web Add/Edit staff Cloudinary limit (Max - 300KB). */
+export const STAFF_PHOTO_MAX_KB = 300;
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function parsePerHourRate(value: string): number | null {
@@ -29,12 +32,22 @@ export function parsePerHourRate(value: string): number | null {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
 
+/** Returns an error message when the picked file is over the staff photo size limit. */
+export function getStaffPhotoSizeError(fileSizeBytes: number | undefined | null): string | null {
+  if (fileSizeBytes == null) return null;
+  if (fileSizeBytes > STAFF_PHOTO_MAX_KB * 1024) {
+    return `Image upload only supports upto ${STAFF_PHOTO_MAX_KB}kb`;
+  }
+  return null;
+}
+
 export function validateStaffForm(draft: StaffFormDraft): StaffFormResult {
   const firstname = draft.firstname.trim();
   const lastName = draft.lastName.trim();
   const email = draft.email.trim();
   const phone = draft.phone.trim();
   const perHourRate = parsePerHourRate(draft.perHourRate);
+  const profilePhotoUrl = draft.profilePhotoUrl.trim();
 
   if (!firstname) return { ok: false, error: 'First name is required.' };
   if (!lastName) return { ok: false, error: 'Last name is required.' };
@@ -54,6 +67,7 @@ export function validateStaffForm(draft: StaffFormDraft): StaffFormResult {
       perHourRate,
       employmentType: draft.employmentType,
       ...(draft.availability.length ? { availability: draft.availability } : {}),
+      ...(profilePhotoUrl ? { profile_photo_url: profilePhotoUrl } : {}),
     },
   };
 }
