@@ -5,6 +5,7 @@ import type { SessionCheckout } from '@/screens/sessions/types';
 
 import {
   buildSessionReceiptEscPos,
+  buildTakeawayReceiptEscPos,
   collectPrintableItems,
   sessionTotalCents,
 } from './escpos';
@@ -117,6 +118,21 @@ describe('escpos receipt builder', () => {
     expect(bytes[1]).toBe(0x40);
     expect(bytes[bytes.length - 4]).toBe(0x1d);
     expect(bytes[bytes.length - 3]).toBe(0x56);
+  });
+
+  test('buildTakeawayReceiptEscPos includes order meta and total', () => {
+    const { bytes, itemCount, totalCents } = buildTakeawayReceiptEscPos(
+      makeOrder({ orderNo: 42, customerName: 'Alex', orderType: 'TAKEAWAY', tableId: null, tableSessionId: null })
+    );
+    const text = String.fromCharCode(...bytes);
+
+    expect(itemCount).toBe(1);
+    expect(totalCents).toBe(1500);
+    expect(text).toContain('Takeaway Receipt');
+    expect(text).toContain('Order: #42');
+    expect(text).toContain('Customer: Alex');
+    expect(text).toContain('Burger');
+    expect(text).toContain('$15.00');
   });
 
   test('strips non-ascii characters from item names', () => {

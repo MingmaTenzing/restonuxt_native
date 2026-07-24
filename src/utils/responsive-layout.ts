@@ -32,6 +32,13 @@ export function getProductGridColumns(width: number) {
   return 2;
 }
 
+/** Floor-plan table tiles (POS table pick). Always multi-column — never a single long stack. */
+export function getTableGridColumns(width: number) {
+  if (width >= RESPONSIVE.LARGE_TABLET_MIN_WIDTH) return 4;
+  if (width >= RESPONSIVE.TABLET_MIN_WIDTH) return 3;
+  return 2;
+}
+
 export function getHorizontalPadding(width: number) {
   return isTabletWidth(width)
     ? RESPONSIVE.TABLET_HORIZONTAL_PADDING
@@ -45,7 +52,7 @@ export function getContentWidth(width: number, maxWidth = RESPONSIVE.CONTENT_MAX
 export function getGridCardWidth(
   width: number,
   columns: number,
-  horizontalPadding = getHorizontalPadding(width),
+  horizontalPadding: number = getHorizontalPadding(width),
   gap = RESPONSIVE.GRID_GAP
 ) {
   const contentWidth = getContentWidth(width);

@@ -55,12 +55,8 @@ function formatLabel(value: string) {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row items-center justify-between gap-4">
-      <Text className="text-sm font-medium text-muted-foreground">
-        {label}
-      </Text>
-      <Text
-        selectable
-        className="flex-1 text-right text-base text-foreground">
+      <Text className="text-sm font-medium text-muted-foreground">{label}</Text>
+      <Text selectable className="flex-1 text-right text-base text-foreground">
         {value}
       </Text>
     </View>
@@ -88,12 +84,8 @@ function ItemRow({ item }: { item: OrderItem }) {
     <View className="gap-1.5">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 flex-row gap-2">
-          <Text className="text-base font-semibold text-muted-foreground">
-            {item.quantity}×
-          </Text>
-          <Text className="flex-1 text-base font-medium text-foreground">
-            {item.itemName}
-          </Text>
+          <Text className="text-base font-semibold text-muted-foreground">{item.quantity}×</Text>
+          <Text className="flex-1 text-base font-medium text-foreground">{item.itemName}</Text>
         </View>
         <Text className="text-base font-semibold text-foreground">
           {formatMoney(itemLineTotalCents(item))}
@@ -184,9 +176,7 @@ export default function OrderDetailScreen() {
                     }`}>
                     {order.customerName || 'Guest'}
                   </Text>
-                  <Text className="text-base text-muted-foreground">
-                    Order #{order.orderNo}
-                  </Text>
+                  <Text className="text-base text-muted-foreground">Order #{order.orderNo}</Text>
                 </View>
               </View>
               <View className="flex-row flex-wrap gap-2">
@@ -198,9 +188,7 @@ export default function OrderDetailScreen() {
 
             <SectionCard title={`Items (${(order.items ?? []).length})`}>
               {(order.items ?? []).length === 0 ? (
-                <Text className="text-base text-muted-foreground">
-                  No items on this order.
-                </Text>
+                <Text className="text-base text-muted-foreground">No items on this order.</Text>
               ) : (
                 (order.items ?? []).map((item, index) => (
                   <View key={item.id} className="gap-3">
@@ -211,9 +199,7 @@ export default function OrderDetailScreen() {
               )}
               <View className="h-px bg-muted" />
               <View className="flex-row items-center justify-between">
-                <Text className="text-base font-semibold text-foreground">
-                  Total
-                </Text>
+                <Text className="text-base font-semibold text-foreground">Total</Text>
                 <Text className="text-xl font-bold tracking-tight text-foreground">
                   {formatMoney(order.totalAmountCents)}
                 </Text>

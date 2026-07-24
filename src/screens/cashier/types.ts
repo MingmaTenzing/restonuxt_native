@@ -2,7 +2,7 @@
 import type { Order, PaymentMethod } from '@/screens/orders/types';
 import type { SessionCheckout, TableSession } from '@/screens/sessions/types';
 
-export type CashierMode = 'TABLES' | 'TAKEAWAY';
+export type CashierMode = 'TABLES' | 'TAKEAWAY' | 'CLOSED_TABLES' | 'PAID_TAKEAWAY';
 
 export interface CashierTableSession extends TableSession {
   outstandingCents: number;
@@ -31,4 +31,20 @@ export interface MarkTablePaidInput {
 export interface CloseTakeawayInput {
   orderId: string;
   paymentMethod: PaymentMethod;
+}
+
+export interface UndoTablePaidInput {
+  tableSessionId: string;
+}
+
+export interface UndoTakeawayPaidInput {
+  orderId: string;
+}
+
+export interface UndoTablePaidResult {
+  tableSessionId: string;
+  tableId: string;
+  status: string;
+  orderIds: string[];
+  updatedCount: number;
 }

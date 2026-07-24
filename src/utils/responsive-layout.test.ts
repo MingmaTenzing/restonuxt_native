@@ -8,6 +8,7 @@ import {
   getPosMenuScrollContentStyle,
   getPosSidebarWidth,
   getProductGridColumns,
+  getTableGridColumns,
   isTabletWidth,
 } from './responsive-layout';
 
@@ -36,6 +37,13 @@ describe('responsive-layout', () => {
     expect(getProductGridColumns(500)).toBe(2);
     expect(getProductGridColumns(900)).toBe(3);
     expect(getProductGridColumns(1200)).toBe(4);
+  });
+
+  test('returns floor table grid columns (never a single stack)', () => {
+    expect(getTableGridColumns(320)).toBe(2);
+    expect(getTableGridColumns(390)).toBe(2);
+    expect(getTableGridColumns(800)).toBe(3);
+    expect(getTableGridColumns(1200)).toBe(4);
   });
 
   test('computes card width for multi-column grids', () => {

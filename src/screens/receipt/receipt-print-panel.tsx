@@ -5,18 +5,24 @@ import { Pressable, Text, TextInput, useColorScheme, View } from 'react-native';
 
 import { useApi } from '@/hooks/use-api';
 
-import { printSessionReceipt } from './api';
+import { printReceipt, type PrintReceiptTarget } from './api';
 import { isValidPrinterIp } from './printer-ip';
 import { loadPrinterIp, savePrinterIp } from './printer-ip-storage';
 import { sendEscPosToPrinter } from './send-to-printer';
 
 interface ReceiptPrintPanelProps {
-  sessionId: string;
+  target: PrintReceiptTarget;
   /** Compact layout for headers / sidebars. */
   compact?: boolean;
+  /** Nested inside another card — drop outer chrome. */
+  embedded?: boolean;
 }
 
-export function ReceiptPrintPanel({ sessionId, compact = false }: ReceiptPrintPanelProps) {
+export function ReceiptPrintPanel({
+  target,
+  compact = false,
+  embedded = false,
+}: ReceiptPrintPanelProps) {
   const { api, isReady } = useApi();
   const isDark = useColorScheme() === 'dark';
   const [printerIp, setPrinterIp] = useState('');
@@ -34,12 +40,11 @@ export function ReceiptPrintPanel({ sessionId, compact = false }: ReceiptPrintPa
   }, []);
 
   const printMutation = useMutation({
-    mutationFn: async (ip: string) =>
-      printSessionReceipt(api, sessionId, ip, sendEscPosToPrinter),
+    mutationFn: async (ip: string) => printReceipt(api, target, ip, sendEscPosToPrinter),
     onSuccess: async (_result, ip) => {
       await savePrinterIp(ip);
       setValidationError(null);
-      setSuccessMessage('Receipt sent to thermal printer.');
+      setSuccessMessage('Sent to printer');
     },
     onError: () => {
       setSuccessMessage(null);
@@ -51,7 +56,7 @@ export function ReceiptPrintPanel({ sessionId, compact = false }: ReceiptPrintPa
     setSuccessMessage(null);
 
     if (!ip) {
-      setValidationError('Enter the thermal printer IP address.');
+      setValidationError('Enter the printer IP address.');
       return;
     }
 
@@ -75,11 +80,22 @@ export function ReceiptPrintPanel({ sessionId, compact = false }: ReceiptPrintPa
 
   return (
     <View
-      className={`gap-2 rounded-3xl border border-border bg-card ${compact ? 'p-3.5' : 'p-4'}`}
-      style={{ borderCurve: 'continuous' }}>
-      <View className="flex-row items-center gap-2">
-        <Ionicons name="print-outline" size={18} color={isDark ? '#E4E4E7' : '#18181B'} />
-        <Text className="text-sm font-semibold text-foreground">Thermal receipt</Text>
+      className={`gap-3 ${
+        embedded
+          ? ''
+          : `rounded-3xl border border-border bg-card ${compact ? 'p-3.5' : 'p-4'}`
+      }`}
+      style={embedded ? undefined : { borderCurve: 'continuous' }}>
+      <View className="gap-1">
+        <View className="flex-row items-center gap-2">
+          <Ionicons name="print-outline" size={18} color={isDark ? '#E4E4E7' : '#18181B'} />
+          <Text className="text-sm font-semibold text-foreground">Print receipt</Text>
+        </View>
+        {!embedded ? (
+          <Text className="text-xs leading-4 text-muted-foreground">
+            Sends over Wi‑Fi to your thermal printer (port 9100). Default IP can be set in Settings.
+          </Text>
+        ) : null}
       </View>
 
       <TextInput
@@ -90,13 +106,13 @@ export function ReceiptPrintPanel({ sessionId, compact = false }: ReceiptPrintPa
           setSuccessMessage(null);
           printMutation.reset();
         }}
-        placeholder="Printer IP (e.g. 192.168.1.50:9100)"
+        placeholder="Printer IP (e.g. 192.168.1.50)"
         placeholderTextColor="#8E8E93"
         autoCapitalize="none"
         autoCorrect={false}
         keyboardType="numbers-and-punctuation"
         editable={!printMutation.isPending}
-        className="rounded-2xl border border-input bg-background px-4 py-3 text-base text-foreground"
+        className="rounded-2xl border border-input bg-background px-4 py-3.5 text-base text-foreground"
         style={{ borderCurve: 'continuous' }}
       />
 
@@ -105,27 +121,32 @@ export function ReceiptPrintPanel({ sessionId, compact = false }: ReceiptPrintPa
         disabled={printMutation.isPending}
         accessibilityRole="button"
         accessibilityLabel="Print receipt to thermal printer"
-        className={`flex-row items-center justify-center gap-2 rounded-2xl px-4 py-3 ${
-          printMutation.isPending ? 'bg-muted opacity-70' : 'bg-primary active:opacity-80'
+        className={`flex-row items-center justify-center gap-2 rounded-2xl px-4 py-3.5 ${
+          printMutation.isPending ? 'bg-muted opacity-70' : 'bg-neutral-950 active:opacity-85 dark:bg-white'
         }`}
         style={{ borderCurve: 'continuous' }}>
         <Ionicons
-          name={printMutation.isPending ? 'hourglass-outline' : 'send-outline'}
-          size={16}
-          color={printMutation.isPending ? (isDark ? '#A1A1AA' : '#71717A') : isDark ? '#18181B' : '#FAFAFA'}
+          name={printMutation.isPending ? 'hourglass-outline' : 'print-outline'}
+          size={18}
+          color={
+            printMutation.isPending
+              ? isDark
+                ? '#A1A1AA'
+                : '#71717A'
+              : isDark
+                ? '#18181B'
+                : '#FAFAFA'
+          }
         />
         <Text
           className={`text-sm font-semibold ${
-            printMutation.isPending ? 'text-muted-foreground' : 'text-primary-foreground'
+            printMutation.isPending
+              ? 'text-muted-foreground'
+              : 'text-white dark:text-neutral-950'
           }`}>
-          {printMutation.isPending ? 'Printing...' : 'Print receipt'}
+          {printMutation.isPending ? 'Printing…' : 'Print receipt'}
         </Text>
       </Pressable>
-
-      <Text className="text-xs leading-4 text-muted-foreground">
-        Prints from this device over Wi‑Fi to your thermal printer (default port 9100). Works
-        before or after closing the sale.
-      </Text>
 
       {errorMessage ? (
         <Text selectable className="text-xs text-red-600 dark:text-red-400">
@@ -134,7 +155,9 @@ export function ReceiptPrintPanel({ sessionId, compact = false }: ReceiptPrintPa
       ) : null}
 
       {successMessage ? (
-        <Text className="text-xs text-emerald-700 dark:text-emerald-400">{successMessage}</Text>
+        <Text className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+          {successMessage}
+        </Text>
       ) : null}
     </View>
   );
