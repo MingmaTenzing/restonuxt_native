@@ -13,7 +13,7 @@ function OrderItemRow({ item, isLast }: { item: OrderItem; isLast: boolean }) {
 
   return (
     <View
-      className={`gap-1.5 py-3.5 ${isLast ? '' : 'border-b border-border/50'}`}>
+      className={`gap-1.5 py-3.5 ${isLast ? '' : 'border-b border-border/60'}`}>
       <View className="flex-row items-start justify-between gap-3">
         <View className="min-w-0 flex-1 flex-row items-start gap-3">
           <View className="h-7 min-w-7 items-center justify-center rounded-lg bg-muted">
@@ -72,8 +72,8 @@ export function CheckoutOrderBlock({ order }: { order: Order }) {
       <View
         className={`flex-row items-center justify-between gap-3 border-b px-5 py-4 ${
           isUnpaid
-            ? 'border-primary/15 bg-primary/5'
-            : 'border-border bg-muted/40'
+            ? 'border-border/60 bg-primary/5'
+            : 'border-border/60 bg-muted/40'
         }`}>
         <View className="min-w-0 flex-1 gap-1">
           <Text className="text-base font-semibold text-foreground">

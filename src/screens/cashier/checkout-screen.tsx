@@ -214,20 +214,12 @@ export function CashierCheckoutScreen({
       });
     },
     onSuccess: async () => {
-      setPaymentSheetVisible(false);
       invalidateCashier();
       setTenderedDollars('');
       if (kind === 'table') await tableQuery.refetch();
       else await takeawayQuery.refetch();
-      Alert.alert('Payment recorded', 'The sale has been closed.', [
-        {
-          text: 'Done',
-          onPress: () => {
-            if (router.canGoBack()) router.back();
-            else router.replace('/cashier');
-          },
-        },
-      ]);
+      // Stay on the payment sheet/sidebar so staff can print the receipt.
+      setPaymentSheetVisible(true);
     },
   });
 

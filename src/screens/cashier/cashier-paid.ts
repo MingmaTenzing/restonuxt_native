@@ -18,3 +18,8 @@ export function sessionCollectedCents(session: {
     .filter((order) => order.paymentStatus === 'PAID')
     .reduce((sum, order) => sum + order.totalAmountCents, 0);
 }
+
+/** Closed-tab sessions with unpaid orders (e.g. after undo payment). */
+export function closedSessionHasUnpaid(session: { unpaidOrderCount: number }) {
+  return session.unpaidOrderCount > 0;
+}

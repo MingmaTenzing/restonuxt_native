@@ -44,7 +44,7 @@ export function OrderCard({ order, onPress }: { order: Order; onPress: () => voi
         </Text>
       </View>
 
-      <View className="flex-row flex-wrap gap-2">
+      <View className="flex-row flex-wrap gap-2 border-t border-border/60 pt-4">
         <StatusBadge status={order.status} />
         <PaymentBadge status={order.paymentStatus} />
         <TypeBadge type={order.orderType} />
