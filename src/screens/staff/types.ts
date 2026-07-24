@@ -29,6 +29,7 @@ export interface StaffInput {
   perHourRate: number;
   employmentType?: EmploymentType;
   availability?: WeekDay[];
+  profile_photo_url?: string;
 }
 
 export interface StaffUpdateInput {
