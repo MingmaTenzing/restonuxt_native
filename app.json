@@ -2,12 +2,14 @@
   "expo": {
     "name": "my-expo-app",
     "slug": "my-expo-app",
+    "scheme": "myexpoapp",
     "version": "1.0.0",
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "experiments": {
-      "tsconfigPaths": true
+      "tsconfigPaths": true,
+      "reactCompiler": true
     },
     "plugins": [
       [
@@ -18,7 +20,12 @@
         }
       ],
       "expo-router",
-      "@clerk/expo",
+      [
+        "@clerk/expo",
+        {
+          "appleSignIn": false
+        }
+      ],
       "expo-secure-store",
       [
         "expo-image-picker",
@@ -32,7 +39,8 @@
         {
           "cameraPermission": "Allow RestoQuick to scan stock QR labels with your camera."
         }
-      ]
+      ],
+      "expo-status-bar"
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
