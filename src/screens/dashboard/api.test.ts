@@ -31,7 +31,7 @@ describe('fetchDashboardStats', () => {
         case DASHBOARD_ENDPOINTS.revenueTrend:
           return [
             {
-              createdAt: '2026-07-23T00:00:00.000Z',
+              createdAt: new Date().toISOString(),
               _sum: { totalAmountCents: 9000 },
             },
           ] as T;
@@ -64,7 +64,8 @@ describe('fetchDashboardStats', () => {
     expect(called.sort()).toEqual(Object.values(DASHBOARD_ENDPOINTS).sort());
     expect(stats.popularItems[0]?.name).toBe('Burger');
     expect(stats.recentOrders[0]?.orderNo).toBe(101);
-    expect(stats.revenueTrend[0]?.revenueCents).toBe(9000);
+    expect(stats.revenueTrend).toHaveLength(7);
+    expect(stats.revenueTrend.at(-1)?.revenueCents).toBe(9000);
     expect(stats.rosterOverview.totalStaff).toBe(8);
     expect(stats.soldByCategory[0]?.percentage).toBe(55);
     expect(stats.weeklyKpi.weeklyOrderCount).toBe(5);

@@ -5,29 +5,45 @@ import {
   categoryLabel,
   compactNumber,
   formatCategoryShare,
-  greetingForHour,
+  formatChartMoney,
   toRevenuePoints,
+  welcomeName,
   type RevenueTrendRow,
 } from './dashboard-stats';
 import type { WeeklyKpi } from './types';
 
 describe('toRevenuePoints', () => {
-  test('maps API rows to chart points with cents', () => {
+  test('aggregates timestamp rows into the last 7 local days', () => {
+    const now = new Date(2026, 6, 24, 15, 0, 0); // 24 Jul 2026 local
+    const day22 = new Date(2026, 6, 22, 10, 0, 0).toISOString();
+    const day22Later = new Date(2026, 6, 22, 18, 30, 0).toISOString();
+    const day24 = new Date(2026, 6, 24, 9, 0, 0).toISOString();
+
     const rows: RevenueTrendRow[] = [
-      { createdAt: '2026-07-20T00:00:00.000Z', _sum: { totalAmountCents: 12500 } },
-      { createdAt: '2026-07-21T00:00:00.000Z', _sum: { totalAmountCents: null } },
+      { createdAt: day22, _sum: { totalAmountCents: 1000 } },
+      { createdAt: day22Later, _sum: { totalAmountCents: 500 } },
+      { createdAt: day24, _sum: { totalAmountCents: 8000 } },
     ];
 
-    const points = toRevenuePoints(rows);
-    expect(points).toHaveLength(2);
-    expect(points[0]?.revenueCents).toBe(12500);
-    expect(points[1]?.revenueCents).toBe(0);
-    expect(points[0]?.label.length).toBeGreaterThan(0);
+    const points = toRevenuePoints(rows, { days: 7, now });
+    expect(points).toHaveLength(7);
+    expect(points.map((p) => p.revenueCents)).toEqual([0, 0, 0, 0, 1500, 0, 8000]);
+    expect(points[4]?.label.length).toBeGreaterThan(0);
+    expect(points[6]?.label.length).toBeGreaterThan(0);
+    expect(new Set(points.map((p) => p.label)).size).toBe(7);
+  });
+});
+
+describe('formatChartMoney', () => {
+  test('formats compact dollar labels for chart points', () => {
+    expect(formatChartMoney(0)).toBe('$0');
+    expect(formatChartMoney(4500)).toBe('$45');
+    expect(formatChartMoney(1250)).toBe('$12.5');
   });
 });
 
 describe('buildWeeklyKpiCards', () => {
-  test('builds the four web dashboard KPI cards', () => {
+  test('builds the four compact weekly KPI cards', () => {
     const kpi: WeeklyKpi = {
       revenueCents: 45000,
       weeklyOrderCount: 42,
@@ -39,10 +55,11 @@ describe('buildWeeklyKpiCards', () => {
 
     const cards = buildWeeklyKpiCards(kpi);
     expect(cards.map((c) => c.key)).toEqual(['revenue', 'orders', 'bookings', 'shift-cost']);
-    expect(cards[0]?.label).toBe('Weekly revenue');
+    expect(cards[0]?.label).toBe('Revenue');
+    expect(cards[0]?.detail).toBe('This week');
     expect(cards[1]?.value).toBe('42');
-    expect(cards[2]?.change).toBe('Today');
-    expect(cards[3]?.headline).toBe('Rostered payroll estimate');
+    expect(cards[2]?.detail).toBe('Today');
+    expect(cards[3]?.label).toBe('Shift cost');
   });
 });
 
@@ -74,10 +91,10 @@ describe('compactNumber', () => {
   });
 });
 
-describe('greetingForHour', () => {
-  test('returns time-of-day greeting', () => {
-    expect(greetingForHour(8)).toBe('Good morning');
-    expect(greetingForHour(14)).toBe('Good afternoon');
-    expect(greetingForHour(20)).toBe('Good evening');
+describe('welcomeName', () => {
+  test('prefers first name then falls back', () => {
+    expect(welcomeName('Ming', 'Mingma Sherpa')).toBe('Ming');
+    expect(welcomeName(null, 'Mingma Sherpa')).toBe('Mingma');
+    expect(welcomeName(null, null)).toBe('there');
   });
 });

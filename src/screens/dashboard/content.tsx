@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '@clerk/expo';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
-import { Pressable, Text, useColorScheme, View } from 'react-native';
+import { Text, useColorScheme, useWindowDimensions, View } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Button } from '@/components/button';
 import { ScreenScroll } from '@/components/screen-scroll';
@@ -15,14 +15,16 @@ import { formatDate } from '@/utils/format-date';
 import { formatMoney } from '@/utils/format-money';
 
 import { fetchDashboardStats } from './api';
+import { buildCategoryPieSlices } from './category-pie';
 import {
   buildWeeklyKpiCards,
   emptyKpi,
   emptyRoster,
-  formatCategoryShare,
-  greetingForHour,
+  formatChartMoney,
+  welcomeName,
   type DashboardKpiCard,
 } from './dashboard-stats';
+import { buildRevenueLineGeometry } from './revenue-line';
 import { DashboardUserAction } from './user-action';
 import type {
   DashboardStats,
@@ -33,11 +35,8 @@ import type {
   SoldByCategory,
 } from './types';
 
-const QUICK_ACTIONS = [
-  { label: 'View bookings', href: '/bookings' as const, icon: 'calendar-outline' as const },
-  { label: 'Kitchen board', href: '/kitchen' as const, icon: 'restaurant-outline' as const },
-  { label: 'Menu', href: '/menu' as const, icon: 'book-outline' as const },
-];
+const PIE_SIZE = 180;
+const LINE_CHART_HEIGHT = 168;
 
 function formatShortDate(value: string) {
   if (!value) return 'Not set';
@@ -61,24 +60,17 @@ function formatOrderTime(value: string) {
 
 function Section({
   title,
-  subtitle,
   action,
   children,
 }: {
   title: string;
-  subtitle?: string;
   action?: string;
   children: React.ReactNode;
 }) {
   return (
     <View className="gap-3">
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="flex-1 gap-1">
-          <Text className="text-lg font-semibold text-foreground">{title}</Text>
-          {subtitle ? (
-            <Text className="text-sm text-muted-foreground">{subtitle}</Text>
-          ) : null}
-        </View>
+      <View className="flex-row items-center justify-between gap-3">
+        <Text className="text-lg font-semibold text-foreground">{title}</Text>
         {action ? (
           <Text className="text-sm font-medium text-muted-foreground">{action}</Text>
         ) : null}
@@ -99,65 +91,99 @@ function MetricCard({
 
   return (
     <View
-      className="gap-3 rounded-3xl border border-border bg-card p-4"
+      className="gap-4 rounded-3xl border border-border bg-card p-4"
       style={{
         width,
         flex: width ? undefined : 1,
         borderCurve: 'continuous',
         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
       }}>
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="flex-1 gap-3">
-          <Text className="text-sm text-muted-foreground">{card.label}</Text>
-          <Text className="text-3xl font-bold tracking-tight text-foreground">{card.value}</Text>
-        </View>
-        <View className="rounded-full bg-muted px-2.5 py-1">
-          <Text className="text-xs font-semibold text-foreground">{card.change}</Text>
+      <View className="flex-row items-center justify-between">
+        <Text className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {card.label}
+        </Text>
+        <View className="h-9 w-9 items-center justify-center rounded-full bg-muted">
+          <Ionicons name={card.iconName} size={18} color={isDark ? '#FAFAFA' : '#18181B'} />
         </View>
       </View>
       <View className="gap-1">
-        <View className="flex-row items-center gap-2">
-          <Text className="flex-1 text-sm font-medium text-foreground" numberOfLines={1}>
-            {card.headline}
-          </Text>
-          <Ionicons name={card.iconName} size={16} color={isDark ? '#FAFAFA' : '#18181B'} />
-        </View>
-        <Text className="text-sm leading-5 text-muted-foreground">{card.description}</Text>
+        <Text className="text-3xl font-bold tracking-tight text-foreground">{card.value}</Text>
+        <Text className="text-sm text-muted-foreground">{card.detail}</Text>
       </View>
     </View>
   );
 }
 
 function RevenueTrendCard({ points }: { points: RevenuePoint[] }) {
-  const chartHeight = 128;
-  const maxRevenue = Math.max(...points.map((point) => point.revenueCents), 1);
-  const visiblePoints = points.slice(-7);
+  const isDark = useColorScheme() === 'dark';
+  const { width: windowWidth } = useWindowDimensions();
+  const { contentWidth, horizontalPadding, isTablet } = useResponsiveLayout();
+  const lineColor = isDark ? '#60A5FA' : '#2563EB';
+
+  // Card sits in full width or half of a tablet row; subtract card padding.
+  const chartWidth = Math.max(
+    (isTablet ? (contentWidth - horizontalPadding * 2 - 16) / 2 : contentWidth - horizontalPadding * 2) -
+      40,
+    Math.min(windowWidth - 64, 280)
+  );
+
+  const { coords, linePath, maxRevenueCents } = buildRevenueLineGeometry(
+    points,
+    chartWidth,
+    LINE_CHART_HEIGHT
+  );
 
   return (
     <View
       className="gap-4 overflow-hidden rounded-3xl border border-border bg-card p-5"
       style={{ borderCurve: 'continuous' }}>
-      {visiblePoints.length > 0 ? (
+      {coords.length > 0 ? (
         <>
-          <View className="flex-row items-end" style={{ height: chartHeight }}>
-            {visiblePoints.map((point, index) => {
-              const barHeight = Math.max((point.revenueCents / maxRevenue) * chartHeight, 6);
+          <View style={{ width: chartWidth, height: LINE_CHART_HEIGHT }}>
+            <Svg width={chartWidth} height={LINE_CHART_HEIGHT}>
+              <Path
+                d={linePath}
+                stroke={lineColor}
+                strokeWidth={2.5}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {coords.map((coord) => (
+                <Circle
+                  key={`dot-${coord.label}`}
+                  cx={coord.x}
+                  cy={coord.y}
+                  r={4.5}
+                  fill={lineColor}
+                  stroke={isDark ? '#18181B' : '#FFFFFF'}
+                  strokeWidth={2}
+                />
+              ))}
+            </Svg>
 
-              return (
-                <View key={`${point.label}-${index}`} className="h-full flex-1 justify-end px-0.5">
-                  <View className="w-full rounded-t-xl bg-chart-2" style={{ height: barHeight }} />
-                </View>
-              );
-            })}
+            {coords.map((coord) => (
+              <Text
+                key={`price-${coord.label}`}
+                numberOfLines={1}
+                className="absolute text-center text-[10px] font-semibold text-foreground"
+                style={{
+                  width: 48,
+                  left: coord.x - 24,
+                  top: Math.max(coord.y - 22, 0),
+                }}>
+                {formatChartMoney(coord.revenueCents)}
+              </Text>
+            ))}
           </View>
 
-          <View className="flex-row gap-1">
-            {visiblePoints.map((point, index) => (
-              <View key={`${point.label}-label-${index}`} className="flex-1 items-center">
+          <View className="flex-row">
+            {coords.map((coord) => (
+              <View key={`label-${coord.label}`} className="flex-1 items-center px-0.5">
                 <Text
                   numberOfLines={1}
-                  className="text-center text-xs font-medium text-muted-foreground">
-                  {point.label}
+                  className="text-center text-[11px] font-medium text-muted-foreground">
+                  {coord.label}
                 </Text>
               </View>
             ))}
@@ -165,7 +191,9 @@ function RevenueTrendCard({ points }: { points: RevenuePoint[] }) {
 
           <View className="flex-row items-center justify-between border-t border-border/60 pt-3">
             <Text className="text-sm text-muted-foreground">Peak day</Text>
-            <Text className="text-base font-semibold text-foreground">{formatMoney(maxRevenue)}</Text>
+            <Text className="text-base font-semibold text-foreground">
+              {formatMoney(maxRevenueCents)}
+            </Text>
           </View>
         </>
       ) : (
@@ -177,41 +205,39 @@ function RevenueTrendCard({ points }: { points: RevenuePoint[] }) {
   );
 }
 
-function CategoryShare({ categories }: { categories: SoldByCategory[] }) {
-  const visibleCategories = formatCategoryShare(categories).slice(0, 7);
+function CategoryPie({ categories }: { categories: SoldByCategory[] }) {
+  const slices = buildCategoryPieSlices(categories, PIE_SIZE);
 
   return (
     <View
-      className="gap-4 rounded-3xl border border-border bg-card p-5"
+      className="gap-5 rounded-3xl border border-border bg-card p-5"
       style={{ borderCurve: 'continuous', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}>
-      {visibleCategories.length > 0 ? (
-        visibleCategories.map((category) => (
-          <View key={category.category} className="gap-2">
-            <View className="flex-row items-center justify-between gap-3">
-              <View className="flex-1 flex-row items-center gap-2">
-                <View
-                  className="h-3 w-3 rounded-full"
-                  style={{ backgroundColor: category.color }}
-                />
-                <Text numberOfLines={1} className="flex-1 text-base font-medium text-foreground">
-                  {category.label}
+      {slices.length > 0 ? (
+        <View className="flex-row flex-wrap items-center gap-5">
+          <View className="items-center justify-center" style={{ width: PIE_SIZE, height: PIE_SIZE }}>
+            <Svg width={PIE_SIZE} height={PIE_SIZE} viewBox={`0 0 ${PIE_SIZE} ${PIE_SIZE}`}>
+              {slices.map((slice) => (
+                <Path key={slice.category} d={slice.path} fill={slice.color} />
+              ))}
+            </Svg>
+          </View>
+
+          <View className="min-w-[140px] flex-1 gap-3">
+            {slices.map((slice) => (
+              <View key={slice.category} className="flex-row items-center justify-between gap-3">
+                <View className="flex-1 flex-row items-center gap-2">
+                  <View className="h-3 w-3 rounded-full" style={{ backgroundColor: slice.color }} />
+                  <Text numberOfLines={1} className="flex-1 text-sm text-muted-foreground">
+                    {slice.label}
+                  </Text>
+                </View>
+                <Text className="text-sm font-semibold text-foreground">
+                  {Math.round(slice.percentage)}%
                 </Text>
               </View>
-              <Text className="text-sm font-semibold text-muted-foreground">
-                {Math.round(category.percentage)}%
-              </Text>
-            </View>
-            <View className="h-2 overflow-hidden rounded-full bg-muted">
-              <View
-                className="h-full rounded-full"
-                style={{
-                  width: `${category.percentage}%`,
-                  backgroundColor: category.color,
-                }}
-              />
-            </View>
+            ))}
           </View>
-        ))
+        </View>
       ) : (
         <Text className="text-base leading-6 text-muted-foreground">
           Category sales will appear once menu items have been sold.
@@ -222,8 +248,7 @@ function CategoryShare({ categories }: { categories: SoldByCategory[] }) {
 }
 
 function PopularItems({ items }: { items: PopularItem[] }) {
-  const visibleItems = items.slice(0, 8);
-  const maxSold = Math.max(...visibleItems.map((item) => item.sold_quantity), 1);
+  const visibleItems = items.slice(0, 5);
 
   return (
     <View
@@ -233,24 +258,16 @@ function PopularItems({ items }: { items: PopularItem[] }) {
         visibleItems.map((item, index) => (
           <View
             key={`${item.name}-${index}`}
-            className="gap-2 border-b border-border px-5 py-4 last:border-b-0">
-            <View className="flex-row items-center gap-3">
-              <View className="h-9 w-9 items-center justify-center rounded-full bg-muted">
-                <Text className="text-sm font-bold text-foreground">{index + 1}</Text>
-              </View>
-              <Text numberOfLines={1} className="flex-1 text-base font-medium text-foreground">
-                {item.name}
-              </Text>
-              <Text className="text-sm font-semibold text-muted-foreground">
-                {item.sold_quantity} sold
-              </Text>
+            className="flex-row items-center gap-3 border-b border-border px-5 py-4 last:border-b-0">
+            <View className="h-9 w-9 items-center justify-center rounded-full bg-muted">
+              <Text className="text-sm font-bold text-foreground">{index + 1}</Text>
             </View>
-            <View className="ml-12 h-2 overflow-hidden rounded-full bg-muted">
-              <View
-                className="h-full rounded-full bg-emerald-500"
-                style={{ width: `${(item.sold_quantity / maxSold) * 100}%` }}
-              />
-            </View>
+            <Text numberOfLines={1} className="flex-1 text-base font-medium text-foreground">
+              {item.name}
+            </Text>
+            <Text className="text-sm font-semibold text-muted-foreground">
+              {item.sold_quantity} sold
+            </Text>
           </View>
         ))
       ) : (
@@ -277,10 +294,11 @@ function RecentOrders({ orders }: { orders: RecentOrder[] }) {
             <View className="flex-row items-start justify-between gap-3">
               <View className="flex-1 gap-1">
                 <Text numberOfLines={1} className="text-base font-semibold text-foreground">
-                  #{order.orderNo ?? 'New'} · {order.customerName || 'Guest'}
+                  {order.customerName || 'Guest'}
                 </Text>
                 <Text className="text-sm text-muted-foreground">
-                  {order.itemCount} item{order.itemCount === 1 ? '' : 's'}
+                  #{order.orderNo ?? 'New'} · {order.itemCount} item
+                  {order.itemCount === 1 ? '' : 's'}
                   {order.tableNumber ? ` · Table ${order.tableNumber}` : ''}
                 </Text>
               </View>
@@ -301,7 +319,7 @@ function RecentOrders({ orders }: { orders: RecentOrder[] }) {
         ))
       ) : (
         <Text className="p-5 text-base leading-6 text-muted-foreground">
-          No recent orders found.
+          Recent orders will appear here as they come in.
         </Text>
       )}
     </View>
@@ -342,7 +360,6 @@ function RosterCard({ roster }: { roster: RosterOverview }) {
 }
 
 export function DashboardContent() {
-  const router = useRouter();
   const { user } = useUser();
   const { api } = useApi();
   const { isTablet, isLargeTablet, contentWidth, horizontalPadding, gridGap } =
@@ -365,54 +382,33 @@ export function DashboardContent() {
   };
 
   const kpiCards = buildWeeklyKpiCards(stats.weeklyKpi);
-  const firstName = user?.firstName ?? user?.fullName?.split(' ')[0] ?? 'there';
-  const greeting = greetingForHour(new Date().getHours());
+  const name = welcomeName(user?.firstName, user?.fullName);
   const todayLabel = new Intl.DateTimeFormat('en-AU', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-    year: 'numeric',
   }).format(new Date());
 
   return (
     <ScreenScroll refreshing={isRefetching} onRefresh={() => refetch()}>
-      <View
-        className="gap-4 rounded-3xl border border-border bg-card p-5"
-        style={{ borderCurve: 'continuous', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}>
+      <View className="gap-2">
         <View className="flex-row items-start justify-between gap-4">
           <View className="flex-1 gap-2">
-            <Text className="text-sm font-medium text-muted-foreground">
-              {greeting}, {firstName}
-            </Text>
             <Text
               className={`font-bold tracking-tight text-foreground ${
                 isTablet ? 'text-3xl' : 'text-4xl'
               }`}>
-              Dashboard overview
+              Hi, {name}
             </Text>
             <Text className="text-base leading-6 text-muted-foreground">
-              Bookings, orders, and service activity for today.
+              Welcome back — a quick look at how things are going today.
             </Text>
-            <View className="mt-1 self-start rounded-full bg-muted px-3 py-1.5">
-              <Text className="text-sm text-muted-foreground">{todayLabel}</Text>
-            </View>
+            <Text className="text-sm font-medium text-muted-foreground">{todayLabel}</Text>
           </View>
           <View className="flex-row items-center gap-2">
             <ThemeToggle variant="compact" />
             <DashboardUserAction />
           </View>
-        </View>
-
-        <View className="flex-row flex-wrap gap-2">
-          {QUICK_ACTIONS.map((action) => (
-            <Pressable
-              key={action.href}
-              onPress={() => router.push(action.href)}
-              className="flex-row items-center gap-2 rounded-full border border-border px-3 py-2 active:bg-muted">
-              <Ionicons name={action.icon} size={16} color="#71717A" />
-              <Text className="text-sm font-medium text-foreground">{action.label}</Text>
-            </Pressable>
-          ))}
         </View>
 
         {stats.weeklyKpi.startofWeek || stats.weeklyKpi.endOfWeek ? (
@@ -452,47 +448,54 @@ export function DashboardContent() {
           {isTablet ? (
             <View className="flex-row gap-4">
               <View className="flex-1">
-                <Section
-                  title="Top selling items"
-                  subtitle="Best performers from the last 30 days"
-                  action={isRefetching ? 'Refreshing' : undefined}>
-                  <PopularItems items={stats.popularItems} />
+                <Section title="Revenue trend" action={isRefetching ? 'Refreshing' : 'Last 7 days'}>
+                  <RevenueTrendCard points={stats.revenueTrend} />
                 </Section>
               </View>
               <View className="flex-1">
-                <Section title="Revenue trend" subtitle="Completed order revenue over time">
-                  <RevenueTrendCard points={stats.revenueTrend} />
+                <Section title="Sales by category">
+                  <CategoryPie categories={stats.soldByCategory} />
                 </Section>
               </View>
             </View>
           ) : (
             <>
-              <Section
-                title="Top selling items"
-                subtitle="Best performers from the last 30 days"
-                action={isRefetching ? 'Refreshing' : undefined}>
-                <PopularItems items={stats.popularItems} />
-              </Section>
-              <Section title="Revenue trend" subtitle="Completed order revenue over time">
+              <Section title="Revenue trend" action={isRefetching ? 'Refreshing' : 'Last 7 days'}>
                 <RevenueTrendCard points={stats.revenueTrend} />
+              </Section>
+              <Section title="Sales by category">
+                <CategoryPie categories={stats.soldByCategory} />
               </Section>
             </>
           )}
 
-          <Section title="Sales by category" subtitle="Share of units sold by menu category">
-            <CategoryShare categories={stats.soldByCategory} />
-          </Section>
-
-          <Section
-            title="Recent orders"
-            subtitle="The latest five orders across dine-in, takeaway, and delivery"
-            action={`${stats.recentOrders.length} recent`}>
-            <RecentOrders orders={stats.recentOrders} />
-          </Section>
-
-          <Section title="Roster overview" subtitle="Staff coverage for the current week">
+          <Section title="Operations">
             <RosterCard roster={stats.rosterOverview} />
           </Section>
+
+          {isTablet ? (
+            <View className="flex-row gap-4">
+              <View className="flex-1">
+                <Section title="Popular items">
+                  <PopularItems items={stats.popularItems} />
+                </Section>
+              </View>
+              <View className="flex-1">
+                <Section title="Recent orders">
+                  <RecentOrders orders={stats.recentOrders} />
+                </Section>
+              </View>
+            </View>
+          ) : (
+            <>
+              <Section title="Popular items">
+                <PopularItems items={stats.popularItems} />
+              </Section>
+              <Section title="Recent orders">
+                <RecentOrders orders={stats.recentOrders} />
+              </Section>
+            </>
+          )}
         </>
       )}
     </ScreenScroll>
