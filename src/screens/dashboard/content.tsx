@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useUser } from '@clerk/expo';
 import { useQuery } from '@tanstack/react-query';
-import { Text, useColorScheme, View } from 'react-native';
+import { Text, useColorScheme, useWindowDimensions, View } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Button } from '@/components/button';
 import { ScreenScroll } from '@/components/screen-scroll';
@@ -8,10 +10,21 @@ import { DashboardSkeleton } from '@/components/skeleton';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import type { ApiClient } from '@/utils/api';
+import { StatusBadge, TypeBadge } from '@/screens/orders/order-badges';
 import { formatDate } from '@/utils/format-date';
 import { formatMoney } from '@/utils/format-money';
 
+import { fetchDashboardStats } from './api';
+import { buildCategoryPieSlices } from './category-pie';
+import {
+  buildWeeklyKpiCards,
+  emptyKpi,
+  emptyRoster,
+  formatChartMoney,
+  welcomeName,
+  type DashboardKpiCard,
+} from './dashboard-stats';
+import { buildRevenueLineGeometry } from './revenue-line';
 import { DashboardUserAction } from './user-action';
 import type {
   DashboardStats,
@@ -20,76 +33,10 @@ import type {
   RevenuePoint,
   RosterOverview,
   SoldByCategory,
-  WeeklyKpi,
 } from './types';
 
-const DASHBOARD_ENDPOINTS = {
-  popularItems: '/api/dashboard/stats/popular-items',
-  recentOrders: '/api/dashboard/stats/recent-order',
-  revenueTrend: '/api/dashboard/stats/revenue-trend',
-  rosterOverview: '/api/dashboard/stats/roster-overview',
-  soldByCategory: '/api/dashboard/stats/soldbycategory',
-  weeklyKpi: '/api/dashboard/stats/weekly-kpi',
-} as const;
-
-const emptyRoster: RosterOverview = {
-  totalStaff: 0,
-  weeklyShiftCount: 0,
-  pendingLeaveRequests: 0,
-  startDate: '',
-  endDate: '',
-};
-
-const emptyKpi: WeeklyKpi = {
-  revenueCents: 0,
-  weeklyOrderCount: 0,
-  todayBookingsCount: 0,
-  weeklyShiftCostCents: 0,
-  startofWeek: '',
-  endOfWeek: '',
-};
-
-type RevenueTrendRow = {
-  createdAt: string;
-  _sum: { totalAmountCents: number | null };
-};
-
-function toRevenuePoints(rows: RevenueTrendRow[]): RevenuePoint[] {
-  return rows.map((row) => ({
-    label: new Intl.DateTimeFormat('en-AU', { month: 'short', day: 'numeric' }).format(
-      new Date(row.createdAt)
-    ),
-    revenueCents: row._sum.totalAmountCents ?? 0,
-  }));
-}
-
-async function fetchDashboardStats(api: ApiClient): Promise<DashboardStats> {
-  const [popularItems, recentOrders, revenueTrend, rosterOverview, soldByCategory, weeklyKpi] =
-    await Promise.all([
-      api<PopularItem[]>(DASHBOARD_ENDPOINTS.popularItems),
-      api<RecentOrder[]>(DASHBOARD_ENDPOINTS.recentOrders),
-      api<RevenueTrendRow[]>(DASHBOARD_ENDPOINTS.revenueTrend),
-      api<RosterOverview>(DASHBOARD_ENDPOINTS.rosterOverview),
-      api<SoldByCategory[]>(DASHBOARD_ENDPOINTS.soldByCategory),
-      api<WeeklyKpi>(DASHBOARD_ENDPOINTS.weeklyKpi),
-    ]);
-
-  return {
-    popularItems,
-    recentOrders,
-    revenueTrend: toRevenuePoints(revenueTrend),
-    rosterOverview,
-    soldByCategory,
-    weeklyKpi,
-  };
-}
-
-function compactNumber(value: number) {
-  return new Intl.NumberFormat('en', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(value || 0);
-}
+const PIE_SIZE = 180;
+const LINE_CHART_HEIGHT = 168;
 
 function formatShortDate(value: string) {
   if (!value) return 'Not set';
@@ -100,12 +47,15 @@ function formatShortDate(value: string) {
   }
 }
 
-function formatTrendLabel(label: string) {
-  const date = new Date(label);
-  if (!Number.isNaN(date.getTime())) {
-    return date.toLocaleDateString(undefined, { weekday: 'short' });
-  }
-  return label;
+function formatOrderTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 function Section({
@@ -120,13 +70,9 @@ function Section({
   return (
     <View className="gap-3">
       <View className="flex-row items-center justify-between gap-3">
-        <Text className="text-lg font-semibold text-foreground">
-          {title}
-        </Text>
+        <Text className="text-lg font-semibold text-foreground">{title}</Text>
         {action ? (
-          <Text className="text-sm font-medium text-muted-foreground">
-            {action}
-          </Text>
+          <Text className="text-sm font-medium text-muted-foreground">{action}</Text>
         ) : null}
       </View>
       {children}
@@ -135,16 +81,10 @@ function Section({
 }
 
 function MetricCard({
-  label,
-  value,
-  detail,
-  iconName,
+  card,
   width,
 }: {
-  label: string;
-  value: string;
-  detail: string;
-  iconName: keyof typeof Ionicons.glyphMap;
+  card: DashboardKpiCard;
   width?: number;
 }) {
   const isDark = useColorScheme() === 'dark';
@@ -160,68 +100,99 @@ function MetricCard({
       }}>
       <View className="flex-row items-center justify-between">
         <Text className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {label}
+          {card.label}
         </Text>
         <View className="h-9 w-9 items-center justify-center rounded-full bg-muted">
-          <Ionicons name={iconName} size={18} color={isDark ? '#FAFAFA' : '#18181B'} />
+          <Ionicons name={card.iconName} size={18} color={isDark ? '#FAFAFA' : '#18181B'} />
         </View>
       </View>
       <View className="gap-1">
-        <Text className="text-3xl font-bold tracking-tight text-foreground">
-          {value}
-        </Text>
-        <Text className="text-sm text-muted-foreground">
-          {detail}
-        </Text>
+        <Text className="text-3xl font-bold tracking-tight text-foreground">{card.value}</Text>
+        <Text className="text-sm text-muted-foreground">{card.detail}</Text>
       </View>
     </View>
   );
 }
 
 function RevenueTrendCard({ points }: { points: RevenuePoint[] }) {
-  const chartHeight = 128;
-  const maxRevenue = Math.max(...points.map((point) => point.revenueCents), 1);
-  const visiblePoints = points.slice(-7);
+  const isDark = useColorScheme() === 'dark';
+  const { width: windowWidth } = useWindowDimensions();
+  const { contentWidth, horizontalPadding, isTablet } = useResponsiveLayout();
+  const lineColor = isDark ? '#60A5FA' : '#2563EB';
+
+  // Card sits in full width or half of a tablet row; subtract card padding.
+  const chartWidth = Math.max(
+    (isTablet ? (contentWidth - horizontalPadding * 2 - 16) / 2 : contentWidth - horizontalPadding * 2) -
+      40,
+    Math.min(windowWidth - 64, 280)
+  );
+
+  const { coords, linePath, maxRevenueCents } = buildRevenueLineGeometry(
+    points,
+    chartWidth,
+    LINE_CHART_HEIGHT
+  );
 
   return (
     <View
-      className="gap-4 overflow-hidden rounded-3xl bg-muted/40 p-5"
+      className="gap-4 overflow-hidden rounded-3xl border border-border bg-card p-5"
       style={{ borderCurve: 'continuous' }}>
-      {visiblePoints.length > 0 ? (
+      {coords.length > 0 ? (
         <>
-          <View className="flex-row items-end" style={{ height: chartHeight }}>
-            {visiblePoints.map((point, index) => {
-              const barHeight = Math.max((point.revenueCents / maxRevenue) * chartHeight, 6);
+          <View style={{ width: chartWidth, height: LINE_CHART_HEIGHT }}>
+            <Svg width={chartWidth} height={LINE_CHART_HEIGHT}>
+              <Path
+                d={linePath}
+                stroke={lineColor}
+                strokeWidth={2.5}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {coords.map((coord) => (
+                <Circle
+                  key={`dot-${coord.label}`}
+                  cx={coord.x}
+                  cy={coord.y}
+                  r={4.5}
+                  fill={lineColor}
+                  stroke={isDark ? '#18181B' : '#FFFFFF'}
+                  strokeWidth={2}
+                />
+              ))}
+            </Svg>
 
-              return (
-                <View key={`${point.label}-${index}`} className="h-full flex-1 justify-end px-0.5">
-                  <View
-                    className="w-full rounded-t-xl bg-chart-2"
-                    style={{ height: barHeight }}
-                  />
-                </View>
-              );
-            })}
+            {coords.map((coord) => (
+              <Text
+                key={`price-${coord.label}`}
+                numberOfLines={1}
+                className="absolute text-center text-[10px] font-semibold text-foreground"
+                style={{
+                  width: 48,
+                  left: coord.x - 24,
+                  top: Math.max(coord.y - 22, 0),
+                }}>
+                {formatChartMoney(coord.revenueCents)}
+              </Text>
+            ))}
           </View>
 
-          <View className="flex-row gap-1">
-            {visiblePoints.map((point, index) => (
-              <View key={`${point.label}-label-${index}`} className="flex-1 items-center">
+          <View className="flex-row">
+            {coords.map((coord) => (
+              <View key={`label-${coord.label}`} className="flex-1 items-center px-0.5">
                 <Text
                   numberOfLines={1}
-                  className="text-center text-xs font-medium text-muted-foreground">
-                  {formatTrendLabel(point.label)}
+                  className="text-center text-[11px] font-medium text-muted-foreground">
+                  {coord.label}
                 </Text>
               </View>
             ))}
           </View>
 
           <View className="flex-row items-center justify-between border-t border-border/60 pt-3">
-            <Text className="text-sm text-muted-foreground">
-              Peak
-            </Text>
+            <Text className="text-sm text-muted-foreground">Peak day</Text>
             <Text className="text-base font-semibold text-foreground">
-              {formatMoney(maxRevenue)}
+              {formatMoney(maxRevenueCents)}
             </Text>
           </View>
         </>
@@ -234,34 +205,39 @@ function RevenueTrendCard({ points }: { points: RevenuePoint[] }) {
   );
 }
 
-function CategoryShare({ categories }: { categories: SoldByCategory[] }) {
-  const visibleCategories = categories.slice(0, 5);
+function CategoryPie({ categories }: { categories: SoldByCategory[] }) {
+  const slices = buildCategoryPieSlices(categories, PIE_SIZE);
 
   return (
     <View
-      className="gap-4 rounded-3xl border border-border bg-card p-5"
+      className="gap-5 rounded-3xl border border-border bg-card p-5"
       style={{ borderCurve: 'continuous', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}>
-      {visibleCategories.length > 0 ? (
-        visibleCategories.map((category) => (
-          <View key={category.category} className="gap-2">
-            <View className="flex-row items-center justify-between gap-3">
-              <Text
-                numberOfLines={1}
-                className="flex-1 text-base font-medium text-foreground">
-                {category.category}
-              </Text>
-              <Text className="text-sm font-semibold text-muted-foreground">
-                {Math.round(category.percentage)}%
-              </Text>
-            </View>
-            <View className="h-2 overflow-hidden rounded-full bg-muted">
-              <View
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${Math.min(Math.max(category.percentage, 0), 100)}%` }}
-              />
-            </View>
+      {slices.length > 0 ? (
+        <View className="flex-row flex-wrap items-center gap-5">
+          <View className="items-center justify-center" style={{ width: PIE_SIZE, height: PIE_SIZE }}>
+            <Svg width={PIE_SIZE} height={PIE_SIZE} viewBox={`0 0 ${PIE_SIZE} ${PIE_SIZE}`}>
+              {slices.map((slice) => (
+                <Path key={slice.category} d={slice.path} fill={slice.color} />
+              ))}
+            </Svg>
           </View>
-        ))
+
+          <View className="min-w-[140px] flex-1 gap-3">
+            {slices.map((slice) => (
+              <View key={slice.category} className="flex-row items-center justify-between gap-3">
+                <View className="flex-1 flex-row items-center gap-2">
+                  <View className="h-3 w-3 rounded-full" style={{ backgroundColor: slice.color }} />
+                  <Text numberOfLines={1} className="flex-1 text-sm text-muted-foreground">
+                    {slice.label}
+                  </Text>
+                </View>
+                <Text className="text-sm font-semibold text-foreground">
+                  {Math.round(slice.percentage)}%
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
       ) : (
         <Text className="text-base leading-6 text-muted-foreground">
           Category sales will appear once menu items have been sold.
@@ -284,17 +260,13 @@ function PopularItems({ items }: { items: PopularItem[] }) {
             key={`${item.name}-${index}`}
             className="flex-row items-center gap-3 border-b border-border px-5 py-4 last:border-b-0">
             <View className="h-9 w-9 items-center justify-center rounded-full bg-muted">
-              <Text className="text-sm font-bold text-foreground">
-                {index + 1}
-              </Text>
+              <Text className="text-sm font-bold text-foreground">{index + 1}</Text>
             </View>
-            <Text
-              numberOfLines={1}
-              className="flex-1 text-base font-medium text-foreground">
+            <Text numberOfLines={1} className="flex-1 text-base font-medium text-foreground">
               {item.name}
             </Text>
             <Text className="text-sm font-semibold text-muted-foreground">
-              {compactNumber(item.sold_quantity)} sold
+              {item.sold_quantity} sold
             </Text>
           </View>
         ))
@@ -321,9 +293,7 @@ function RecentOrders({ orders }: { orders: RecentOrder[] }) {
             className="gap-3 border-b border-border px-5 py-4 last:border-b-0">
             <View className="flex-row items-start justify-between gap-3">
               <View className="flex-1 gap-1">
-                <Text
-                  numberOfLines={1}
-                  className="text-base font-semibold text-foreground">
+                <Text numberOfLines={1} className="text-base font-semibold text-foreground">
                   {order.customerName || 'Guest'}
                 </Text>
                 <Text className="text-sm text-muted-foreground">
@@ -336,14 +306,13 @@ function RecentOrders({ orders }: { orders: RecentOrder[] }) {
                 {formatMoney(order.totalAmountCents)}
               </Text>
             </View>
-            <View className="flex-row items-center justify-between gap-3">
-              <View className="rounded-full bg-muted px-3 py-1">
-                <Text className="text-xs font-semibold text-muted-foreground">
-                  {order.status.toLowerCase()}
-                </Text>
+            <View className="flex-row flex-wrap items-center justify-between gap-2">
+              <View className="flex-row flex-wrap items-center gap-2">
+                <TypeBadge type={order.orderType} />
+                <StatusBadge status={order.status} />
               </View>
               <Text className="text-xs font-medium text-muted-foreground">
-                {formatShortDate(order.createdAt)}
+                {formatOrderTime(order.createdAt)}
               </Text>
             </View>
           </View>
@@ -367,25 +336,19 @@ function RosterCard({ roster }: { roster: RosterOverview }) {
           <Text className="text-3xl font-bold tracking-tight text-foreground">
             {roster.totalStaff}
           </Text>
-          <Text className="text-sm text-muted-foreground">
-            Staff
-          </Text>
+          <Text className="text-sm text-muted-foreground">Staff</Text>
         </View>
         <View className="flex-1 gap-1">
           <Text className="text-3xl font-bold tracking-tight text-foreground">
             {roster.weeklyShiftCount}
           </Text>
-          <Text className="text-sm text-muted-foreground">
-            Shifts
-          </Text>
+          <Text className="text-sm text-muted-foreground">Shifts</Text>
         </View>
         <View className="flex-1 gap-1">
           <Text className="text-3xl font-bold tracking-tight text-foreground">
             {roster.pendingLeaveRequests}
           </Text>
-          <Text className="text-sm text-muted-foreground">
-            Leave
-          </Text>
+          <Text className="text-sm text-muted-foreground">Leave</Text>
         </View>
       </View>
       <View className="h-px bg-border" />
@@ -397,8 +360,10 @@ function RosterCard({ roster }: { roster: RosterOverview }) {
 }
 
 export function DashboardContent() {
+  const { user } = useUser();
   const { api } = useApi();
-  const { isTablet, isLargeTablet, contentWidth, horizontalPadding, gridGap } = useResponsiveLayout();
+  const { isTablet, isLargeTablet, contentWidth, horizontalPadding, gridGap } =
+    useResponsiveLayout();
   const metricColumns = isLargeTablet ? 4 : 2;
   const metricCardWidth =
     (contentWidth - horizontalPadding * 2 - gridGap * (metricColumns - 1)) / metricColumns;
@@ -416,26 +381,36 @@ export function DashboardContent() {
     weeklyKpi: emptyKpi,
   };
 
+  const kpiCards = buildWeeklyKpiCards(stats.weeklyKpi);
+  const name = welcomeName(user?.firstName, user?.fullName);
+  const todayLabel = new Intl.DateTimeFormat('en-AU', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date());
+
   return (
     <ScreenScroll refreshing={isRefetching} onRefresh={() => refetch()}>
-      <View className="gap-3">
+      <View className="gap-2">
         <View className="flex-row items-start justify-between gap-4">
           <View className="flex-1 gap-2">
             <Text
               className={`font-bold tracking-tight text-foreground ${
                 isTablet ? 'text-3xl' : 'text-4xl'
               }`}>
-              Dashboard
+              Hi, {name}
             </Text>
             <Text className="text-base leading-6 text-muted-foreground">
-              Live restaurant performance, orders, menu movement, and roster coverage.
+              Welcome back — a quick look at how things are going today.
             </Text>
+            <Text className="text-sm font-medium text-muted-foreground">{todayLabel}</Text>
           </View>
           <View className="flex-row items-center gap-2">
             <ThemeToggle variant="compact" />
             <DashboardUserAction />
           </View>
         </View>
+
         {stats.weeklyKpi.startofWeek || stats.weeklyKpi.endOfWeek ? (
           <Text className="text-sm font-medium text-muted-foreground">
             Week of {formatShortDate(stats.weeklyKpi.startofWeek)} to{' '}
@@ -465,56 +440,31 @@ export function DashboardContent() {
       ) : (
         <>
           <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
-            <MetricCard
-              label="Revenue"
-              value={formatMoney(stats.weeklyKpi.revenueCents)}
-              detail="This week"
-              iconName="cash-outline"
-              width={metricCardWidth}
-            />
-            <MetricCard
-              label="Orders"
-              value={compactNumber(stats.weeklyKpi.weeklyOrderCount)}
-              detail="This week"
-              iconName="receipt-outline"
-              width={metricCardWidth}
-            />
-            <MetricCard
-              label="Bookings"
-              value={compactNumber(stats.weeklyKpi.todayBookingsCount)}
-              detail="Today"
-              iconName="calendar-outline"
-              width={metricCardWidth}
-            />
-            <MetricCard
-              label="Shift cost"
-              value={formatMoney(stats.weeklyKpi.weeklyShiftCostCents)}
-              detail="Scheduled week"
-              iconName="people-outline"
-              width={metricCardWidth}
-            />
+            {kpiCards.map((card) => (
+              <MetricCard key={card.key} card={card} width={metricCardWidth} />
+            ))}
           </View>
 
           {isTablet ? (
             <View className="flex-row gap-4">
               <View className="flex-1">
-                <Section title="Revenue trend" action={isRefetching ? 'Refreshing' : 'Last 7 points'}>
+                <Section title="Revenue trend" action={isRefetching ? 'Refreshing' : 'Last 7 days'}>
                   <RevenueTrendCard points={stats.revenueTrend} />
                 </Section>
               </View>
               <View className="flex-1">
                 <Section title="Sales by category">
-                  <CategoryShare categories={stats.soldByCategory} />
+                  <CategoryPie categories={stats.soldByCategory} />
                 </Section>
               </View>
             </View>
           ) : (
             <>
-              <Section title="Revenue trend" action={isRefetching ? 'Refreshing' : 'Last 7 points'}>
+              <Section title="Revenue trend" action={isRefetching ? 'Refreshing' : 'Last 7 days'}>
                 <RevenueTrendCard points={stats.revenueTrend} />
               </Section>
               <Section title="Sales by category">
-                <CategoryShare categories={stats.soldByCategory} />
+                <CategoryPie categories={stats.soldByCategory} />
               </Section>
             </>
           )}
