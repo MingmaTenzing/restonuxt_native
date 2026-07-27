@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { TextField } from '@/components/text-field';
+import { getInitials } from '@/screens/staff/staff-utils';
 
 import { toDateKey } from './roster-week';
 import type { Shift, ShiftInput, StaffSummary } from './types';
@@ -116,8 +117,31 @@ export function RosterShiftModal({
                   <Pressable
                     key={member.id}
                     onPress={() => setStaffId(member.id)}
-                    className={`rounded-full px-4 py-2 ${isActive ? 'bg-primary' : 'bg-muted'}`}
+                    className={`flex-row items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 ${
+                      isActive ? 'bg-primary' : 'bg-muted'
+                    }`}
                     style={{ borderCurve: 'continuous' }}>
+                    {member.profile_photo_url ? (
+                      <View className="h-7 w-7 overflow-hidden rounded-full bg-black/10">
+                        <Image
+                          source={{ uri: member.profile_photo_url }}
+                          className="h-full w-full"
+                          resizeMode="cover"
+                        />
+                      </View>
+                    ) : (
+                      <View
+                        className={`h-7 w-7 items-center justify-center rounded-full ${
+                          isActive ? 'bg-white/20' : 'bg-primary/10'
+                        }`}>
+                        <Text
+                          className={`text-[10px] font-bold ${
+                            isActive ? 'text-primary-foreground' : 'text-primary'
+                          }`}>
+                          {getInitials(member.firstname, member.lastName)}
+                        </Text>
+                      </View>
+                    )}
                     <Text
                       className={`text-sm font-semibold ${
                         isActive ? 'text-primary-foreground' : 'text-foreground'

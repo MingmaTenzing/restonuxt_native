@@ -136,6 +136,7 @@ export function DashboardSkeleton() {
   return (
     <View className="gap-6">
       <ScreenHeaderSkeleton />
+      <Skeleton className={`w-full rounded-3xl ${isTablet ? 'h-60' : 'h-56'}`} />
       <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
         {Array.from({ length: 4 }, (_, index) => (
           <Skeleton key={index} className="h-32 rounded-3xl" style={{ width: metricCardWidth }} />
