@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 
+import { RosterStaffAvatar } from './roster-staff-avatar';
 import { staffDisplayName } from './roster-stats';
 import type { Shift } from './types';
 
@@ -23,11 +24,7 @@ export function RosterShiftCard({ shift, onPress, onDelete }: RosterShiftCardPro
       className="flex-row items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3"
       style={{ borderCurve: 'continuous' }}>
       <Pressable onPress={onPress} className="min-w-0 flex-1 flex-row items-center gap-3 active:opacity-80">
-        <View className="h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-          <Text className="text-sm font-bold text-primary">
-            {shift.staff ? `${shift.staff.firstname[0] ?? ''}${shift.staff.lastName[0] ?? ''}` : '?'}
-          </Text>
-        </View>
+        <RosterStaffAvatar staff={shift.staff} />
 
         <View className="min-w-0 flex-1 gap-1">
           <Text className="text-base font-semibold text-foreground" numberOfLines={1}>

@@ -1296,7 +1296,19 @@ All require auth. Aggregations are over the last 30 days or the current week/day
 
 ### `GET /api/dashboard/stats/popular-items`
 
-- **Response:** `{ name: string; sold_quantity: number }[]`
+- **Response:** full `MenuItem` fields plus `sold_quantity` (top 5 by units sold, last 30 days):
+  ```ts
+  {
+    id: string;
+    name: string;
+    description: string | null;
+    priceCents: number;
+    category: string;
+    imageUrl: string | null;
+    isAvailable: boolean;
+    sold_quantity: number;
+  }[]
+  ```
 
 ### `GET /api/dashboard/stats/recent-order`
 

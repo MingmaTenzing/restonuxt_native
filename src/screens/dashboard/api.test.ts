@@ -13,7 +13,18 @@ describe('fetchDashboardStats', () => {
 
       switch (path) {
         case DASHBOARD_ENDPOINTS.popularItems:
-          return [{ name: 'Burger', sold_quantity: 12 }] as T;
+          return [
+            {
+              id: 'm1',
+              name: 'Burger',
+              description: 'Classic beef burger',
+              priceCents: 1800,
+              category: 'MAIN_COURSE',
+              imageUrl: 'https://example.com/burger.jpg',
+              isAvailable: true,
+              sold_quantity: 12,
+            },
+          ] as T;
         case DASHBOARD_ENDPOINTS.recentOrders:
           return [
             {
@@ -63,6 +74,8 @@ describe('fetchDashboardStats', () => {
 
     expect(called.sort()).toEqual(Object.values(DASHBOARD_ENDPOINTS).sort());
     expect(stats.popularItems[0]?.name).toBe('Burger');
+    expect(stats.popularItems[0]?.imageUrl).toBe('https://example.com/burger.jpg');
+    expect(stats.popularItems[0]?.sold_quantity).toBe(12);
     expect(stats.recentOrders[0]?.orderNo).toBe(101);
     expect(stats.revenueTrend).toHaveLength(7);
     expect(stats.revenueTrend.at(-1)?.revenueCents).toBe(9000);

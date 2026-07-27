@@ -703,26 +703,43 @@ export default function PosScreen() {
     </ScrollView>
   );
 
-  return (
-    <View className="flex-1 bg-background">
-      <View className="min-h-0 flex-1 flex-row items-stretch">
-        <View className="min-h-0 min-w-0 flex-1">
-          {isOrdering ? menuPane : tableSelectPane}
+  // NativeTabs `minimizeBehavior="onScrollDown"` only finds a scroll view along the
+  // first-child path — keep the main ScrollView as the screen's first opaque child.
+  const itemSheet = isOrdering ? (
+    <PosItemSheet
+      visible={!!customizingItem}
+      item={customizingItem}
+      onClose={() => setCustomizingItem(null)}
+      onAdd={addToCart}
+    />
+  ) : null;
+
+  if (isTablet && isOrdering) {
+    return (
+      <View
+        className="min-h-0 flex-1 flex-row items-stretch bg-background"
+        collapsable={false}>
+        {menuPane}
+        <View
+          className="min-h-0 self-stretch"
+          style={{ width: posSidebarWidth }}
+          collapsable={false}>
+          <PosCartPanel
+            {...cartPanelProps}
+            variant="sidebar"
+            topInset={Math.max(insets.top, 12)}
+            bottomInset={insets.bottom}
+          />
         </View>
-
-        {isTablet && isOrdering ? (
-          <View className="min-h-0 self-stretch" style={{ width: posSidebarWidth }}>
-            <PosCartPanel
-              {...cartPanelProps}
-              variant="sidebar"
-              topInset={Math.max(insets.top, 12)}
-              bottomInset={insets.bottom}
-            />
-          </View>
-        ) : null}
+        {itemSheet}
       </View>
+    );
+  }
 
-      {!isTablet && isOrdering ? (
+  return (
+    <>
+      {isOrdering ? menuPane : tableSelectPane}
+      {isOrdering ? (
         <>
           <PosCartBar
             itemCount={itemCount}
@@ -737,15 +754,7 @@ export default function PosScreen() {
           />
         </>
       ) : null}
-
-      {isOrdering ? (
-        <PosItemSheet
-          visible={!!customizingItem}
-          item={customizingItem}
-          onClose={() => setCustomizingItem(null)}
-          onAdd={addToCart}
-        />
-      ) : null}
-    </View>
+      {itemSheet}
+    </>
   );
 }

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '@clerk/expo';
 import { useQuery } from '@tanstack/react-query';
-import { Text, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { Image, Text, useColorScheme, useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Button } from '@/components/button';
@@ -18,6 +18,7 @@ import { fetchDashboardStats } from './api';
 import { buildCategoryPieSlices } from './category-pie';
 import {
   buildWeeklyKpiCards,
+  categoryLabel,
   emptyKpi,
   emptyRoster,
   formatChartMoney,
@@ -25,6 +26,7 @@ import {
   type DashboardKpiCard,
 } from './dashboard-stats';
 import { buildRevenueLineGeometry } from './revenue-line';
+import { TrendingFoodsCarousel } from './trending-foods-carousel';
 import { DashboardUserAction } from './user-action';
 import type {
   DashboardStats,
@@ -257,14 +259,34 @@ function PopularItems({ items }: { items: PopularItem[] }) {
       {visibleItems.length > 0 ? (
         visibleItems.map((item, index) => (
           <View
-            key={`${item.name}-${index}`}
-            className="flex-row items-center gap-3 border-b border-border px-5 py-4 last:border-b-0">
-            <View className="h-9 w-9 items-center justify-center rounded-full bg-muted">
-              <Text className="text-sm font-bold text-foreground">{index + 1}</Text>
+            key={item.id}
+            className="flex-row items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0">
+            <View className="relative">
+              {item.imageUrl ? (
+                <View className="h-14 w-14 overflow-hidden rounded-2xl" style={{ borderCurve: 'continuous' }}>
+                  <Image source={{ uri: item.imageUrl }} className="h-full w-full" />
+                </View>
+              ) : (
+                <View
+                  className="h-14 w-14 items-center justify-center rounded-2xl bg-muted"
+                  style={{ borderCurve: 'continuous' }}>
+                  <Text className="text-lg font-bold text-foreground">
+                    {item.name.slice(0, 1).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              <View className="absolute -left-1 -top-1 h-6 w-6 items-center justify-center rounded-full bg-foreground">
+                <Text className="text-[11px] font-bold text-background">{index + 1}</Text>
+              </View>
             </View>
-            <Text numberOfLines={1} className="flex-1 text-base font-medium text-foreground">
-              {item.name}
-            </Text>
+            <View className="min-w-0 flex-1 gap-0.5">
+              <Text numberOfLines={1} className="text-base font-semibold text-foreground">
+                {item.name}
+              </Text>
+              <Text numberOfLines={1} className="text-sm text-muted-foreground">
+                {categoryLabel(item.category)} · {formatMoney(item.priceCents)}
+              </Text>
+            </View>
             <Text className="text-sm font-semibold text-muted-foreground">
               {item.sold_quantity} sold
             </Text>
@@ -439,6 +461,10 @@ export function DashboardContent() {
         <DashboardSkeleton />
       ) : (
         <>
+          <Section title="Top trending foods" action="Swipe · last 30 days">
+            <TrendingFoodsCarousel items={stats.popularItems} />
+          </Section>
+
           <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
             {kpiCards.map((card) => (
               <MetricCard key={card.key} card={card} width={metricCardWidth} />

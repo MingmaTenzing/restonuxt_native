@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import { Button } from '@/components/button';
 import { formatDate } from '@/utils/format-date';
 
+import { RosterStaffAvatar } from './roster-staff-avatar';
 import { staffDisplayName } from './roster-stats';
 import type { LeaveRequest, LeaveStatus } from './types';
 
@@ -47,13 +48,16 @@ export function RosterLeaveCard({
       className="gap-4 rounded-3xl border border-border bg-card p-5"
       style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
       <View className="flex-row items-start justify-between gap-3">
-        <View className="min-w-0 flex-1 gap-1">
-          <Text className="text-lg font-semibold text-foreground">
-            {staffDisplayName(request.staff)}
-          </Text>
-          <Text className="text-sm text-muted-foreground">
-            Submitted {formatDate(request.submittedAt)}
-          </Text>
+        <View className="min-w-0 flex-1 flex-row items-center gap-3">
+          <RosterStaffAvatar staff={request.staff} />
+          <View className="min-w-0 flex-1 gap-1">
+            <Text className="text-lg font-semibold text-foreground" numberOfLines={1}>
+              {staffDisplayName(request.staff)}
+            </Text>
+            <Text className="text-sm text-muted-foreground">
+              Submitted {formatDate(request.submittedAt)}
+            </Text>
+          </View>
         </View>
         <View className={`rounded-full px-3 py-1 ${statusStyle.badge}`}>
           <Text className={`text-xs font-semibold ${statusStyle.text}`}>{statusStyle.label}</Text>
