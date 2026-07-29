@@ -128,20 +128,26 @@ export function ListScreenSkeleton({
 }
 
 export function DashboardSkeleton() {
-  const { isTablet, isLargeTablet, contentWidth, horizontalPadding, gridGap } = useResponsiveLayout();
-  const metricColumns = isLargeTablet ? 4 : 2;
-  const metricCardWidth =
-    (contentWidth - horizontalPadding * 2 - gridGap * (metricColumns - 1)) / metricColumns;
+  const { isTablet } = useResponsiveLayout();
 
   return (
     <View className="gap-6">
-      <ScreenHeaderSkeleton />
-      <Skeleton className={`w-full rounded-3xl ${isTablet ? 'h-60' : 'h-56'}`} />
-      <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
+      <Skeleton className={`w-full rounded-3xl ${isTablet ? 'h-56' : 'h-52'}`} />
+      <View className="flex-row gap-2.5">
         {Array.from({ length: 4 }, (_, index) => (
-          <Skeleton key={index} className="h-32 rounded-3xl" style={{ width: metricCardWidth }} />
+          <Skeleton key={index} className="h-24 w-32 rounded-2xl" />
         ))}
       </View>
+      <View className="flex-row gap-3">
+        {Array.from({ length: 3 }, (_, index) => (
+          <View key={index} className="gap-2">
+            <Skeleton className="h-28 w-36 rounded-2xl" />
+            <Skeleton className="h-3 w-28 rounded-full" />
+            <Skeleton className="h-3 w-20 rounded-full" />
+          </View>
+        ))}
+      </View>
+      <Skeleton className="h-48 w-full rounded-3xl" />
       {isTablet ? (
         <View className="flex-row gap-4">
           <Skeleton className="h-48 flex-1 rounded-3xl" />
@@ -154,17 +160,6 @@ export function DashboardSkeleton() {
         </>
       )}
       <Skeleton className="h-36 w-full rounded-3xl" />
-      {isTablet ? (
-        <View className="flex-row gap-4">
-          <Skeleton className="h-56 flex-1 rounded-3xl" />
-          <Skeleton className="h-56 flex-1 rounded-3xl" />
-        </View>
-      ) : (
-        <>
-          <Skeleton className="h-56 w-full rounded-3xl" />
-          <Skeleton className="h-56 w-full rounded-3xl" />
-        </>
-      )}
     </View>
   );
 }

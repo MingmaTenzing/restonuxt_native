@@ -17,7 +17,8 @@ import { categoryLabel } from './dashboard-stats';
 import type { PopularItem } from './types';
 
 const AUTO_ADVANCE_MS = 4200;
-const SLIDE_HEIGHT = 220;
+const SLIDE_HEIGHT = 200;
+const SLIDE_GAP = 12;
 
 interface TrendingFoodsCarouselProps {
   items: PopularItem[];
@@ -27,10 +28,13 @@ export function TrendingFoodsCarousel({ items }: TrendingFoodsCarouselProps) {
   const slides = items.slice(0, 5);
   const { width: windowWidth } = useWindowDimensions();
   const { contentWidth, horizontalPadding, isTablet } = useResponsiveLayout();
-  const slideWidth = Math.max(
+  const trackWidth = Math.max(
     contentWidth - horizontalPadding * 2,
     Math.min(windowWidth - horizontalPadding * 2, 320)
   );
+  // Peek the next card — Uber Eats–style horizontal browse.
+  const slideWidth = Math.round(trackWidth * (slides.length > 1 ? 0.86 : 1));
+  const snapInterval = slideWidth + SLIDE_GAP;
   const scrollRef = useRef<ScrollView>(null);
   const [index, setIndex] = useState(0);
   const indexRef = useRef(0);
@@ -42,9 +46,9 @@ export function TrendingFoodsCarousel({ items }: TrendingFoodsCarouselProps) {
       const clamped = ((next % slides.length) + slides.length) % slides.length;
       indexRef.current = clamped;
       setIndex(clamped);
-      scrollRef.current?.scrollTo({ x: clamped * slideWidth, animated });
+      scrollRef.current?.scrollTo({ x: clamped * snapInterval, animated });
     },
-    [slideWidth, slides.length]
+    [snapInterval, slides.length]
   );
 
   useEffect(() => {
@@ -59,7 +63,7 @@ export function TrendingFoodsCarousel({ items }: TrendingFoodsCarouselProps) {
   }, [goTo, slides.length]);
 
   const onMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const next = Math.round(event.nativeEvent.contentOffset.x / slideWidth);
+    const next = Math.round(event.nativeEvent.contentOffset.x / snapInterval);
     if (Number.isNaN(next)) return;
     indexRef.current = next;
     setIndex(next);
@@ -82,7 +86,6 @@ export function TrendingFoodsCarousel({ items }: TrendingFoodsCarouselProps) {
       <ScrollView
         ref={scrollRef}
         horizontal
-        pagingEnabled
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
         onScrollBeginDrag={() => {
@@ -92,10 +95,11 @@ export function TrendingFoodsCarousel({ items }: TrendingFoodsCarouselProps) {
           pausedRef.current = false;
           onMomentumEnd(event);
         }}
-        style={{ width: slideWidth }}
-        snapToInterval={slideWidth}
+        snapToInterval={snapInterval}
         snapToAlignment="start"
-        disableIntervalMomentum>
+        disableIntervalMomentum
+        contentContainerStyle={{ gap: SLIDE_GAP }}
+        style={{ marginHorizontal: -horizontalPadding, paddingHorizontal: horizontalPadding }}>
         {slides.map((item, slideIndex) => (
           <Pressable
             key={item.id}
@@ -151,23 +155,18 @@ export function TrendingFoodsCarousel({ items }: TrendingFoodsCarouselProps) {
                 </View>
               </View>
 
-              <View className="absolute bottom-0 left-0 right-0 gap-1.5 p-5">
+              <View className="absolute bottom-0 left-0 right-0 gap-1 p-5">
                 <Text numberOfLines={2} className="text-2xl font-bold tracking-tight text-white">
                   {item.name}
                 </Text>
                 <View className="flex-row flex-wrap items-center gap-x-3 gap-y-1">
                   <Text className="text-sm font-semibold text-white/90">
-                    {item.sold_quantity} sold · last 30 days
+                    {item.sold_quantity} sold
                   </Text>
                   <Text className="text-sm font-semibold text-white/90">
                     {formatMoney(item.priceCents)}
                   </Text>
                 </View>
-                {item.description ? (
-                  <Text numberOfLines={1} className="text-sm text-white/70">
-                    {item.description}
-                  </Text>
-                ) : null}
               </View>
             </View>
           </Pressable>

@@ -11,8 +11,9 @@ import { unwrapList, type ApiClient } from '@/utils/api';
 
 import { AddBookingModal } from './add-booking-modal';
 import { BookingCard } from './booking-card';
-import { computeBookingStats, filterBookings, type BookingFilter } from './booking-stats';
-import { BookingFilterToggle, BookingStatsRow } from './booking-stats-row';
+import { computeBookingStats, filterBookings, searchBookings, type BookingFilter } from './booking-stats';
+import { BookingStatsRow } from './booking-stats-row';
+import { BookingSearch } from './booking-search';
 import type { Booking, NewBooking } from './types';
 
 async function fetchBookings(api: ApiClient): Promise<Booking[]> {
@@ -32,6 +33,7 @@ export default function BookingsScreen() {
   const queryClient = useQueryClient();
   const [isModalVisible, setModalVisible] = useState(false);
   const [filter, setFilter] = useState<BookingFilter>('today');
+  const [query, setQuery] = useState('');
   const { isTablet, fabStyle } = useResponsiveLayout();
 
   const {
@@ -56,7 +58,7 @@ export default function BookingsScreen() {
   });
 
   const stats = computeBookingStats(bookings);
-  const visibleBookings = filterBookings(bookings, filter);
+  const visibleBookings = searchBookings(filterBookings(bookings, filter), query);
 
   if (!isLoaded) {
     return (
@@ -99,8 +101,13 @@ export default function BookingsScreen() {
         {!isError && isLoading ? <StatsRowSkeleton count={4} /> : null}
         {!isError && !isLoading && bookings.length > 0 ? <BookingStatsRow stats={stats} /> : null}
 
-        {!isError && !isLoading && bookings.length > 0 ? (
-          <BookingFilterToggle value={filter} onChange={setFilter} />
+        {!isError ? (
+          <BookingSearch
+            query={query}
+            onQueryChange={setQuery}
+            filter={filter}
+            onFilterChange={setFilter}
+          />
         ) : null}
 
         {isError ? (
@@ -134,7 +141,11 @@ export default function BookingsScreen() {
             className="rounded-3xl border border-border bg-card p-5"
             style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
             <Text className="text-base leading-6 text-muted-foreground">
-              No bookings for today. Switch to All to see every booking.
+              {query.trim()
+                ? 'No bookings match your search.'
+                : filter === 'today'
+                  ? 'No bookings for today. Switch to All to see every booking.'
+                  : 'No bookings in this view.'}
             </Text>
           </View>
         ) : null}

@@ -4,6 +4,7 @@ import {
   buildWeeklyKpiCards,
   categoryLabel,
   compactNumber,
+  dayGreeting,
   formatCategoryShare,
   formatChartMoney,
   toRevenuePoints,
@@ -96,5 +97,13 @@ describe('welcomeName', () => {
     expect(welcomeName('Ming', 'Mingma Sherpa')).toBe('Ming');
     expect(welcomeName(null, 'Mingma Sherpa')).toBe('Mingma');
     expect(welcomeName(null, null)).toBe('there');
+  });
+});
+
+describe('dayGreeting', () => {
+  test('returns morning, afternoon, or evening by hour', () => {
+    expect(dayGreeting(new Date(2026, 6, 28, 8, 0, 0))).toBe('Good morning');
+    expect(dayGreeting(new Date(2026, 6, 28, 14, 0, 0))).toBe('Good afternoon');
+    expect(dayGreeting(new Date(2026, 6, 28, 20, 0, 0))).toBe('Good evening');
   });
 });

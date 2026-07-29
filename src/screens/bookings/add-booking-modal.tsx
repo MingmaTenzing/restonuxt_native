@@ -28,6 +28,11 @@ export function AddBookingModal({
   const [bookingDate, setBookingDate] = useState(() => new Date(Date.now() + 60 * 60 * 1000));
   const [specialRequest, setSpecialRequest] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [minimumDate] = useState(() => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    return start;
+  });
 
   const reset = () => {
     setCustomerName('');
@@ -118,7 +123,7 @@ export function AddBookingModal({
             label="Date & time"
             value={bookingDate}
             onChange={setBookingDate}
-            minimumDate={new Date()}
+            minimumDate={minimumDate}
           />
           <TextField
             label="Special request"

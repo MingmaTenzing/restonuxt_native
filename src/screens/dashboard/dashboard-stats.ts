@@ -172,3 +172,11 @@ export function formatCategoryShare(categories: SoldByCategory[]) {
 export function welcomeName(firstName?: string | null, fullName?: string | null) {
   return firstName?.trim() || fullName?.trim()?.split(/\s+/)[0] || 'there';
 }
+
+/** Time-of-day greeting for the dashboard header. */
+export function dayGreeting(now = new Date()) {
+  const hour = now.getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
