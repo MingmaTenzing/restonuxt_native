@@ -64,8 +64,8 @@ export default function OrdersScreen() {
               Orders
             </Text>
           </View>
-          <OrderSearch query="" onQueryChange={() => {}} range="day" onRangeChange={() => {}} />
           <OrderStatsSkeleton />
+          <OrderSearch query="" onQueryChange={() => {}} range="day" onRangeChange={() => {}} />
           <CardGridSkeleton />
         </ScreenScroll>
       </View>
@@ -100,16 +100,16 @@ export default function OrdersScreen() {
       </View>
 
       {!isError ? (
+        isDayLoading ? <OrderStatsSkeleton /> : <OrderStatsRow stats={stats} />
+      ) : null}
+
+      {!isError ? (
         <OrderSearch
           query={query}
           onQueryChange={setQuery}
           range={range}
           onRangeChange={setRange}
         />
-      ) : null}
-
-      {!isError ? (
-        isDayLoading ? <OrderStatsSkeleton /> : <OrderStatsRow stats={stats} />
       ) : null}
 
       {isError ? (

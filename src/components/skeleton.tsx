@@ -55,16 +55,12 @@ export function FilterChipsSkeleton({ count = 4 }: { count?: number }) {
 }
 
 export function StatsRowSkeleton({ count = 4 }: { count?: number }) {
-  const { isLargeTablet, contentWidth, horizontalPadding, gridGap } = useResponsiveLayout();
-  const columns = isLargeTablet ? Math.min(count, 4) : 2;
-  const cardWidth = Math.floor(
-    (contentWidth - horizontalPadding * 2 - gridGap * (columns - 1)) / columns
-  );
+  const { gridGap } = useResponsiveLayout();
 
   return (
-    <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
+    <View className="flex-row" style={{ gap: Math.min(gridGap, 8) }}>
       {Array.from({ length: count }, (_, index) => (
-        <Skeleton key={index} className="h-24 rounded-3xl" style={{ width: cardWidth }} />
+        <Skeleton key={index} className="h-14 flex-1 rounded-2xl" />
       ))}
     </View>
   );

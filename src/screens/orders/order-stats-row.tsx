@@ -24,18 +24,14 @@ function MetricCard({
     <View
       className="flex-1 gap-3 rounded-3xl border border-border bg-card p-4"
       style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
-      <Text className="text-xs font-medium text-muted-foreground">
-        {label}
-      </Text>
+      <Text className="text-xs font-medium text-muted-foreground">{label}</Text>
       <View className="flex-row items-center gap-2">
         <View
           className={`h-9 w-9 items-center justify-center rounded-full ${accentWrap}`}
           style={{ borderCurve: 'continuous' }}>
           <Ionicons name={iconName} size={18} color={iconColor} />
         </View>
-        <Text className="text-3xl font-semibold tracking-tight text-foreground">
-          {value}
-        </Text>
+        <Text className="text-3xl font-semibold tracking-tight text-foreground">{value}</Text>
       </View>
     </View>
   );
@@ -55,7 +51,8 @@ export function OrderStatsRow({ stats }: { stats: OrderStats }) {
         <Text className="text-xs font-medium uppercase tracking-wider text-neutral-300">
           Revenue today
         </Text>
-        <Text className={`font-semibold tracking-tight text-white ${isTablet ? 'text-5xl' : 'text-4xl'}`}>
+        <Text
+          className={`font-semibold tracking-tight text-white ${isTablet ? 'text-5xl' : 'text-4xl'}`}>
           {formatMoney(stats.todayRevenueCents)}
         </Text>
         <Text className="text-sm text-neutral-400">
