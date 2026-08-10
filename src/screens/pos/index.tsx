@@ -6,7 +6,7 @@ import { Alert, Pressable, RefreshControl, ScrollView, Text, TextInput, View } f
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
-import { CardGridSkeleton, ListScreenSkeleton } from '@/components/skeleton';
+import { CardGridSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { formatMoney } from '@/utils/format-money';
@@ -94,7 +94,7 @@ function confirmDestructiveAction({
 }
 
 export default function PosScreen() {
-  const { api, isLoaded, isSignedIn, isReady } = useApi();
+  const { api, isReady } = useApi();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const {
@@ -156,9 +156,9 @@ export default function PosScreen() {
   // Refresh floor sessions when the POS tab is focused — not on every local state change.
   useFocusEffect(
     useCallback(() => {
-      if (!isReady || !isSignedIn) return;
+      if (!isReady) return;
       void refetchTables();
-    }, [isReady, isSignedIn, refetchTables])
+    }, [isReady, refetchTables])
   );
 
   const openSessionMutation = useMutation({
@@ -472,27 +472,6 @@ export default function PosScreen() {
       </ScrollView>
     </View>
   );
-
-  if (!isLoaded) {
-    return (
-      <View className="flex-1 bg-background">
-        <ListScreenSkeleton filters cards={6} />
-      </View>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-center text-xl font-semibold text-foreground">
-          Sign in required
-        </Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
-          Sign in from the Home tab to take orders.
-        </Text>
-      </View>
-    );
-  }
 
   const tableSelectPane = (
     <ScrollView

@@ -5,7 +5,7 @@ import { Alert, Pressable, ScrollView, Text, TextInput, useColorScheme, View } f
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
-import { CardGridSkeleton, ListScreenSkeleton } from '@/components/skeleton';
+import { CardGridSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 
@@ -49,7 +49,7 @@ function groupByLetter(tables: Table[]) {
 }
 
 export default function TablesScreen() {
-  const { api, isLoaded, isSignedIn, isReady } = useApi();
+  const { api, isReady } = useApi();
   const queryClient = useQueryClient();
   const isDark = useColorScheme() === 'dark';
   const { isTablet, fabStyle } = useResponsiveLayout();
@@ -140,29 +140,6 @@ export default function TablesScreen() {
       ]
     );
   };
-
-  if (!isLoaded) {
-    return (
-      <View className="flex-1 bg-background">
-        <ScreenScroll bottomInset={72}>
-          <ListScreenSkeleton cards={6} />
-        </ScreenScroll>
-      </View>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-center text-xl font-semibold text-foreground">
-          Sign in required
-        </Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
-          Sign in from the Home tab to manage tables.
-        </Text>
-      </View>
-    );
-  }
 
   return (
     <>

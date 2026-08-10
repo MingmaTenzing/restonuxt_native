@@ -1,6 +1,5 @@
+import type { CashierTableSession } from '@/screens/cashier/types';
 import type { TableSession } from '@/screens/sessions/types';
-
-import type { CashierTableSession } from './types';
 
 export function toCashierSession(session: TableSession): CashierTableSession {
   const unpaid = (session.orders ?? []).filter((order) => order.paymentStatus === 'UNPAID');

@@ -1,6 +1,14 @@
 import CommunityDateTimePicker from '@expo/ui/community/datetime-picker';
 import { useState } from 'react';
-import { Platform, Pressable, Text, useColorScheme, View } from 'react-native';
+import { Platform, Pressable, Text, TextInput, useColorScheme, View } from 'react-native';
+
+import {
+  applyDatePart,
+  applyTimePart,
+  formatDateTimeValue,
+  fromWebInputValue,
+  toWebInputValue,
+} from './date-time-value';
 
 interface DateTimeFieldProps {
   label: string;
@@ -12,19 +20,13 @@ interface DateTimeFieldProps {
   accentColor?: string;
 }
 
-function formatValue(date: Date, mode: 'date' | 'time' | 'datetime') {
-  if (Number.isNaN(date.getTime())) return '';
-  const datePart = date.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-  const timePart = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-  if (mode === 'date') return datePart;
-  if (mode === 'time') return timePart;
-  return `${datePart} · ${timePart}`;
-}
+type AndroidStep = 'hidden' | 'date' | 'time';
 
+/**
+ * Date/time field that works inside RN Modals.
+ * iOS compact popovers fail in Modal — use an expandable spinner instead.
+ * Android has no datetime dialog — run date then time for `datetime` mode.
+ */
 export function DateTimeField({
   label,
   value,
@@ -34,50 +36,104 @@ export function DateTimeField({
   maximumDate,
   accentColor,
 }: DateTimeFieldProps) {
-  const [showAndroidPicker, setShowAndroidPicker] = useState(false);
+  const [iosOpen, setIosOpen] = useState(false);
+  const [androidStep, setAndroidStep] = useState<AndroidStep>('hidden');
   const isDark = useColorScheme() === 'dark';
   const resolvedAccentColor = accentColor ?? (isDark ? '#E4E4E7' : '#18181B');
 
+  const openAndroid = () => {
+    if (mode === 'time') setAndroidStep('time');
+    else setAndroidStep('date');
+  };
+
   return (
     <View className="gap-2">
-      <Text className="px-1 text-sm font-medium text-muted-foreground">
-        {label}
-      </Text>
-      {Platform.OS === 'ios' ? (
-        <View className="flex-row items-center justify-between rounded-2xl border border-input bg-card px-4 py-2">
-          <CommunityDateTimePicker
-            value={value}
-            mode={mode}
-            display="compact"
-            minimumDate={minimumDate}
-            maximumDate={maximumDate}
-            accentColor={resolvedAccentColor}
-            onValueChange={(_event, date) => onChange(date)}
-          />
+      <Text className="px-1 text-sm font-medium text-muted-foreground">{label}</Text>
+
+      {Platform.OS === 'web' ? (
+        <TextInput
+          value={toWebInputValue(value, mode)}
+          onChangeText={(text) => {
+            const next = fromWebInputValue(text, mode, value);
+            if (next) onChange(next);
+          }}
+          // @ts-expect-error web-only input type
+          type={mode === 'time' ? 'time' : mode === 'date' ? 'date' : 'datetime-local'}
+          className="rounded-2xl border border-input bg-card px-4 py-3.5 text-base text-foreground"
+          style={{ borderCurve: 'continuous' }}
+        />
+      ) : Platform.OS === 'ios' ? (
+        <View className="overflow-hidden rounded-2xl border border-input bg-card">
+          <Pressable
+            onPress={() => setIosOpen((open) => !open)}
+            className="flex-row items-center justify-between px-4 py-3.5"
+            accessibilityRole="button"
+            accessibilityLabel={`${label}: ${formatDateTimeValue(value, mode)}`}>
+            <Text className="text-base text-foreground">{formatDateTimeValue(value, mode)}</Text>
+            <Text className="text-sm font-medium text-primary">{iosOpen ? 'Done' : 'Edit'}</Text>
+          </Pressable>
+          {iosOpen ? (
+            <View className="border-t border-border px-2 pb-2 pt-1">
+              <CommunityDateTimePicker
+                value={value}
+                mode={mode}
+                display="spinner"
+                minimumDate={minimumDate}
+                maximumDate={maximumDate}
+                accentColor={resolvedAccentColor}
+                themeVariant={isDark ? 'dark' : 'light'}
+                style={{ alignSelf: 'stretch', height: mode === 'datetime' ? 180 : 140 }}
+                onValueChange={(_event, date) => {
+                  if (date) onChange(date);
+                }}
+              />
+            </View>
+          ) : null}
         </View>
       ) : (
         <>
           <Pressable
-            onPress={() => setShowAndroidPicker(true)}
+            onPress={openAndroid}
             className="rounded-2xl border border-input bg-card px-4 py-3.5"
-            style={{ borderCurve: 'continuous' }}>
-            <Text className="text-base text-foreground">
-              {formatValue(value, mode)}
-            </Text>
+            style={{ borderCurve: 'continuous' }}
+            accessibilityRole="button"
+            accessibilityLabel={`${label}: ${formatDateTimeValue(value, mode)}`}>
+            <Text className="text-base text-foreground">{formatDateTimeValue(value, mode)}</Text>
           </Pressable>
-          {showAndroidPicker ? (
+
+          {androidStep === 'date' ? (
             <CommunityDateTimePicker
               value={value}
-              mode={mode}
+              mode="date"
               presentation="dialog"
               minimumDate={minimumDate}
               maximumDate={maximumDate}
               accentColor={resolvedAccentColor}
               onValueChange={(_event, date) => {
-                setShowAndroidPicker(false);
-                onChange(date);
+                if (!date) {
+                  setAndroidStep('hidden');
+                  return;
+                }
+                const next = applyDatePart(value, date);
+                onChange(next);
+                if (mode === 'datetime') setAndroidStep('time');
+                else setAndroidStep('hidden');
               }}
-              onDismiss={() => setShowAndroidPicker(false)}
+              onDismiss={() => setAndroidStep('hidden')}
+            />
+          ) : null}
+
+          {androidStep === 'time' ? (
+            <CommunityDateTimePicker
+              value={value}
+              mode="time"
+              presentation="dialog"
+              accentColor={resolvedAccentColor}
+              onValueChange={(_event, date) => {
+                setAndroidStep('hidden');
+                if (date) onChange(applyTimePart(value, date));
+              }}
+              onDismiss={() => setAndroidStep('hidden')}
             />
           ) : null}
         </>

@@ -22,7 +22,7 @@ async function fetchOrders(api: ApiClient, range: OrderRange): Promise<Order[]> 
 }
 
 export default function OrdersScreen() {
-  const { api, isLoaded, isSignedIn, isReady } = useApi();
+  const { api, isReady } = useApi();
   const router = useRouter();
   const { isTablet } = useResponsiveLayout();
   const [range, setRange] = useState<OrderRange>('day');
@@ -52,37 +52,6 @@ export default function OrdersScreen() {
   const stats = computeOrderStats(dayOrders);
   const visibleOrders = searchOrders(orders, query);
 
-  if (!isLoaded) {
-    return (
-      <View className="flex-1 bg-background">
-        <ScreenScroll>
-          <View className="gap-2">
-            <Text
-              className={`font-bold tracking-tight text-foreground ${
-                isTablet ? 'text-3xl' : 'text-4xl'
-              }`}>
-              Orders
-            </Text>
-          </View>
-          <OrderSearch query="" onQueryChange={() => {}} range="day" onRangeChange={() => {}} />
-          <OrderStatsSkeleton />
-          <CardGridSkeleton />
-        </ScreenScroll>
-      </View>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-center text-xl font-semibold text-foreground">Sign in required</Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
-          Sign in from the Home tab to view orders.
-        </Text>
-      </View>
-    );
-  }
-
   return (
     <ScreenScroll refreshing={isRefetching} onRefresh={() => refetch()}>
       <View className="gap-2">
@@ -100,16 +69,16 @@ export default function OrdersScreen() {
       </View>
 
       {!isError ? (
+        isDayLoading ? <OrderStatsSkeleton /> : <OrderStatsRow stats={stats} />
+      ) : null}
+
+      {!isError ? (
         <OrderSearch
           query={query}
           onQueryChange={setQuery}
           range={range}
           onRangeChange={setRange}
         />
-      ) : null}
-
-      {!isError ? (
-        isDayLoading ? <OrderStatsSkeleton /> : <OrderStatsRow stats={stats} />
       ) : null}
 
       {isError ? (

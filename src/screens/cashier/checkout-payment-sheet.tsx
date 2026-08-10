@@ -2,7 +2,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 
 import { CheckoutPaymentPanel } from './checkout-payment-panel';
 import type { CheckoutPaymentPanelProps } from './checkout-payment-panel';
-import { checkoutPaymentSheetTitle } from './checkout-undo';
+import { checkoutPaymentSheetTitle } from '@/utils/cashier-checkout-undo';
 
 type CheckoutPaymentSheetProps = Omit<
   CheckoutPaymentPanelProps,

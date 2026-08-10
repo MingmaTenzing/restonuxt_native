@@ -53,3 +53,15 @@ export function filterBookings(bookings: Booking[], filter: BookingFilter): Book
     return isSameDay(date, now);
   });
 }
+
+export function searchBookings(bookings: Booking[], query: string): Booking[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return bookings;
+  return bookings.filter((booking) => {
+    const name = booking.customerName?.toLowerCase() ?? '';
+    const phone = booking.customerPhone?.toLowerCase() ?? '';
+    const table = booking.table?.number?.toLowerCase() ?? '';
+    const request = booking.specialRequest?.toLowerCase() ?? '';
+    return name.includes(q) || phone.includes(q) || table.includes(q) || request.includes(q);
+  });
+}

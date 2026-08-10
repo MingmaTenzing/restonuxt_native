@@ -6,7 +6,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
-import { CardGridSkeleton, ListScreenSkeleton } from '@/components/skeleton';
+import { CardGridSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { useTheme } from '@/hooks/use-theme';
@@ -19,7 +19,7 @@ import {
   fetchPaidTakeawayOrders,
   fetchUnpaidTakeawayOrders,
 } from './api';
-import { sessionCollectedCents } from './cashier-paid';
+import { sessionCollectedCents } from '@/utils/cashier-paid';
 import { CashierSessionCard } from './cashier-session-card';
 import { CashierTakeawayCard } from './cashier-takeaway-card';
 import type { CashierMode, CashierTableSession } from './types';
@@ -36,7 +36,7 @@ function isQueueMode(mode: CashierMode) {
 }
 
 export default function CashierScreen() {
-  const { api, isLoaded, isSignedIn, isReady } = useApi();
+  const { api, isReady } = useApi();
   const router = useRouter();
   const [mode, setMode] = useState<CashierMode>('TABLES');
   const { isTablet } = useResponsiveLayout();
@@ -115,29 +115,6 @@ export default function CashierScreen() {
   const openTakeawayCheckout = (order: Order) => {
     router.push(`/cashier/checkout/takeaway/${order.id}`);
   };
-
-  if (!isLoaded) {
-    return (
-      <View className="flex-1 bg-background">
-        <ScreenScroll>
-          <ListScreenSkeleton statsCount={1} filters cards={4} />
-        </ScreenScroll>
-      </View>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-center text-xl font-semibold text-foreground">
-          Sign in required
-        </Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
-          Sign in from the Home tab to collect payments.
-        </Text>
-      </View>
-    );
-  }
 
   const isError =
     mode === 'TABLES'

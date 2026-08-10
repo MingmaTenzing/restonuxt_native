@@ -50,76 +50,63 @@ const STAT_ITEMS: {
   valueKey: keyof BookingStats;
 }[] = [
   { key: 'today', label: 'Today', valueKey: 'today' },
-  { key: 'month', label: 'This month', valueKey: 'thisMonth' },
+  { key: 'month', label: 'Month', valueKey: 'thisMonth' },
   { key: 'upcoming', label: 'Upcoming', valueKey: 'upcoming' },
-  { key: 'guests', label: 'Total guests', valueKey: 'totalGuests' },
+  { key: 'guests', label: 'Guests', valueKey: 'totalGuests' },
 ];
 
 function StatCard({
   label,
   value,
   accent,
-  width,
 }: {
   label: string;
   value: number;
   accent: Accent;
-  width: number;
 }) {
   const isDark = useColorScheme() === 'dark';
-  const valueSize = width < 150 ? 24 : width < 180 ? 28 : 30;
 
   return (
     <View
-      className="gap-3 rounded-3xl border border-border bg-card p-4"
-      style={{
-        width,
-        borderCurve: 'continuous',
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)',
-      }}>
-      <Text numberOfLines={1} className="text-xs font-medium text-muted-foreground">
-        {label}
-      </Text>
-
-      <View className="min-w-0 flex-row items-center gap-2">
+      className="min-w-[104px] flex-1 gap-1 rounded-2xl border border-border bg-card px-3 py-2.5"
+      style={{ borderCurve: 'continuous' }}>
+      <View className="flex-row items-center gap-1.5">
         <View
-          className={`h-9 w-9 shrink-0 items-center justify-center rounded-full ${accent.iconWrap}`}
+          className={`h-6 w-6 shrink-0 items-center justify-center rounded-full ${accent.iconWrap}`}
           style={{ borderCurve: 'continuous' }}>
           <Ionicons
             name={accent.iconName}
-            size={18}
+            size={13}
             color={isDark ? accent.iconDark : accent.iconLight}
           />
         </View>
-        <Text
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.75}
-          className={`min-w-0 flex-1 font-semibold tracking-tight ${accent.value}`}
-          style={{ fontSize: valueSize, fontVariant: ['tabular-nums'] }}>
-          {value}
+        <Text numberOfLines={1} className="flex-1 text-[11px] font-medium text-muted-foreground">
+          {label}
         </Text>
       </View>
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+        className={`text-xl font-semibold tracking-tight ${accent.value}`}
+        style={{ fontVariant: ['tabular-nums'] }}>
+        {value}
+      </Text>
     </View>
   );
 }
 
 export function BookingStatsRow({ stats }: { stats: BookingStats }) {
-  const { isLargeTablet, contentWidth, horizontalPadding, gridGap } = useResponsiveLayout();
-  const columns = isLargeTablet ? 4 : 2;
-  const cardWidth = Math.floor(
-    (contentWidth - horizontalPadding * 2 - gridGap * (columns - 1)) / columns
-  );
+  const { gridGap } = useResponsiveLayout();
 
   return (
-    <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
+    <View className="flex-row" style={{ gap: Math.min(gridGap, 8) }}>
       {STAT_ITEMS.map((item) => (
         <StatCard
           key={item.key}
           label={item.label}
           value={stats[item.valueKey]}
           accent={ACCENTS[item.key]}
-          width={cardWidth}
         />
       ))}
     </View>

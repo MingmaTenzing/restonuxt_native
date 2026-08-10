@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '@clerk/expo';
 import { useQuery } from '@tanstack/react-query';
-import { Image, Text, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { Image, ScrollView, Text, useColorScheme, useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Button } from '@/components/button';
@@ -18,7 +18,7 @@ import { fetchDashboardStats } from './api';
 import { buildCategoryPieSlices } from './category-pie';
 import {
   buildWeeklyKpiCards,
-  categoryLabel,
+  dayGreeting,
   emptyKpi,
   emptyRoster,
   formatChartMoney,
@@ -39,6 +39,7 @@ import type {
 
 const PIE_SIZE = 180;
 const LINE_CHART_HEIGHT = 168;
+const FOOD_CARD_WIDTH = 148;
 
 function formatShortDate(value: string) {
   if (!value) return 'Not set';
@@ -71,10 +72,10 @@ function Section({
 }) {
   return (
     <View className="gap-3">
-      <View className="flex-row items-center justify-between gap-3">
-        <Text className="text-lg font-semibold text-foreground">{title}</Text>
+      <View className="flex-row items-end justify-between gap-3">
+        <Text className="text-xl font-bold tracking-tight text-foreground">{title}</Text>
         {action ? (
-          <Text className="text-sm font-medium text-muted-foreground">{action}</Text>
+          <Text className="pb-0.5 text-sm font-medium text-muted-foreground">{action}</Text>
         ) : null}
       </View>
       {children}
@@ -82,36 +83,21 @@ function Section({
   );
 }
 
-function MetricCard({
-  card,
-  width,
-}: {
-  card: DashboardKpiCard;
-  width?: number;
-}) {
+function KpiChip({ card }: { card: DashboardKpiCard }) {
   const isDark = useColorScheme() === 'dark';
 
   return (
     <View
-      className="gap-4 rounded-3xl border border-border bg-card p-4"
-      style={{
-        width,
-        flex: width ? undefined : 1,
-        borderCurve: 'continuous',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
-      }}>
-      <View className="flex-row items-center justify-between">
-        <Text className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {card.label}
-        </Text>
-        <View className="h-9 w-9 items-center justify-center rounded-full bg-muted">
-          <Ionicons name={card.iconName} size={18} color={isDark ? '#FAFAFA' : '#18181B'} />
+      className="min-w-[132px] gap-2 rounded-2xl border border-border bg-card px-4 py-3.5"
+      style={{ borderCurve: 'continuous' }}>
+      <View className="flex-row items-center gap-2">
+        <View className="h-7 w-7 items-center justify-center rounded-full bg-muted">
+          <Ionicons name={card.iconName} size={14} color={isDark ? '#FAFAFA' : '#18181B'} />
         </View>
+        <Text className="text-xs font-medium text-muted-foreground">{card.label}</Text>
       </View>
-      <View className="gap-1">
-        <Text className="text-3xl font-bold tracking-tight text-foreground">{card.value}</Text>
-        <Text className="text-sm text-muted-foreground">{card.detail}</Text>
-      </View>
+      <Text className="text-xl font-bold tracking-tight text-foreground">{card.value}</Text>
+      <Text className="text-[11px] text-muted-foreground">{card.detail}</Text>
     </View>
   );
 }
@@ -124,8 +110,9 @@ function RevenueTrendCard({ points }: { points: RevenuePoint[] }) {
 
   // Card sits in full width or half of a tablet row; subtract card padding.
   const chartWidth = Math.max(
-    (isTablet ? (contentWidth - horizontalPadding * 2 - 16) / 2 : contentWidth - horizontalPadding * 2) -
-      40,
+    (isTablet
+      ? (contentWidth - horizontalPadding * 2 - 16) / 2
+      : contentWidth - horizontalPadding * 2) - 40,
     Math.min(windowWidth - 64, 280)
   );
 
@@ -191,7 +178,7 @@ function RevenueTrendCard({ points }: { points: RevenuePoint[] }) {
             ))}
           </View>
 
-          <View className="flex-row items-center justify-between border-t border-border/60 pt-3">
+          <View className="border-border/60 flex-row items-center justify-between border-t pt-3">
             <Text className="text-sm text-muted-foreground">Peak day</Text>
             <Text className="text-base font-semibold text-foreground">
               {formatMoney(maxRevenueCents)}
@@ -216,7 +203,9 @@ function CategoryPie({ categories }: { categories: SoldByCategory[] }) {
       style={{ borderCurve: 'continuous', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}>
       {slices.length > 0 ? (
         <View className="flex-row flex-wrap items-center gap-5">
-          <View className="items-center justify-center" style={{ width: PIE_SIZE, height: PIE_SIZE }}>
+          <View
+            className="items-center justify-center"
+            style={{ width: PIE_SIZE, height: PIE_SIZE }}>
             <Svg width={PIE_SIZE} height={PIE_SIZE} viewBox={`0 0 ${PIE_SIZE} ${PIE_SIZE}`}>
               {slices.map((slice) => (
                 <Path key={slice.category} d={slice.path} fill={slice.color} />
@@ -249,55 +238,61 @@ function CategoryPie({ categories }: { categories: SoldByCategory[] }) {
   );
 }
 
-function PopularItems({ items }: { items: PopularItem[] }) {
-  const visibleItems = items.slice(0, 5);
+function PopularFoodsRow({ items }: { items: PopularItem[] }) {
+  const visibleItems = items.slice(0, 8);
+  const { horizontalPadding } = useResponsiveLayout();
 
-  return (
-    <View
-      className="overflow-hidden rounded-3xl border border-border bg-card"
-      style={{ borderCurve: 'continuous', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}>
-      {visibleItems.length > 0 ? (
-        visibleItems.map((item, index) => (
-          <View
-            key={item.id}
-            className="flex-row items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0">
-            <View className="relative">
-              {item.imageUrl ? (
-                <View className="h-14 w-14 overflow-hidden rounded-2xl" style={{ borderCurve: 'continuous' }}>
-                  <Image source={{ uri: item.imageUrl }} className="h-full w-full" />
-                </View>
-              ) : (
-                <View
-                  className="h-14 w-14 items-center justify-center rounded-2xl bg-muted"
-                  style={{ borderCurve: 'continuous' }}>
-                  <Text className="text-lg font-bold text-foreground">
-                    {item.name.slice(0, 1).toUpperCase()}
-                  </Text>
-                </View>
-              )}
-              <View className="absolute -left-1 -top-1 h-6 w-6 items-center justify-center rounded-full bg-foreground">
-                <Text className="text-[11px] font-bold text-background">{index + 1}</Text>
-              </View>
-            </View>
-            <View className="min-w-0 flex-1 gap-0.5">
-              <Text numberOfLines={1} className="text-base font-semibold text-foreground">
-                {item.name}
-              </Text>
-              <Text numberOfLines={1} className="text-sm text-muted-foreground">
-                {categoryLabel(item.category)} · {formatMoney(item.priceCents)}
-              </Text>
-            </View>
-            <Text className="text-sm font-semibold text-muted-foreground">
-              {item.sold_quantity} sold
-            </Text>
-          </View>
-        ))
-      ) : (
-        <Text className="p-5 text-base leading-6 text-muted-foreground">
+  if (visibleItems.length === 0) {
+    return (
+      <View
+        className="items-center justify-center rounded-3xl border border-border bg-card px-5 py-8"
+        style={{ borderCurve: 'continuous' }}>
+        <Text className="text-center text-base leading-6 text-muted-foreground">
           Popular items will appear once customers start ordering.
         </Text>
-      )}
-    </View>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ gap: 12, paddingRight: horizontalPadding }}
+      style={{ marginHorizontal: -horizontalPadding, paddingLeft: horizontalPadding }}>
+      {visibleItems.map((item, index) => (
+        <View key={item.id} style={{ width: FOOD_CARD_WIDTH }} className="gap-2">
+          <View className="relative">
+            {item.imageUrl ? (
+              <View
+                className="overflow-hidden rounded-2xl bg-muted"
+                style={{ height: 112, borderCurve: 'continuous' }}>
+                <Image source={{ uri: item.imageUrl }} className="h-full w-full" resizeMode="cover" />
+              </View>
+            ) : (
+              <View
+                className="items-center justify-center rounded-2xl bg-muted"
+                style={{ height: 112, borderCurve: 'continuous' }}>
+                <Text className="text-3xl font-bold text-foreground/30">
+                  {item.name.slice(0, 1).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <View className="absolute left-2 top-2 h-6 min-w-6 items-center justify-center rounded-full bg-black/70 px-1.5">
+              <Text className="text-[11px] font-bold text-white">{index + 1}</Text>
+            </View>
+          </View>
+          <View className="gap-0.5 px-0.5">
+            <Text numberOfLines={2} className="text-sm font-semibold leading-5 text-foreground">
+              {item.name}
+            </Text>
+            <Text numberOfLines={1} className="text-xs text-muted-foreground">
+              {formatMoney(item.priceCents)} · {item.sold_quantity} sold
+            </Text>
+          </View>
+        </View>
+      ))}
+    </ScrollView>
   );
 }
 
@@ -310,9 +305,7 @@ function RecentOrders({ orders }: { orders: RecentOrder[] }) {
       style={{ borderCurve: 'continuous', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}>
       {visibleOrders.length > 0 ? (
         visibleOrders.map((order) => (
-          <View
-            key={order.id}
-            className="gap-3 border-b border-border px-5 py-4 last:border-b-0">
+          <View key={order.id} className="gap-3 border-b border-border px-5 py-4 last:border-b-0">
             <View className="flex-row items-start justify-between gap-3">
               <View className="flex-1 gap-1">
                 <Text numberOfLines={1} className="text-base font-semibold text-foreground">
@@ -384,11 +377,7 @@ function RosterCard({ roster }: { roster: RosterOverview }) {
 export function DashboardContent() {
   const { user } = useUser();
   const { api } = useApi();
-  const { isTablet, isLargeTablet, contentWidth, horizontalPadding, gridGap } =
-    useResponsiveLayout();
-  const metricColumns = isLargeTablet ? 4 : 2;
-  const metricCardWidth =
-    (contentWidth - horizontalPadding * 2 - gridGap * (metricColumns - 1)) / metricColumns;
+  const { isTablet, horizontalPadding } = useResponsiveLayout();
   const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: () => fetchDashboardStats(api),
@@ -405,40 +394,35 @@ export function DashboardContent() {
 
   const kpiCards = buildWeeklyKpiCards(stats.weeklyKpi);
   const name = welcomeName(user?.firstName, user?.fullName);
+  const greeting = dayGreeting();
   const todayLabel = new Intl.DateTimeFormat('en-AU', {
-    weekday: 'long',
+    weekday: 'short',
     day: 'numeric',
-    month: 'long',
+    month: 'short',
   }).format(new Date());
+
+  const weekLabel =
+    stats.weeklyKpi.startofWeek || stats.weeklyKpi.endOfWeek
+      ? `${formatShortDate(stats.weeklyKpi.startofWeek)} – ${formatShortDate(stats.weeklyKpi.endOfWeek)}`
+      : undefined;
 
   return (
     <ScreenScroll refreshing={isRefetching} onRefresh={() => refetch()}>
-      <View className="gap-2">
-        <View className="flex-row items-start justify-between gap-4">
-          <View className="flex-1 gap-2">
-            <Text
-              className={`font-bold tracking-tight text-foreground ${
-                isTablet ? 'text-3xl' : 'text-4xl'
-              }`}>
-              Hi, {name}
-            </Text>
-            <Text className="text-base leading-6 text-muted-foreground">
-              Welcome back — a quick look at how things are going today.
-            </Text>
-            <Text className="text-sm font-medium text-muted-foreground">{todayLabel}</Text>
-          </View>
-          <View className="flex-row items-center gap-2">
-            <ThemeToggle variant="compact" />
-            <DashboardUserAction />
-          </View>
-        </View>
-
-        {stats.weeklyKpi.startofWeek || stats.weeklyKpi.endOfWeek ? (
-          <Text className="text-sm font-medium text-muted-foreground">
-            Week of {formatShortDate(stats.weeklyKpi.startofWeek)} to{' '}
-            {formatShortDate(stats.weeklyKpi.endOfWeek)}
+      <View className="flex-row items-center justify-between gap-3">
+        <View className="min-w-0 flex-1">
+          <Text
+            numberOfLines={1}
+            className={`font-bold tracking-tight text-foreground ${
+              isTablet ? 'text-2xl' : 'text-[28px]'
+            }`}>
+            {greeting}, {name}
           </Text>
-        ) : null}
+          <Text className="mt-0.5 text-sm text-muted-foreground">{todayLabel}</Text>
+        </View>
+        <View className="flex-row items-center gap-2">
+          <ThemeToggle variant="compact" />
+          <DashboardUserAction />
+        </View>
       </View>
 
       {isError ? (
@@ -461,67 +445,63 @@ export function DashboardContent() {
         <DashboardSkeleton />
       ) : (
         <>
-          <Section title="Top trending foods" action="Swipe · last 30 days">
+          <Section title="Trending now" action="Last 30 days">
             <TrendingFoodsCarousel items={stats.popularItems} />
           </Section>
 
-          <View className="flex-row flex-wrap" style={{ gap: gridGap }}>
-            {kpiCards.map((card) => (
-              <MetricCard key={card.key} card={card} width={metricCardWidth} />
-            ))}
+          <View className="gap-3">
+            <View className="flex-row items-end justify-between gap-3">
+              <Text className="text-xl font-bold tracking-tight text-foreground">This week</Text>
+              {weekLabel ? (
+                <Text className="pb-0.5 text-sm font-medium text-muted-foreground">{weekLabel}</Text>
+              ) : null}
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 10, paddingRight: horizontalPadding }}
+              style={{ marginHorizontal: -horizontalPadding, paddingLeft: horizontalPadding }}>
+              {kpiCards.map((card) => (
+                <KpiChip key={card.key} card={card} />
+              ))}
+            </ScrollView>
           </View>
+
+          <Section title="Popular near you" action="Top sellers">
+            <PopularFoodsRow items={stats.popularItems} />
+          </Section>
+
+          <Section title="Recent orders">
+            <RecentOrders orders={stats.recentOrders} />
+          </Section>
 
           {isTablet ? (
             <View className="flex-row gap-4">
               <View className="flex-1">
-                <Section title="Revenue trend" action={isRefetching ? 'Refreshing' : 'Last 7 days'}>
+                <Section title="Revenue" action={isRefetching ? 'Refreshing' : 'Last 7 days'}>
                   <RevenueTrendCard points={stats.revenueTrend} />
                 </Section>
               </View>
               <View className="flex-1">
-                <Section title="Sales by category">
+                <Section title="By category">
                   <CategoryPie categories={stats.soldByCategory} />
                 </Section>
               </View>
             </View>
           ) : (
             <>
-              <Section title="Revenue trend" action={isRefetching ? 'Refreshing' : 'Last 7 days'}>
+              <Section title="Revenue" action={isRefetching ? 'Refreshing' : 'Last 7 days'}>
                 <RevenueTrendCard points={stats.revenueTrend} />
               </Section>
-              <Section title="Sales by category">
+              <Section title="By category">
                 <CategoryPie categories={stats.soldByCategory} />
               </Section>
             </>
           )}
 
-          <Section title="Operations">
+          <Section title="Team roster">
             <RosterCard roster={stats.rosterOverview} />
           </Section>
-
-          {isTablet ? (
-            <View className="flex-row gap-4">
-              <View className="flex-1">
-                <Section title="Popular items">
-                  <PopularItems items={stats.popularItems} />
-                </Section>
-              </View>
-              <View className="flex-1">
-                <Section title="Recent orders">
-                  <RecentOrders orders={stats.recentOrders} />
-                </Section>
-              </View>
-            </View>
-          ) : (
-            <>
-              <Section title="Popular items">
-                <PopularItems items={stats.popularItems} />
-              </Section>
-              <Section title="Recent orders">
-                <RecentOrders orders={stats.recentOrders} />
-              </Section>
-            </>
-          )}
         </>
       )}
     </ScreenScroll>

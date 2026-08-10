@@ -9,7 +9,7 @@ import {
   resolveUndoTablePaid,
   resolveUndoTakeawayPaid,
   undoPaidConfirmMessage,
-} from './checkout-undo';
+} from './cashier-checkout-undo';
 
 describe('checkout paid CTAs', () => {
   test('balance bar opens receipt actions when paid, collect when unpaid', () => {

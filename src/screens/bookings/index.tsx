@@ -4,15 +4,16 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
-import { CardGridSkeleton, ListScreenSkeleton, StatsRowSkeleton } from '@/components/skeleton';
+import { CardGridSkeleton, StatsRowSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { unwrapList, type ApiClient } from '@/utils/api';
 
 import { AddBookingModal } from './add-booking-modal';
 import { BookingCard } from './booking-card';
-import { computeBookingStats, filterBookings, type BookingFilter } from './booking-stats';
-import { BookingFilterToggle, BookingStatsRow } from './booking-stats-row';
+import { computeBookingStats, filterBookings, searchBookings, type BookingFilter } from './booking-stats';
+import { BookingStatsRow } from './booking-stats-row';
+import { BookingSearch } from './booking-search';
 import type { Booking, NewBooking } from './types';
 
 async function fetchBookings(api: ApiClient): Promise<Booking[]> {
@@ -28,10 +29,11 @@ async function createBooking(api: ApiClient, booking: NewBooking): Promise<Booki
 }
 
 export default function BookingsScreen() {
-  const { api, isLoaded, isSignedIn, isReady } = useApi();
+  const { api, isReady } = useApi();
   const queryClient = useQueryClient();
   const [isModalVisible, setModalVisible] = useState(false);
   const [filter, setFilter] = useState<BookingFilter>('today');
+  const [query, setQuery] = useState('');
   const { isTablet, fabStyle } = useResponsiveLayout();
 
   const {
@@ -56,30 +58,7 @@ export default function BookingsScreen() {
   });
 
   const stats = computeBookingStats(bookings);
-  const visibleBookings = filterBookings(bookings, filter);
-
-  if (!isLoaded) {
-    return (
-      <View className="flex-1 bg-background">
-        <ScreenScroll bottomInset={72}>
-          <ListScreenSkeleton statsCount={4} cards={4} />
-        </ScreenScroll>
-      </View>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-center text-xl font-semibold text-foreground">
-          Sign in required
-        </Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
-          Sign in from the Home tab to view bookings.
-        </Text>
-      </View>
-    );
-  }
+  const visibleBookings = searchBookings(filterBookings(bookings, filter), query);
 
   return (
     <>
@@ -99,8 +78,13 @@ export default function BookingsScreen() {
         {!isError && isLoading ? <StatsRowSkeleton count={4} /> : null}
         {!isError && !isLoading && bookings.length > 0 ? <BookingStatsRow stats={stats} /> : null}
 
-        {!isError && !isLoading && bookings.length > 0 ? (
-          <BookingFilterToggle value={filter} onChange={setFilter} />
+        {!isError ? (
+          <BookingSearch
+            query={query}
+            onQueryChange={setQuery}
+            filter={filter}
+            onFilterChange={setFilter}
+          />
         ) : null}
 
         {isError ? (
@@ -134,7 +118,11 @@ export default function BookingsScreen() {
             className="rounded-3xl border border-border bg-card p-5"
             style={{ borderCurve: 'continuous', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.05)' }}>
             <Text className="text-base leading-6 text-muted-foreground">
-              No bookings for today. Switch to All to see every booking.
+              {query.trim()
+                ? 'No bookings match your search.'
+                : filter === 'today'
+                  ? 'No bookings for today. Switch to All to see every booking.'
+                  : 'No bookings in this view.'}
             </Text>
           </View>
         ) : null}
