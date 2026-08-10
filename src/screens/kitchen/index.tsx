@@ -114,7 +114,7 @@ function QueueTabs({
 }
 
 export default function KitchenScreen() {
-  const { api, getToken, isLoaded, isSignedIn, isReady } = useApi();
+  const { api, getToken, isReady } = useApi();
   const queryClient = useQueryClient();
   const { cardWidth, gridGap, isTablet, scrollContentStyle } = useResponsiveLayout();
   const [activeTab, setActiveTab] = useState<KitchenQueueTab>('active');
@@ -268,29 +268,6 @@ export default function KitchenScreen() {
     isPendingLoading,
     pendingOrders.length,
   ]);
-
-  if (!isLoaded) {
-    return (
-      <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-        <View className="flex-1 px-5 pt-7">
-          <KitchenQueueSkeleton />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-center text-xl font-semibold text-foreground">
-          Sign in required
-        </Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
-          Sign in from the Home tab to open the kitchen display.
-        </Text>
-      </View>
-    );
-  }
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>

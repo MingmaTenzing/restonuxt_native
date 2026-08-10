@@ -3,7 +3,7 @@ import { Pressable, Text, useColorScheme, View } from 'react-native';
 
 import { formatMoney } from '@/utils/format-money';
 
-import { checkoutBalanceBarActionLabel } from './checkout-undo';
+import { checkoutBalanceBarActionLabel } from '@/utils/cashier-checkout-undo';
 
 interface CheckoutBalanceBarProps {
   amountDueCents: number;

@@ -146,6 +146,16 @@ describe('cart mutations', () => {
     expect(updateCartLineQuantity([sampleLine], 'line-1', 0)).toEqual([]);
   });
 
+  test('updateCartLineQuantity removes for any quantity below 1', () => {
+    expect(updateCartLineQuantity([sampleLine], 'line-1', -3)).toEqual([]);
+  });
+
+  test('updateCartLineQuantity never leaves a zero-quantity row', () => {
+    const next = updateCartLineQuantity([sampleLine], 'line-1', 0);
+    expect(next.every((line) => line.quantity >= 1)).toBe(true);
+    expect(next).toHaveLength(0);
+  });
+
   test('removeCartLine drops matching id', () => {
     expect(removeCartLine([sampleLine], 'line-1')).toEqual([]);
   });
@@ -263,6 +273,153 @@ describe('addCartLine', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]?.quantity).toBe(3);
+  });
+});
+
+/**
+ * Core cart invariants:
+ * - same menu item + same options (+ instructions) → one row, quantity +=
+ * - different options → separate rows (no silent dup of the wrong variant)
+ * - quantity cannot stay at 0; setting/decreasing to < 1 removes the row
+ */
+describe('cart duplicate / quantity invariants', () => {
+  const cheese = {
+    menuOptionId: 'opt-cheese',
+    name: 'Cheese',
+    priceCents: 100,
+    quantity: 1,
+  };
+  const bacon = {
+    menuOptionId: 'opt-bacon',
+    name: 'Bacon',
+    priceCents: 200,
+    quantity: 1,
+  };
+
+  const burgerWithCheese: CartLine = {
+    id: 'line-cheese-1',
+    menuItemId: 'menu-burger',
+    itemName: 'Burger',
+    unitPriceCents: 1200,
+    quantity: 1,
+    specialInstructions: null,
+    options: [cheese],
+  };
+
+  test('adding the same item with the same options increments quantity instead of duplicating', () => {
+    const again: CartLine = {
+      ...burgerWithCheese,
+      id: 'line-cheese-2',
+      quantity: 1,
+    };
+
+    let cart = addCartLine([], burgerWithCheese);
+    cart = addCartLine(cart, again);
+    cart = addCartLine(cart, { ...again, id: 'line-cheese-3', quantity: 2 });
+
+    expect(cart).toHaveLength(1);
+    expect(cart[0]?.id).toBe('line-cheese-1');
+    expect(cart[0]?.quantity).toBe(4);
+    expect(cartItemCount(cart)).toBe(4);
+  });
+
+  test('same menu item with different options stays as separate cart rows', () => {
+    const withBacon: CartLine = {
+      ...burgerWithCheese,
+      id: 'line-bacon',
+      options: [bacon],
+    };
+    const withBoth: CartLine = {
+      ...burgerWithCheese,
+      id: 'line-both',
+      options: [cheese, bacon],
+    };
+
+    let cart = addCartLine([], burgerWithCheese);
+    cart = addCartLine(cart, withBacon);
+    cart = addCartLine(cart, withBoth);
+
+    expect(cart).toHaveLength(3);
+    expect(cart.map((line) => line.id)).toEqual([
+      'line-cheese-1',
+      'line-bacon',
+      'line-both',
+    ]);
+  });
+
+  test('re-adding an exact option set merges into that row only', () => {
+    const withBacon: CartLine = {
+      ...burgerWithCheese,
+      id: 'line-bacon',
+      quantity: 1,
+      options: [bacon],
+    };
+    const anotherBacon: CartLine = {
+      ...withBacon,
+      id: 'line-bacon-2',
+      quantity: 3,
+    };
+
+    let cart = addCartLine([], burgerWithCheese);
+    cart = addCartLine(cart, withBacon);
+    cart = addCartLine(cart, anotherBacon);
+
+    expect(cart).toHaveLength(2);
+    expect(cart.find((line) => line.id === 'line-cheese-1')?.quantity).toBe(1);
+    expect(cart.find((line) => line.id === 'line-bacon')?.quantity).toBe(4);
+  });
+
+  test('option order does not create a duplicate row', () => {
+    const cheeseThenBacon: CartLine = {
+      ...burgerWithCheese,
+      id: 'line-a',
+      options: [cheese, bacon],
+    };
+    const baconThenCheese: CartLine = {
+      ...burgerWithCheese,
+      id: 'line-b',
+      quantity: 2,
+      options: [bacon, cheese],
+    };
+
+    const cart = addCartLine([cheeseThenBacon], baconThenCheese);
+
+    expect(cart).toHaveLength(1);
+    expect(cart[0]?.quantity).toBe(3);
+  });
+
+  test('decrease from 1 removes the line instead of leaving quantity 0', () => {
+    const single = { ...burgerWithCheese, quantity: 1 };
+    const next = decreaseCartLineQuantity([single], single);
+
+    expect(next).toEqual([]);
+    expect(next.every((line) => line.quantity >= 1)).toBe(true);
+  });
+
+  test('repeated decreases remove the line and never keep a zero row', () => {
+    let cart: CartLine[] = [{ ...burgerWithCheese, quantity: 2 }];
+
+    cart = decreaseCartLineQuantity(cart, burgerWithCheese);
+    expect(cart).toHaveLength(1);
+    expect(cart[0]?.quantity).toBe(1);
+
+    cart = decreaseCartLineQuantity(cart, burgerWithCheese);
+    expect(cart).toEqual([]);
+  });
+
+  test('setting quantity to zero removes that line and leaves other variants intact', () => {
+    const withBacon: CartLine = {
+      ...burgerWithCheese,
+      id: 'line-bacon',
+      quantity: 2,
+      options: [bacon],
+    };
+    const cart = [burgerWithCheese, withBacon];
+
+    const next = updateCartLineQuantity(cart, burgerWithCheese.id, 0);
+
+    expect(next).toEqual([withBacon]);
+    expect(next.every((line) => line.quantity >= 1)).toBe(true);
   });
 });
 

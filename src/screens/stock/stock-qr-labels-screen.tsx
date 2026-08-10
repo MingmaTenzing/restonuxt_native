@@ -15,7 +15,7 @@ import { buildStockQrValue } from './stock-qr';
 export default function StockQrLabelsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { api, isLoaded, isSignedIn, isReady } = useApi();
+  const { api, isReady } = useApi();
   const { isTablet } = useResponsiveLayout();
 
   const { data: items = [], isLoading, isError, error, refetch } = useQuery({
@@ -34,15 +34,7 @@ export default function StockQrLabelsScreen() {
         <View className="w-6" />
       </View>
 
-      {!isLoaded ? (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-base text-muted-foreground">Loading...</Text>
-        </View>
-      ) : !isSignedIn ? (
-        <View className="flex-1 items-center justify-center px-5">
-          <Text className="text-center text-base text-muted-foreground">Sign in to view labels.</Text>
-        </View>
-      ) : isLoading ? (
+      {isLoading ? (
         <View className="flex-1 items-center justify-center">
           <Text className="text-base text-muted-foreground">Loading stock items...</Text>
         </View>

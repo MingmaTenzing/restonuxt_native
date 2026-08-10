@@ -47,7 +47,8 @@ Apply this to **all** feature logic (UI flows, cart, CRUD, sessions, guards, hel
 ## Data and auth
 
 - Base URL: `process.env.EXPO_PUBLIC_API_BASE_URL`
-- Attach Clerk session token on API requests (see existing screen patterns and `native-data-fetching` skill).
+- Auth guard lives in root `src/app/_layout.tsx` via Expo Router `Stack.Protected` + Clerk `useAuth()` — do not add per-screen “Sign in required” UI. Sign-in route: `src/app/sign-in.tsx`.
+- Attach Clerk session token on API requests via `useApi()` (`enabled: isReady` on queries).
 - **API responses are camelCase** (Prisma/Nitro) — type them and use them directly, like the Nuxt web app in **`RestoQuick_Nuxt_Web/`** does with `useFetch<T>`. Prefer `api<Order[]>(...)` or `unwrapList<T>(payload)` over `normalize*` helpers. Map to a display shape inline only when the UI needs it (e.g. chart labels).
 - When adding a feature, read the Nuxt page (`RestoQuick_Nuxt_Web/app/pages/Dashboard/`), composable (`app/composables/`), and API handler (`server/api/`) first — mirror data flow, cart/CRUD logic, and state patterns before writing native code.
 - Kitchen WebSocket: `src/hooks/kitchen-websocket-client.ts` + `src/utils/websocket-url.ts` (see `RESTOQUICK_DOC.md` → Kitchen display flow)

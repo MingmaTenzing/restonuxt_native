@@ -2,8 +2,8 @@ import type { Order } from '@/screens/orders/types';
 import type { SessionCheckout, TableSession } from '@/screens/sessions/types';
 import { unwrapList, type ApiClient } from '@/utils/api';
 
-import { selectPaidTakeawayOrders } from './cashier-paid';
-import { toCashierSession } from './cashier-sessions';
+import { selectPaidTakeawayOrders } from '@/utils/cashier-paid';
+import { toCashierSession } from '@/utils/cashier-sessions';
 import type {
   CloseTakeawayInput,
   MarkTablePaidInput,

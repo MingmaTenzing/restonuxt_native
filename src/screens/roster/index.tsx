@@ -5,7 +5,7 @@ import { Alert, Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
-import { CardGridSkeleton, ListScreenSkeleton, StatsRowSkeleton } from '@/components/skeleton';
+import { CardGridSkeleton, StatsRowSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 
@@ -28,7 +28,7 @@ import { formatWeekLabel, shiftWeek, toWeekRange } from './roster-week';
 import type { RosterView, Shift, ShiftInput } from './types';
 
 export default function RosterScreen() {
-  const { api, isLoaded, isSignedIn, isReady } = useApi();
+  const { api, isReady } = useApi();
   const queryClient = useQueryClient();
   const { isTablet, fabStyle } = useResponsiveLayout();
 
@@ -143,27 +143,6 @@ export default function RosterScreen() {
 
   const shiftMutationPending = createShiftMutation.isPending || updateShiftMutation.isPending;
   const shiftMutationError = createShiftMutation.error ?? updateShiftMutation.error;
-
-  if (!isLoaded) {
-    return (
-      <View className="flex-1 bg-background">
-        <ScreenScroll bottomInset={72}>
-          <ListScreenSkeleton statsCount={3} cards={4} />
-        </ScreenScroll>
-      </View>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-center text-xl font-semibold text-foreground">Sign in required</Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
-          Sign in from the Home tab to manage the roster.
-        </Text>
-      </View>
-    );
-  }
 
   const hasLoadError = shiftsQuery.isError || leaveQuery.isError || overviewQuery.isError;
   const loadError =

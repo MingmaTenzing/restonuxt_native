@@ -38,16 +38,16 @@ import {
   parseTenderedCents,
   shouldShowCheckoutPayment,
   type CashOrCard,
-} from './checkout';
-import { CheckoutPaymentPanel } from './checkout-payment-panel';
-import { CheckoutPaymentSheet } from './checkout-payment-sheet';
+} from '@/utils/cashier-checkout';
 import {
   formatUndoTablePaidBlockMessage,
   formatUndoTakeawayPaidBlockMessage,
   resolveUndoTablePaid,
   resolveUndoTakeawayPaid,
   undoPaidConfirmMessage,
-} from './checkout-undo';
+} from '@/utils/cashier-checkout-undo';
+import { CheckoutPaymentPanel } from './checkout-payment-panel';
+import { CheckoutPaymentSheet } from './checkout-payment-sheet';
 
 type CheckoutKind = 'table' | 'takeaway';
 
@@ -113,7 +113,7 @@ export function CashierCheckoutScreen({
   kind: CheckoutKind;
   id: string;
 }) {
-  const { api, isLoaded, isSignedIn, isReady } = useApi();
+  const { api, isReady } = useApi();
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -357,26 +357,6 @@ export function CashierCheckoutScreen({
     isTablet,
     showPayment,
   });
-
-  if (!isLoaded) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-base font-medium text-muted-foreground">
-          Loading...
-        </Text>
-      </View>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-center text-xl font-semibold text-foreground">
-          Sign in required
-        </Text>
-      </View>
-    );
-  }
 
   return (
     <View className="flex-1 bg-background">

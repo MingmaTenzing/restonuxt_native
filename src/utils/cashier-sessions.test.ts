@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 
-import { toCashierSession } from './cashier-sessions';
 import type { TableSession } from '@/screens/sessions/types';
+
+import { toCashierSession } from './cashier-sessions';
 
 function makeSession(overrides: Partial<TableSession> = {}): TableSession {
   const now = '2026-07-12T10:00:00.000Z';

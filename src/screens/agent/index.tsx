@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ScreenHeaderSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -28,7 +27,7 @@ import {
 import { createChatMessageId, streamRestoAgentReply } from './api';
 
 export default function AgentScreen() {
-  const { getToken, isLoaded, isSignedIn, isReady } = useApi();
+  const { getToken, isReady } = useApi();
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
@@ -137,30 +136,6 @@ export default function AgentScreen() {
     setError('');
     setIsResponding(false);
   };
-
-  if (!isLoaded) {
-    return (
-      <View className="flex-1 bg-background px-5 pt-7">
-        <ScreenHeaderSkeleton />
-      </View>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background px-6">
-        <View className="mb-4 h-14 w-14 items-center justify-center rounded-full bg-primary">
-          <Ionicons name="sparkles" size={24} color={isDark ? '#18181B' : '#FAFAFA'} />
-        </View>
-        <Text className="mb-2 text-center text-2xl font-semibold text-foreground">
-          Resto Agent
-        </Text>
-        <Text className="text-center text-base text-muted-foreground">
-          Sign in to chat with your restaurant assistant.
-        </Text>
-      </View>
-    );
-  }
 
   return (
     <KeyboardAvoidingView

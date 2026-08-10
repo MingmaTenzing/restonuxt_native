@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ResponsiveCardGrid, ScreenScroll } from '@/components/screen-scroll';
-import { CardGridSkeleton, ListScreenSkeleton, StatsRowSkeleton } from '@/components/skeleton';
+import { CardGridSkeleton, StatsRowSkeleton } from '@/components/skeleton';
 import { useApi } from '@/hooks/use-api';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { unwrapList, type ApiClient } from '@/utils/api';
@@ -29,7 +29,7 @@ async function createBooking(api: ApiClient, booking: NewBooking): Promise<Booki
 }
 
 export default function BookingsScreen() {
-  const { api, isLoaded, isSignedIn, isReady } = useApi();
+  const { api, isReady } = useApi();
   const queryClient = useQueryClient();
   const [isModalVisible, setModalVisible] = useState(false);
   const [filter, setFilter] = useState<BookingFilter>('today');
@@ -59,29 +59,6 @@ export default function BookingsScreen() {
 
   const stats = computeBookingStats(bookings);
   const visibleBookings = searchBookings(filterBookings(bookings, filter), query);
-
-  if (!isLoaded) {
-    return (
-      <View className="flex-1 bg-background">
-        <ScreenScroll bottomInset={72}>
-          <ListScreenSkeleton statsCount={4} cards={4} />
-        </ScreenScroll>
-      </View>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background px-5">
-        <Text className="text-center text-xl font-semibold text-foreground">
-          Sign in required
-        </Text>
-        <Text className="mt-2 text-center text-base leading-6 text-muted-foreground">
-          Sign in from the Home tab to view bookings.
-        </Text>
-      </View>
-    );
-  }
 
   return (
     <>

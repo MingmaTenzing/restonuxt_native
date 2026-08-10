@@ -7,7 +7,7 @@ import type { PrintReceiptTarget } from '@/screens/receipt/api';
 import { ReceiptPrintPanel } from '@/screens/receipt/receipt-print-panel';
 import { formatMoney } from '@/utils/format-money';
 
-import { checkoutAmountEyebrow } from './checkout';
+import { checkoutAmountEyebrow } from '@/utils/cashier-checkout';
 
 const QUICK_AMOUNTS = [10, 20, 50, 100];
 

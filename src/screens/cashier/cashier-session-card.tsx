@@ -3,7 +3,7 @@ import { Pressable, Text, useColorScheme, View } from 'react-native';
 
 import { formatMoney } from '@/utils/format-money';
 
-import { closedSessionHasUnpaid, sessionCollectedCents } from './cashier-paid';
+import { closedSessionHasUnpaid, sessionCollectedCents } from '@/utils/cashier-paid';
 import type { CashierTableSession } from './types';
 
 function formatDateTime(iso: string | null) {

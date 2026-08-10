@@ -22,7 +22,7 @@ import {
   resolveCheckoutTenderState,
   shouldShowCheckoutPayment,
   type CashOrCard,
-} from './checkout';
+} from './cashier-checkout';
 
 function makeSummary(overrides: Partial<SessionCheckoutSummary> = {}): SessionCheckoutSummary {
   return {

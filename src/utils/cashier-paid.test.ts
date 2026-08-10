@@ -2,7 +2,11 @@ import { describe, expect, test } from 'bun:test';
 
 import type { Order } from '@/screens/orders/types';
 
-import { selectPaidTakeawayOrders, sessionCollectedCents, closedSessionHasUnpaid } from './cashier-paid';
+import {
+  closedSessionHasUnpaid,
+  selectPaidTakeawayOrders,
+  sessionCollectedCents,
+} from './cashier-paid';
 
 function makeOrder(overrides: Partial<Order> = {}): Order {
   return {

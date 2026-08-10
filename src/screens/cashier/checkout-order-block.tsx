@@ -6,7 +6,7 @@ import type { Order, OrderItem } from '@/screens/orders/types';
 import { formatDate } from '@/utils/format-date';
 import { formatMoney } from '@/utils/format-money';
 
-import { orderItemLineTotalCents } from './checkout';
+import { orderItemLineTotalCents } from '@/utils/cashier-checkout';
 
 function OrderItemRow({ item, isLast }: { item: OrderItem; isLast: boolean }) {
   const options = item.orderItemOptions ?? [];
